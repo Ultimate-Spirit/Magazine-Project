@@ -13,7 +13,7 @@ export interface UserProfile {
 export interface Company {
   id: string;
   name: string;
-  logoUrl?: string;
+  logo_url?: string;
 }
 
 export interface Folder {

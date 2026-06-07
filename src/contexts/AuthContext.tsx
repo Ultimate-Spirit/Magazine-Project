@@ -68,23 +68,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchProfile = async (user: User) => {
     try {
-      const { data, error } = await supabase
+      // Fetch profile
+      let { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
 
-      if (!error && data) {
-        setProfile(data as UserProfile);
-        setIsAuthorized(true);
-        setIsAdmin(data.role === 'admin');
-      } else {
-        setProfile(null);
-        setIsAuthorized(false);
-        setIsAdmin(false);
+      if (profileError && profileError.code === 'PGRST116') {
+        // Profile doesn't exist, create one
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert([
+            { id: user.id, email: user.email, role: 'viewer' }
+          ])
+          .select()
+          .single();
+        
+        if (createError) throw createError;
+        profile = newProfile;
+      } else if (profileError) {
+        throw profileError;
       }
+
+      setProfile(profile as UserProfile);
+      setIsAuthorized(true);
+      setIsAdmin(profile.role === 'admin');
+
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('Error fetching/creating profile:', error);
       setProfile(null);
       setIsAuthorized(false);
       setIsAdmin(false);
