@@ -8,7 +8,10 @@ import { FolderView } from './components/FolderView';
 import { PageBuilder } from './components/PageBuilder';
 import { useAuth } from './contexts/AuthContext';
 import { Login } from './components/Login';
-import { AdminPanel } from './components/AdminPanel';
+import { AdminLayout } from './components/admin/AdminLayout';
+import { AdminDashboard } from './components/admin/AdminDashboard';
+import { UserManagement } from './components/admin/UserManagement';
+import { CompanyManagement } from './components/admin/CompanyManagement';
 import { UpdatePassword } from './components/UpdatePassword';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import type { ViewState, Company, Folder, Page } from './types';
@@ -165,10 +168,16 @@ function App() {
       <Route path="/login" element={user && isAuthorized ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/update-password" element={<UpdatePassword />} />
       <Route 
-        path="/admin" 
+        path="/admin/*" 
         element={
           <ProtectedRoute requiredRole="admin">
-            <AdminPanel />
+            <Routes>
+              <Route element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="users" element={<UserManagement />} />
+                <Route path="companies" element={<CompanyManagement />} />
+              </Route>
+            </Routes>
           </ProtectedRoute>
         } 
       />
