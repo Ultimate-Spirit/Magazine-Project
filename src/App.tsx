@@ -15,10 +15,21 @@ import { UpdatePassword } from './components/UpdatePassword';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import type { Company } from './types';
 
-function MainApp() {
+function App() {
+  const { user, loading, isAuthorized, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
   const [activeCompany, setActiveCompany] = useState<Company | null>(null);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="animate-spin h-8 w-8 text-blue-600" />
+          <p className="text-sm text-gray-500 font-medium">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleCompanySelect = (company: Company) => {
     setActiveCompany(company);
@@ -28,22 +39,26 @@ function MainApp() {
   return (
     <div className="relative min-h-screen">
       <Routes>
+        <Route path="/login" element={user && isAuthorized ? <Navigate to="/" replace /> : <Login />} />
+        <Route path="/update-password" element={<UpdatePassword />} />
+        
+        {/* Admin Section */}
         <Route 
-          path="/" 
+          path="/admin/*" 
           element={
-            <WorkspaceLayout 
-              company={activeCompany || { id: 'none', name: 'Select Company' }}
-              currentView="company_selection"
-              onNavigateBack={() => navigate(-1)}
-              onHome={() => {
-                setActiveCompany(null);
-                navigate('/');
-              }}
-            >
-              <CompanySelection onSelect={handleCompanySelect} />
-            </WorkspaceLayout>
+            <ProtectedRoute requiredRole="admin">
+              <Routes>
+                <Route element={<AdminLayout />}>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="users" element={<UserManagement />} />
+                  <Route path="companies" element={<CompanyManagement />} />
+                </Route>
+              </Routes>
+            </ProtectedRoute>
           } 
         />
+
+        {/* Application Section (Shared by Users & Admins) */}
         <Route 
           path="/company/:companyId/folders" 
           element={
@@ -60,6 +75,32 @@ function MainApp() {
             </ProtectedRoute>
           } 
         />
+
+        {/* Root Route Selection */}
+        <Route 
+          path="/" 
+          element={
+            <ProtectedRoute>
+              {isAdmin ? (
+                <Navigate to="/admin" replace />
+              ) : (
+                <WorkspaceLayout 
+                  company={activeCompany || { id: 'none', name: 'Select Company' }}
+                  currentView="company_selection"
+                  onNavigateBack={() => navigate(-1)}
+                  onHome={() => {
+                    setActiveCompany(null);
+                    navigate('/');
+                  }}
+                >
+                  <CompanySelection onSelect={handleCompanySelect} />
+                </WorkspaceLayout>
+              )}
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
       {isAdmin && (
@@ -75,64 +116,6 @@ function MainApp() {
         </Link>
       )}
     </div>
-  );
-}
-
-function RootRedirect() {
-  const { isAdmin, loading } = useAuth();
-  
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <Loader2 className="animate-spin h-8 w-8 text-blue-600" />
-    </div>
-  );
-
-  if (isAdmin) return <Navigate to="/admin" replace />;
-  return <MainApp />;
-}
-
-function App() {
-  const { user, loading, isAuthorized } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="animate-spin h-8 w-8 text-blue-600" />
-          <p className="text-sm text-gray-500 font-medium">Verifying access...</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <Routes>
-      <Route path="/login" element={user && isAuthorized ? <Navigate to="/" replace /> : <Login />} />
-      <Route path="/update-password" element={<UpdatePassword />} />
-      <Route 
-        path="/admin/*" 
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <Routes>
-              <Route element={<AdminLayout />}>
-                <Route index element={<AdminDashboard />} />
-                <Route path="users" element={<UserManagement />} />
-                <Route path="companies" element={<CompanyManagement />} />
-              </Route>
-            </Routes>
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/" 
-        element={
-          <ProtectedRoute>
-            <RootRedirect />
-          </ProtectedRoute>
-        } 
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
   );
 }
 
