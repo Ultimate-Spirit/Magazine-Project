@@ -39,6 +39,12 @@ export function FoldersView({ onSelectCompany }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   
+  // Live Insights State
+  const [stats, setStats] = useState({
+    collaborators: 0,
+    publications: 0
+  });
+
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   
   // Modal states
@@ -58,9 +64,11 @@ export function FoldersView({ onSelectCompany }: Props) {
     else setRefreshing(true);
     
     try {
-      const [compData, folderData] = await Promise.all([
+      const [compData, folderData, membersData, pagesData] = await Promise.all([
         supabase.from('companies').select('*').eq('id', targetCid).single(),
-        supabase.from('folders').select('*').eq('company_id', targetCid).order('updated_at', { ascending: false })
+        supabase.from('folders').select('*').eq('company_id', targetCid).order('updated_at', { ascending: false }),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('company_id', targetCid),
+        supabase.from('pages').select('id', { count: 'exact', head: true }).in('folder_id', folders.map(f => f.id).length > 0 ? folders.map(f => f.id) : ['none'])
       ]);
 
       if (compData.data) {
@@ -70,6 +78,25 @@ export function FoldersView({ onSelectCompany }: Props) {
 
       if (folderData.error) throw folderData.error;
       setFolders(folderData.data || []);
+
+      // If we don't have folder IDs yet (initial load), we need to re-query pages once folders are set
+      // But for better efficiency, let's query pages using a join-like logic if possible, 
+      // or just handle the second fetch for stats.
+      
+      setStats({
+        collaborators: membersData.count || 0,
+        publications: 0 // Will update below
+      });
+
+      // Fetch publications count properly based on active folders
+      if (folderData.data && folderData.data.length > 0) {
+        const { count } = await supabase
+          .from('pages')
+          .select('id', { count: 'exact', head: true })
+          .in('folder_id', folderData.data.map(f => f.id));
+        
+        setStats(prev => ({ ...prev, publications: count || 0 }));
+      }
 
     } catch (err: any) {
       console.error('Fetch Error:', err);
@@ -168,7 +195,7 @@ export function FoldersView({ onSelectCompany }: Props) {
       onNavigateBack={() => navigate('/')}
       onHome={() => navigate('/')}
     >
-      <div className="max-w-[1600px] mx-auto px-10 py-16">
+      <div className="w-full px-8 md:px-12 xl:px-16 py-16">
         {notification && (
           <div className={`fixed top-8 right-8 z-[100] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right-8 duration-300 ${notification.type === 'success' ? 'bg-gray-900 text-white' : 'bg-red-600 text-white'}`}>
             {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-green-400" /> : <AlertCircle className="w-5 h-5" />}
@@ -219,15 +246,15 @@ export function FoldersView({ onSelectCompany }: Props) {
           {/* Main Content Area - Folder Grid */}
           <div className="lg:col-span-8 xl:col-span-9">
             {folders.length === 0 ? (
-              <div className="bg-gray-50/50 rounded-[3rem] border border-gray-100 py-32 text-center">
-                <div className="w-20 h-20 bg-white rounded-3xl border border-gray-100 flex items-center justify-center mx-auto mb-8">
+              <div className="bg-gray-50/50 rounded-2xl border border-gray-100 py-32 text-center">
+                <div className="w-20 h-20 bg-white rounded-2xl border border-gray-100 flex items-center justify-center mx-auto mb-8">
                   <FolderIcon className="w-10 h-10 text-gray-200" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Workspace context is empty</h3>
                 <p className="text-gray-400 font-medium mb-10">Initialize your first directory to start composing publications.</p>
                 <button 
                   onClick={() => setIsCreateModalOpen(true)}
-                  className="px-10 py-4 bg-white border border-gray-200 rounded-2xl font-bold text-gray-700 hover:bg-gray-50 transition-all"
+                  className="px-10 py-4 bg-white border border-gray-200 rounded-xl font-bold text-gray-700 hover:bg-gray-50 transition-all"
                 >
                   Initialize Registry
                 </button>
@@ -237,7 +264,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                 {folders.map((folder) => (
                   <div
                     key={folder.id}
-                    className="group relative bg-white rounded-[2rem] border border-gray-100 hover:border-blue-500/20 hover:bg-gray-50/30 transition-all duration-300 p-8 flex flex-col justify-between min-h-[220px] cursor-pointer"
+                    className="group relative bg-white rounded-2xl border border-gray-100 hover:border-blue-500/20 hover:bg-gray-50/30 transition-all duration-300 p-8 flex flex-col justify-between min-h-[220px] cursor-pointer"
                     onClick={() => navigate(`/folder/${folder.id}/editor`)}
                   >
                     {/* Actions Group - Top Right */}
@@ -272,14 +299,13 @@ export function FoldersView({ onSelectCompany }: Props) {
                     </div>
 
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors line-clamp-1 pr-10">
+                      <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-1 pr-10">
                         {folder.name}
                       </h3>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-between">
                         <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest">
                           {new Date(folder.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                         </span>
-                        <div className="h-1 w-1 rounded-full bg-gray-200" />
                         <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-blue-400 transform group-hover:translate-x-0.5 transition-all" />
                       </div>
                     </div>
@@ -293,7 +319,7 @@ export function FoldersView({ onSelectCompany }: Props) {
           <aside className="lg:col-span-4 xl:col-span-3 space-y-6">
             
             {/* Quick Stats Widget */}
-            <div className="bg-gray-50/30 rounded-[2.5rem] border border-gray-100 p-8">
+            <div className="bg-gray-50/30 rounded-2xl border border-gray-100 p-8">
               <div className="flex items-center gap-3 mb-8">
                 <div className="p-2.5 bg-white rounded-xl border border-gray-100 text-blue-600 shadow-sm">
                   <BarChart3 className="w-4 h-4" />
@@ -309,18 +335,18 @@ export function FoldersView({ onSelectCompany }: Props) {
                 <div className="h-px bg-gray-100 w-full" />
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold text-gray-400">Active Publications</span>
-                  <span className="text-xl font-black text-gray-900">24</span>
+                  <span className="text-xl font-black text-gray-900">{stats.publications}</span>
                 </div>
                 <div className="h-px bg-gray-100 w-full" />
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold text-gray-400">Collaborators</span>
-                  <span className="text-xl font-black text-gray-900">8</span>
+                  <span className="text-xl font-black text-gray-900">{stats.collaborators}</span>
                 </div>
               </div>
             </div>
 
             {/* Recent Activity Widget */}
-            <div className="bg-white rounded-[2.5rem] border border-gray-100 p-8">
+            <div className="bg-white rounded-2xl border border-gray-100 p-10">
               <div className="flex items-center gap-3 mb-8">
                 <div className="p-2.5 bg-gray-50 rounded-xl border border-gray-100 text-purple-600">
                   <Activity className="w-4 h-4" />
@@ -328,14 +354,14 @@ export function FoldersView({ onSelectCompany }: Props) {
                 <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest">Activity</h2>
               </div>
 
-              <div className="space-y-6">
-                {[1, 2, 3].map((i) => (
+              <div className="space-y-8">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                   <div key={i} className="flex gap-4 group cursor-default">
-                    <div className="mt-1">
+                    <div className="mt-1 shrink-0">
                       <div className="w-2 h-2 rounded-full bg-blue-600 ring-4 ring-blue-50 group-hover:scale-125 transition-all" />
                     </div>
-                    <div>
-                      <p className="text-xs font-bold text-gray-900 leading-none mb-1.5">New Publication Draft</p>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-gray-900 leading-none mb-1.5 truncate">New Publication Draft</p>
                       <div className="flex items-center gap-2 text-[10px] text-gray-400 font-medium">
                         <Clock className="w-3 h-3" />
                         {i * 2} hours ago
@@ -344,10 +370,6 @@ export function FoldersView({ onSelectCompany }: Props) {
                   </div>
                 ))}
               </div>
-
-              <button className="w-full mt-10 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-blue-600 transition-colors">
-                View Full Logs
-              </button>
             </div>
 
           </aside>
@@ -357,7 +379,7 @@ export function FoldersView({ onSelectCompany }: Props) {
       {/* Modal - Create/Rename */}
       {(isCreateModalOpen || editingFolder) && (
         <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-xl z-[150] flex items-center justify-center p-6 animate-in fade-in duration-300">
-          <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-md overflow-hidden border border-gray-100 animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100 animate-in zoom-in-95 duration-200">
             <div className="p-12 border-b border-gray-50 flex items-center justify-between">
               <div>
                 <h2 className="text-3xl font-black text-gray-900 tracking-tight">
@@ -385,7 +407,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                   <FolderPlus className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
                   <input
                     type="text"
-                    className="w-full pl-16 pr-8 py-5 bg-gray-50 border-transparent rounded-[1.5rem] focus:bg-white focus:ring-4 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all font-bold text-gray-900 text-lg"
+                    className="w-full pl-16 pr-8 py-5 bg-gray-50 border-transparent rounded-xl focus:bg-white focus:ring-4 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all font-bold text-gray-900 text-lg"
                     placeholder="e.g. FY26 Executive Summits"
                     value={folderNameInput}
                     onChange={(e) => setFolderNameInput(e.target.value)}
@@ -398,7 +420,7 @@ export function FoldersView({ onSelectCompany }: Props) {
               <button
                 type="submit"
                 disabled={isActionLoading || !folderNameInput.trim()}
-                className="w-full py-6 bg-blue-600 text-white font-black rounded-[1.5rem] hover:bg-blue-700 disabled:opacity-50 transition-all shadow-xl shadow-blue-500/20 flex items-center justify-center gap-3 text-lg uppercase tracking-widest"
+                className="w-full py-6 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-xl shadow-blue-500/20 flex items-center justify-center gap-3 text-lg uppercase tracking-widest"
               >
                 {isActionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : editingFolder ? 'Update Identifier' : 'Initialize Hub'}
               </button>
