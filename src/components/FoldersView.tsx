@@ -69,13 +69,12 @@ export function FoldersView({ onSelectCompany }: Props) {
 
     setIsCreating(true);
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('folders')
         .insert([{ 
           name: newFolderName.trim(), 
           company_id: companyId 
-        }])
-        .select();
+        }]);
       
       if (error) throw error;
 
