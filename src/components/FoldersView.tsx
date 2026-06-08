@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import { Folder as FolderIcon, Plus, Loader2, ChevronRight, LayoutGrid, X, FolderPlus, AlertCircle, CheckCircle2, RefreshCw, Shield, Database, Layout } from 'lucide-react';
+import { Folder as FolderIcon, Plus, Loader2, ChevronRight, LayoutGrid, X, FolderPlus, AlertCircle, CheckCircle2, RefreshCw, Shield } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { useAuth } from '../contexts/AuthContext';
 import type { Folder, Company } from '../types';
