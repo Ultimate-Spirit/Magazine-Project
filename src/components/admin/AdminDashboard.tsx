@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import { Users, Building2, ArrowUpRight, Loader2, Calendar } from 'lucide-react';
+import { Users, Building2, ArrowUpRight, Loader2, Calendar, CheckCircle2 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -11,24 +11,30 @@ export const AdminDashboard: React.FC = () => {
     activeSessions: 0
   });
   const [loading, setLoading] = useState(true);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
   useEffect(() => {
-    fetchStats();
+    fetchData();
   }, []);
 
-  const fetchStats = async () => {
+  const fetchData = async () => {
     setLoading(true);
-    const [profilesRes, companiesRes] = await Promise.all([
-      supabase.from('profiles').select('id', { count: 'exact' }),
-      supabase.from('companies').select('id', { count: 'exact' })
-    ]);
+    try {
+      const [profilesRes, companiesRes] = await Promise.all([
+        supabase.from('profiles').select('id', { count: 'exact', head: true }),
+        supabase.from('companies').select('id', { count: 'exact', head: true })
+      ]);
 
-    setStats({
-      userCount: profilesRes.count || 0,
-      companyCount: companiesRes.count || 0,
-      activeSessions: Math.floor(Math.random() * 5) + 1 // Simulated for now
-    });
-    setLoading(false);
+      setStats({
+        userCount: profilesRes.count || 0,
+        companyCount: companiesRes.count || 0,
+        activeSessions: Math.floor(Math.random() * 5) + 1 // Simulated for now
+      });
+    } catch (err: any) {
+      console.error('Error fetching dashboard stats:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {
@@ -40,12 +46,19 @@ export const AdminDashboard: React.FC = () => {
   }
 
   const cards = [
-    { label: 'Total Users', value: stats.userCount, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Workspaces', value: stats.companyCount, icon: Building2, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Total Users', value: stats.userCount, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', link: '/admin/users' },
+    { label: 'Workspaces', value: stats.companyCount, icon: Building2, color: 'text-purple-600', bg: 'bg-purple-50', link: '/admin/companies' },
   ];
 
   return (
     <div className="flex-1 p-12 overflow-y-auto">
+      {notification && (
+        <div className={`fixed top-8 right-8 z-[60] p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 shadow-2xl ${notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+          <CheckCircle2 className="w-5 h-5" />
+          <p className="font-bold text-sm">{notification.message}</p>
+        </div>
+      )}
+
       <header className="mb-12">
         <div className="flex items-center gap-3 text-sm font-bold text-blue-600 uppercase tracking-widest mb-4">
           <Calendar className="w-4 h-4" />
@@ -57,7 +70,11 @@ export const AdminDashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
         {cards.map((card) => (
-          <div key={card.label} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all group">
+          <div 
+            key={card.label} 
+            onClick={() => navigate(card.link)}
+            className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all group cursor-pointer"
+          >
             <div className="flex items-center justify-between mb-6">
               <div className={`p-4 ${card.bg} ${card.color} rounded-2xl`}>
                 <card.icon className="w-6 h-6" />
@@ -72,7 +89,7 @@ export const AdminDashboard: React.FC = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
         <div className="bg-gray-50 p-10 rounded-[2.5rem] border border-gray-100">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
             Quick Actions
@@ -82,14 +99,14 @@ export const AdminDashboard: React.FC = () => {
               onClick={() => navigate('/admin/users')}
               className="flex items-center justify-between p-6 bg-white rounded-2xl border border-gray-200 hover:border-blue-500 transition-all group"
             >
-              <span className="font-bold text-gray-700">Invite new team member</span>
+              <span className="font-bold text-gray-700">Manage team members</span>
               <Users className="w-5 h-5 text-gray-300 group-hover:text-blue-500 transition-colors" />
             </button>
             <button 
               onClick={() => navigate('/admin/companies')}
               className="flex items-center justify-between p-6 bg-white rounded-2xl border border-gray-200 hover:border-blue-500 transition-all group"
             >
-              <span className="font-bold text-gray-700">Register new workspace</span>
+              <span className="font-bold text-gray-700">Manage workspaces</span>
               <Building2 className="w-5 h-5 text-gray-300 group-hover:text-blue-500 transition-colors" />
             </button>
           </div>

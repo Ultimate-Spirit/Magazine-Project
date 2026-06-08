@@ -14,8 +14,8 @@ export const AdminLayout: React.FC = () => {
 
   const navItems = [
     { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
-    { to: '/admin/users', icon: Users, label: 'User Accounts' },
     { to: '/admin/companies', icon: Building2, label: 'Workspaces' },
+    { to: '/admin/users', icon: Users, label: 'User Accounts' },
   ];
 
   return (
