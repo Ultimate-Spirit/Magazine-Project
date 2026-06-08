@@ -7,7 +7,7 @@ import pandas as pd
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
-from xhtml2pdf import pisa
+from fpdf import FPDF
 from dotenv import load_dotenv
 from database import get_supabase
 import schemas
@@ -105,114 +105,119 @@ async def upload_excel(file: UploadFile = File(...)):
 @app.post("/generate-pdf", dependencies=[Depends(get_current_user)])
 async def generate_pdf(data: dict):
     try:
-        # Create metrics HTML
-        metrics_html = "".join([f"""
-            <div style="background-color: #f9fafb; padding: 15px; border: 1px solid #f3f4f6; margin-bottom: 15px;">
-                <div style="font-size: 8pt; font-weight: bold; color: #9ca3af; text-transform: uppercase;">{m.get('label', '')}</div>
-                <div style="font-size: 20pt; font-weight: bold; color: #111827;">{m.get('value', '0')}</div>
-                <div style="font-size: 10pt; font-weight: bold; color: {'#059669' if float(m.get('percentage', 0)) >= 0 else '#dc2626'};">
-                    {'+' if float(m.get('percentage', 0)) >= 0 else ''}{m.get('percentage', 0)}%
-                </div>
-            </div>
-        """ for m in data.get('metrics', [])])
-
-        # HTML content tailored for xhtml2pdf (it prefers older CSS/HTML styles)
-        html_content = f"""
-        <html>
-        <head>
-            <style>
-                @page {{
-                    size: a4 portrait;
-                    margin: 2cm;
-                }}
-                body {{
-                    font-family: Helvetica, Arial, sans-serif;
-                    font-size: 10pt;
-                    color: #4b5563;
-                }}
-                .header {{
-                    border-bottom: 2px solid #111827;
-                    padding-bottom: 20px;
-                    margin-bottom: 20px;
-                }}
-                .headline {{
-                    font-size: 24pt;
-                    font-weight: bold;
-                    color: #111827;
-                }}
-                .subheadline {{
-                    font-size: 14pt;
-                    color: #2563eb;
-                    margin-top: 10px;
-                }}
-                .content-table {{
-                    width: 100%;
-                }}
-                .section-title {{
-                    font-size: 9pt;
-                    font-weight: bold;
-                    color: #9ca3af;
-                    text-transform: uppercase;
-                    margin-bottom: 10px;
-                }}
-                .footer {{
-                    margin-top: 20px;
-                    border-top: 1px solid #d1d5db;
-                    padding-top: 10px;
-                    font-size: 8pt;
-                    color: #d1d5db;
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <div class="headline">{data.get('headline', 'Untitled Report')}</div>
-                <div class="subheadline">{data.get('subheadline', 'EXECUTIVE SUMMARY')}</div>
-            </div>
-
-            <table class="content-table">
-                <tr>
-                    <td style="width: 50%; vertical-align: top; padding-right: 20px;">
-                        <div class="section-title">Executive Summary</div>
-                        <div>{data.get('summaryText', '').replace('\n', '<br/>')}</div>
-                    </td>
-                    <td style="width: 50%; vertical-align: top;">
-                        <div class="section-title">Key Performance</div>
-                        {metrics_html}
-                    </td>
-                </tr>
-                <tr>
-                    <td style="vertical-align: top; padding-right: 20px; padding-top: 20px;">
-                        <div class="section-title">Strategic Drivers</div>
-                        <div>{data.get('growthDriversText', '').replace('\n', '<br/>')}</div>
-                    </td>
-                    <td style="vertical-align: top; padding-top: 20px;">
-                        <div class="section-title">Future Outlook</div>
-                        <div>{data.get('outlookText', '').replace('\n', '<br/>')}</div>
-                    </td>
-                </tr>
-            </table>
-
-            <div class="footer">
-                <table style="width: 100%;">
-                    <tr>
-                        <td>{data.get('footerConfidentiality', '')}</td>
-                        <td style="text-align: right;">{data.get('footerDate', '')}</td>
-                    </tr>
-                </table>
-            </div>
-        </body>
-        </html>
-        """
+        pdf = FPDF(orientation="P", unit="mm", format="A4")
+        pdf.add_page()
         
-        result = io.BytesIO()
-        pisa_status = pisa.CreatePDF(html_content, dest=result)
+        # Set margin
+        margin = 20
+        page_width = 210 - (2 * margin)
         
-        if pisa_status.err:
-            raise HTTPException(status_code=500, detail="Error converting HTML to PDF")
+        # Header
+        pdf.set_font("Helvetica", "B", 24)
+        pdf.set_text_color(17, 24, 39) # #111827
+        pdf.cell(page_width, 15, data.get('headline', 'Untitled Report'), ln=True)
+        
+        pdf.set_font("Helvetica", "B", 14)
+        pdf.set_text_color(37, 99, 235) # #2563EB
+        pdf.cell(page_width, 10, data.get('subheadline', 'EXECUTIVE SUMMARY'), ln=True)
+        
+        pdf.ln(10)
+        pdf.set_draw_color(17, 24, 39)
+        pdf.set_line_width(1)
+        pdf.line(margin, pdf.get_y(), margin + page_width, pdf.get_y())
+        pdf.ln(15)
+        
+        # Two column layout start
+        y_start = pdf.get_y()
+        col_width = (page_width - 15) / 2
+        
+        # Left Column: Executive Summary
+        pdf.set_font("Helvetica", "B", 9)
+        pdf.set_text_color(156, 163, 175) # #9CA3AF
+        pdf.cell(col_width, 5, "EXECUTIVE SUMMARY", ln=True)
+        pdf.ln(5)
+        
+        pdf.set_font("Helvetica", "", 10)
+        pdf.set_text_color(75, 85, 99) # #4B5563
+        pdf.multi_cell(col_width, 6, data.get('summaryText', ''))
+        
+        y_left_end = pdf.get_y()
+        
+        # Right Column: Key Performance
+        pdf.set_xy(margin + col_width + 15, y_start)
+        pdf.set_font("Helvetica", "B", 9)
+        pdf.set_text_color(156, 163, 175)
+        pdf.cell(col_width, 5, "KEY PERFORMANCE", ln=True)
+        pdf.ln(5)
+        
+        current_y = pdf.get_y()
+        for metric in data.get('metrics', []):
+            pdf.set_xy(margin + col_width + 15, current_y)
+            # Metric Box
+            pdf.set_fill_color(249, 250, 251)
+            pdf.set_draw_color(243, 244, 246)
+            pdf.rect(margin + col_width + 15, current_y, col_width, 25, "DF")
             
+            pdf.set_xy(margin + col_width + 20, current_y + 5)
+            pdf.set_font("Helvetica", "B", 7)
+            pdf.set_text_color(156, 163, 175)
+            pdf.cell(col_width - 10, 3, metric.get('label', '').upper(), ln=True)
+            
+            pdf.set_xy(margin + col_width + 20, current_y + 10)
+            pdf.set_font("Helvetica", "B", 18)
+            pdf.set_text_color(17, 24, 39)
+            pdf.cell(col_width - 10, 10, str(metric.get('value', '0')), ln=False)
+            
+            percentage = float(metric.get('percentage', 0))
+            pdf.set_font("Helvetica", "B", 10)
+            if percentage >= 0:
+                pdf.set_text_color(5, 150, 105)
+                perf_text = f"+{percentage}%"
+            else:
+                pdf.set_text_color(220, 38, 38)
+                perf_text = f"{percentage}%"
+            
+            pdf.cell(0, 10, perf_text, align="R", ln=True)
+            current_y += 30
+
+        y_right_end = current_y
+        
+        # Move to next section
+        final_y = max(y_left_end, y_right_end) + 15
+        pdf.set_xy(margin, final_y)
+        
+        # Strategic Drivers & Future Outlook
+        pdf.set_font("Helvetica", "B", 9)
+        pdf.set_text_color(156, 163, 175)
+        pdf.cell(col_width, 5, "STRATEGIC DRIVERS")
+        pdf.set_xy(margin + col_width + 15, final_y)
+        pdf.cell(col_width, 5, "FUTURE OUTLOOK", ln=True)
+        pdf.ln(5)
+        
+        y_next = pdf.get_y()
+        pdf.set_font("Helvetica", "", 10)
+        pdf.set_text_color(75, 85, 99)
+        pdf.set_xy(margin, y_next)
+        pdf.multi_cell(col_width, 6, data.get('growthDriversText', ''))
+        
+        pdf.set_xy(margin + col_width + 15, y_next)
+        pdf.multi_cell(col_width, 6, data.get('outlookText', ''))
+        
+        # Footer
+        pdf.set_y(-25)
+        pdf.set_draw_color(243, 244, 246)
+        pdf.line(margin, pdf.get_y(), margin + page_width, pdf.get_y())
+        pdf.ln(5)
+        pdf.set_font("Helvetica", "B", 8)
+        pdf.set_text_color(209, 213, 219)
+        pdf.cell(col_width, 5, data.get('footerConfidentiality', '').upper())
+        pdf.set_xy(margin + col_width + 15, pdf.get_y())
+        pdf.cell(col_width, 5, data.get('footerDate', '').upper(), align="R")
+        
+        pdf_output = pdf.output(dest="S")
+        
         return Response(
-            content=result.getvalue(),
+            content=pdf_output,
             media_type="application/pdf",
             headers={"Content-Disposition": f"attachment; filename={data.get('title', 'report')}.pdf"}
         )
