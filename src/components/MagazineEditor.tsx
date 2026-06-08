@@ -14,7 +14,12 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
+import { PrintTemplate } from './PrintTemplate';
 import type { Page, Company } from '../types';
+// @ts-ignore
+import html2canvas from 'html2canvas';
+// @ts-ignore
+import jsPDF from 'jspdf';
 
 export const MagazineEditor: React.FC = () => {
   const { folderId, pageId } = useParams<{ folderId: string, pageId: string }>();
@@ -45,6 +50,7 @@ export const MagazineEditor: React.FC = () => {
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (folderId) {
@@ -119,7 +125,6 @@ export const MagazineEditor: React.FC = () => {
           .single();
         if (error) throw error;
         setPage(data);
-        // Replace current 'new' route with the actual ID to enforce hierarchy on back click
         navigate(`/folder/${folderId}/editor/${data.id}`, { replace: true });
       }
       showNotification('success', 'Publication saved successfully');
@@ -175,42 +180,39 @@ export const MagazineEditor: React.FC = () => {
   };
 
   const handleDownloadPDF = async () => {
+    if (!printRef.current) return;
+    
     setExporting(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const response = await fetch('/_/backend/generate-pdf', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(editorData)
+      // Use the 'Hidden Print Template' pattern for pixel-perfect A4 export
+      const element = printRef.current;
+      
+      const canvas = await html2canvas(element, {
+        scale: 3, // High resolution
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        scrollY: 0,
+        windowWidth: document.documentElement.offsetWidth
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('SERVER-SIDE PDF ERROR:', {
-          status: response.status,
-          statusText: response.statusText,
-          payload: errorText
-        });
-        throw new Error(`Server Error (${response.status}): ${errorText}`);
-      }
       
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `${editorData.title}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode?.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
       
-      showNotification('success', 'PDF exported successfully from server');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`${editorData.title}.pdf`);
+      
+      showNotification('success', 'High-fidelity PDF exported successfully');
     } catch (err: any) {
-      console.error('FRONTEND EXPORT EXCEPTION:', err);
-      showNotification('error', `Export Failed: ${err.message}`);
+      console.error('PDF Export Error:', err);
+      showNotification('error', 'Failed to generate high-fidelity PDF');
     } finally {
       setExporting(false);
     }
@@ -235,7 +237,13 @@ export const MagazineEditor: React.FC = () => {
       onNavigateBack={goBackToFolder}
       onHome={() => navigate('/', { replace: true })}
     >
-      <div className="flex flex-col h-[calc(100vh-5rem)] bg-gray-50/50">
+      <div className="flex flex-col h-[calc(100vh-5rem)] bg-gray-50/50 relative overflow-hidden">
+        {/* Hidden Print Template (Off-screen) */}
+        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+          <PrintTemplate ref={printRef} data={editorData} />
+        </div>
+
+        {/* Editor Toolbar */}
         <div className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-12 shrink-0">
           <div className="flex items-center gap-6">
             <button 
@@ -291,6 +299,7 @@ export const MagazineEditor: React.FC = () => {
         </div>
 
         <div className="flex-1 flex overflow-hidden">
+          {/* Sidebar Tools */}
           <div className="w-20 bg-white border-r border-gray-100 flex flex-col items-center py-8 gap-6">
             <button className="p-4 bg-blue-50 text-blue-600 rounded-2xl" title="Templates">
               <Layout className="w-6 h-6" />
@@ -303,6 +312,7 @@ export const MagazineEditor: React.FC = () => {
             </button>
           </div>
 
+          {/* Canvas Area (UI Version for live editing) */}
           <main className="flex-1 overflow-y-auto p-12 flex justify-center">
             {notification && (
               <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
@@ -311,7 +321,6 @@ export const MagazineEditor: React.FC = () => {
               </div>
             )}
 
-            {/* Publication Canvas (Preview Only) */}
             <div className="w-full max-w-[850px] bg-white shadow-2xl shadow-blue-900/5 rounded-sm p-20 flex flex-col min-h-[1100px] border border-gray-100">
               <div className="border-b-4 border-gray-900 pb-12 mb-12">
                 <input 
