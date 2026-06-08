@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import { Users, Building2, ArrowUpRight, Loader2, Calendar, CheckCircle2 } from 'lucide-react';
+import { Users, Building2, ArrowUpRight, Loader2, Calendar } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -11,7 +11,6 @@ export const AdminDashboard: React.FC = () => {
     activeSessions: 0
   });
   const [loading, setLoading] = useState(true);
-  const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -52,13 +51,6 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <div className="flex-1 p-12 overflow-y-auto">
-      {notification && (
-        <div className={`fixed top-8 right-8 z-[60] p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 shadow-2xl ${notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
-          <CheckCircle2 className="w-5 h-5" />
-          <p className="font-bold text-sm">{notification.message}</p>
-        </div>
-      )}
-
       <header className="mb-12">
         <div className="flex items-center gap-3 text-sm font-bold text-blue-600 uppercase tracking-widest mb-4">
           <Calendar className="w-4 h-4" />
