@@ -15,7 +15,9 @@ import {
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import type { Page, Company } from '../types';
+// @ts-ignore
 import html2canvas from 'html2canvas';
+// @ts-ignore
 import jsPDF from 'jspdf';
 
 export const MagazineEditor: React.FC = () => {
