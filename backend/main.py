@@ -215,11 +215,11 @@ async def generate_pdf(data: dict):
         pdf.set_xy(margin + col_width + 15, pdf.get_y())
         pdf.cell(col_width, 5, data.get('footerDate', '').upper(), align="R")
         
-        pdf_output = pdf.output(dest="S")
+        pdf_bytes = bytes(pdf.output())
         print("PDF GENERATION SUCCESS")
         
         return Response(
-            content=pdf_output,
+            content=pdf_bytes,
             media_type="application/pdf",
             headers={"Content-Disposition": f"attachment; filename={data.get('title', 'report')}.pdf"}
         )
