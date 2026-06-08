@@ -187,7 +187,15 @@ export const MagazineEditor: React.FC = () => {
         body: JSON.stringify(editorData)
       });
 
-      if (!response.ok) throw new Error('Failed to generate PDF on server');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('SERVER-SIDE PDF ERROR:', {
+          status: response.status,
+          statusText: response.statusText,
+          payload: errorText
+        });
+        throw new Error(`Server Error (${response.status}): ${errorText}`);
+      }
       
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -201,8 +209,8 @@ export const MagazineEditor: React.FC = () => {
       
       showNotification('success', 'PDF exported successfully from server');
     } catch (err: any) {
-      console.error('PDF Export Error:', err);
-      showNotification('error', 'Failed to generate high-fidelity PDF');
+      console.error('FRONTEND EXPORT EXCEPTION:', err);
+      showNotification('error', `Export Failed: ${err.message}`);
     } finally {
       setExporting(false);
     }

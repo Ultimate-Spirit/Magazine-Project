@@ -105,6 +105,7 @@ async def upload_excel(file: UploadFile = File(...)):
 @app.post("/generate-pdf", dependencies=[Depends(get_current_user)])
 async def generate_pdf(data: dict):
     try:
+        print(f"PDF GENERATION START: {data.get('title', 'Untitled')}")
         pdf = FPDF(orientation="P", unit="mm", format="A4")
         pdf.add_page()
         
@@ -215,6 +216,7 @@ async def generate_pdf(data: dict):
         pdf.cell(col_width, 5, data.get('footerDate', '').upper(), align="R")
         
         pdf_output = pdf.output(dest="S")
+        print("PDF GENERATION SUCCESS")
         
         return Response(
             content=pdf_output,
@@ -222,8 +224,8 @@ async def generate_pdf(data: dict):
             headers={"Content-Disposition": f"attachment; filename={data.get('title', 'report')}.pdf"}
         )
     except Exception as e:
-        print(f"Error generating PDF: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error generating PDF: {str(e)}")
+        print(f"PDF GENERATION CRASH: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"PDF Generation Error: {str(e)}")
 
 # Articles Endpoints (Legacy)
 
