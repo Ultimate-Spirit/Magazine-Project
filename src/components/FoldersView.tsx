@@ -64,11 +64,10 @@ export function FoldersView({ onSelectCompany }: Props) {
     else setRefreshing(true);
     
     try {
-      const [compData, folderData, membersData, pagesData] = await Promise.all([
+      const [compData, folderData, membersData] = await Promise.all([
         supabase.from('companies').select('*').eq('id', targetCid).single(),
         supabase.from('folders').select('*').eq('company_id', targetCid).order('updated_at', { ascending: false }),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('company_id', targetCid),
-        supabase.from('pages').select('id', { count: 'exact', head: true }).in('folder_id', folders.map(f => f.id).length > 0 ? folders.map(f => f.id) : ['none'])
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('company_id', targetCid)
       ]);
 
       if (compData.data) {
