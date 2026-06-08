@@ -123,6 +123,7 @@ export const MagazineEditor: React.FC = () => {
           .single();
         if (error) throw error;
         setPage(data);
+        // Replace current 'new' route with the actual ID to enforce hierarchy on back click
         navigate(`/folder/${folderId}/editor/${data.id}`, { replace: true });
       }
       showNotification('success', 'Publication saved successfully');
@@ -183,17 +184,15 @@ export const MagazineEditor: React.FC = () => {
     
     setExporting(true);
     try {
-      // 1. Temporarily reset scroll to avoid capture offset errors
       const currentScroll = window.scrollY;
       window.scrollTo(0, 0);
 
-      // 2. Generate high-resolution canvas capture
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
-        scrollY: -window.scrollY // Guarantee zero offset
+        scrollY: -window.scrollY
       });
       
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
@@ -210,9 +209,7 @@ export const MagazineEditor: React.FC = () => {
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`${editorData.title}.pdf`);
       
-      // 3. Restore user's previous scroll position
       window.scrollTo(0, currentScroll);
-      
       showNotification('success', 'PDF exported successfully');
     } catch (err: any) {
       console.error('PDF Export Error:', err);
@@ -230,18 +227,22 @@ export const MagazineEditor: React.FC = () => {
     );
   }
 
+  const goBackToFolder = () => {
+    navigate(`/folder/${folderId}`, { replace: true });
+  };
+
   return (
     <WorkspaceLayout 
       company={company || { id: 'none', name: 'Select Company' }}
       currentView="page_builder"
-      onNavigateBack={() => navigate(`/folder/${folderId}`)}
-      onHome={() => navigate('/')}
+      onNavigateBack={goBackToFolder}
+      onHome={() => navigate('/', { replace: true })}
     >
       <div className="flex flex-col h-[calc(100vh-5rem)] bg-gray-50/50">
         <div className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-12 shrink-0">
           <div className="flex items-center gap-6">
             <button 
-              onClick={() => navigate(`/folder/${folderId}`)}
+              onClick={goBackToFolder}
               className="p-2 hover:bg-gray-50 rounded-xl text-gray-400 hover:text-gray-900 transition-all"
             >
               <ChevronLeft className="w-6 h-6" />
@@ -313,14 +314,11 @@ export const MagazineEditor: React.FC = () => {
               </div>
             )}
 
-            {/* Export Wrapper with ID and Dynamic Padding */}
             <div 
               id="pdf-export-canvas" 
               className={`bg-white transition-all duration-300 ${exporting ? 'p-[40px]' : 'p-0'}`}
             >
-              {/* Publication Canvas */}
               <div className="w-full max-w-[850px] bg-white shadow-2xl shadow-blue-900/5 rounded-sm p-20 flex flex-col min-h-[1100px] border border-gray-100">
-                {/* Template Content */}
                 <div className="border-b-4 border-gray-900 pb-12 mb-12">
                   <input 
                     className="w-full text-5xl font-black text-gray-900 border-none p-0 focus:ring-0 placeholder:text-gray-200 leading-[1.2]"

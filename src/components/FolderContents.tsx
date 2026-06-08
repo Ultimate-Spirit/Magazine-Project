@@ -107,12 +107,16 @@ export function FolderContents() {
     );
   }
 
+  const goBack = () => {
+    navigate(`/company/${company?.id}/folders`, { replace: true });
+  };
+
   return (
     <WorkspaceLayout 
       company={company || { id: 'none', name: 'Workspace' }}
       currentView="folder_view"
-      onNavigateBack={() => navigate(`/company/${company?.id}/folders`)}
-      onHome={() => navigate('/')}
+      onNavigateBack={goBack}
+      onHome={() => navigate('/', { replace: true })}
     >
       <div className="w-full px-8 md:px-12 xl:px-16 py-16">
         {notification && (
@@ -125,7 +129,7 @@ export function FolderContents() {
         <header className="flex items-end justify-between mb-16">
           <div>
             <button 
-              onClick={() => navigate(`/company/${company?.id}/folders`)}
+              onClick={goBack}
               className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 hover:text-blue-600 transition-colors group"
             >
               <ArrowLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" />

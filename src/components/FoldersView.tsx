@@ -13,7 +13,7 @@ import {
   RefreshCw, 
   Trash2, 
   Edit2,
-  Activity,
+  Activity as ActivityIcon,
   BarChart3,
   Clock,
   Zap,
@@ -28,6 +28,14 @@ interface Props {
   onSelectCompany: (company: Company) => void;
 }
 
+interface ActivityEvent {
+  id: string;
+  type: 'publication' | 'folder';
+  action: 'created' | 'updated';
+  name: string;
+  timestamp: string;
+}
+
 export function FoldersView({ onSelectCompany }: Props) {
   const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
@@ -36,6 +44,7 @@ export function FoldersView({ onSelectCompany }: Props) {
   const targetCid = (companyId || '').toLowerCase();
 
   const [folders, setFolders] = useState<Folder[]>([]);
+  const [activities, setActivities] = useState<ActivityEvent[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -78,20 +87,46 @@ export function FoldersView({ onSelectCompany }: Props) {
       }
 
       if (folderData.error) throw folderData.error;
-      setFolders(folderData.data || []);
+      const fetchedFolders = folderData.data || [];
+      setFolders(fetchedFolders);
 
       setStats({
         collaborators: membersData.count || 0,
         publications: 0
       });
 
-      if (folderData.data && folderData.data.length > 0) {
-        const { count } = await supabase
+      if (fetchedFolders.length > 0) {
+        const { count, data: pagesData } = await supabase
           .from('pages')
-          .select('id', { count: 'exact', head: true })
-          .in('folder_id', folderData.data.map(f => f.id));
+          .select('id, title, updated_at', { count: 'exact' })
+          .in('folder_id', fetchedFolders.map(f => f.id))
+          .order('updated_at', { ascending: false })
+          .limit(10);
         
         setStats(prev => ({ ...prev, publications: count || 0 }));
+
+        // Transform pages into activity events
+        const pageActivities: ActivityEvent[] = (pagesData || []).map(p => ({
+          id: p.id,
+          type: 'publication',
+          action: 'updated',
+          name: p.title,
+          timestamp: p.updated_at
+        }));
+        
+        const folderActivities: ActivityEvent[] = fetchedFolders.slice(0, 5).map(f => ({
+          id: f.id,
+          type: 'folder',
+          action: 'updated',
+          name: f.name,
+          timestamp: f.updated_at
+        }));
+
+        const combined = [...pageActivities, ...folderActivities]
+          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+          .slice(0, 8);
+        
+        setActivities(combined);
       }
 
     } catch (err: any) {
@@ -106,6 +141,40 @@ export function FoldersView({ onSelectCompany }: Props) {
   useEffect(() => {
     if (targetCid && profile) {
       fetchData(true);
+
+      // Real-time Subscriptions
+      const channel = supabase
+        .channel('schema-db-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'pages'
+          },
+          (payload) => {
+            console.log('Real-time page update:', payload);
+            fetchData(); // Simplest way to ensure all stats/lists are consistent
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'folders',
+            filter: `company_id=eq.${targetCid}`
+          },
+          (payload) => {
+            console.log('Real-time folder update:', payload);
+            fetchData();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [targetCid, profile, fetchData]);
 
@@ -127,6 +196,7 @@ export function FoldersView({ onSelectCompany }: Props) {
       showNotification('success', `Created folder "${folderNameInput}"`);
       setFolderNameInput('');
       setIsCreateModalOpen(false);
+      // fetchData() will be called by realtime sub, but calling it here for instant feedback
       await fetchData();
     } catch (err: any) {
       showNotification('error', err.message);
@@ -180,6 +250,19 @@ export function FoldersView({ onSelectCompany }: Props) {
     f.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const getRelativeTime = (dateStr: string) => {
+    const now = new Date();
+    const then = new Date(dateStr);
+    const diffInSecs = Math.floor((now.getTime() - then.getTime()) / 1000);
+    
+    if (diffInSecs < 60) return 'just now';
+    const mins = Math.floor(diffInSecs / 60);
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return then.toLocaleDateString();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -192,8 +275,8 @@ export function FoldersView({ onSelectCompany }: Props) {
     <WorkspaceLayout 
       company={company || { id: targetCid, name: 'Workspace' }}
       currentView="project_explorer"
-      onNavigateBack={() => navigate('/')}
-      onHome={() => navigate('/')}
+      onNavigateBack={() => navigate('/', { replace: true })}
+      onHome={() => navigate('/', { replace: true })}
     >
       <div className="w-full px-8 md:px-12 xl:px-16 py-16">
         {notification && (
@@ -242,7 +325,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                 setFolderNameInput('');
                 setIsCreateModalOpen(true);
               }}
-              className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/10"
+              className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/10"
             >
               <Plus className="w-5 h-5" />
               New Directory
@@ -365,26 +448,31 @@ export function FoldersView({ onSelectCompany }: Props) {
               </div>
             </div>
 
-            {/* Recent Activity Widget */}
+            {/* Recent Activity Widget - Live Bound */}
             <div className="bg-white rounded-2xl border border-gray-100 p-10">
               <div className="flex items-center gap-3 mb-8">
                 <div className="p-2.5 bg-gray-50 rounded-xl border border-gray-100 text-purple-600">
-                  <Activity className="w-4 h-4" />
+                  <ActivityIcon className="w-4 h-4" />
                 </div>
                 <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest">Activity</h2>
               </div>
 
               <div className="space-y-8">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                  <div key={i} className="flex gap-4 group cursor-default">
+                {activities.length === 0 ? (
+                  <p className="text-[10px] text-gray-400 font-bold uppercase text-center py-4">No recent activity</p>
+                ) : activities.map((event) => (
+                  <div key={`${event.type}-${event.id}`} className="flex gap-4 group cursor-default">
                     <div className="mt-1 shrink-0">
-                      <div className="w-2 h-2 rounded-full bg-blue-600 ring-4 ring-blue-50 group-hover:scale-125 transition-all" />
+                      <div className={`w-2 h-2 rounded-full ring-4 ${event.type === 'publication' ? 'bg-blue-600 ring-blue-50' : 'bg-purple-600 ring-purple-50'} group-hover:scale-125 transition-all`} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-gray-900 leading-none mb-1.5 truncate">New Publication Draft</p>
+                      <p className="text-xs font-bold text-gray-900 leading-none mb-1.5 truncate">
+                        {event.action === 'created' ? 'New' : 'Updated'} {event.type}
+                      </p>
+                      <p className="text-[10px] text-gray-500 truncate mb-1">{event.name}</p>
                       <div className="flex items-center gap-2 text-[10px] text-gray-400 font-medium">
                         <Clock className="w-3 h-3" />
-                        {i * 2} hours ago
+                        {getRelativeTime(event.timestamp)}
                       </div>
                     </div>
                   </div>
