@@ -15,8 +15,8 @@ import {
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import type { Page, Company } from '../types';
-// @ts-ignore
-import html2pdf from 'html2pdf.js';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 export const MagazineEditor: React.FC = () => {
   const { folderId, pageId } = useParams<{ folderId: string, pageId: string }>();
@@ -67,7 +67,6 @@ export const MagazineEditor: React.FC = () => {
       if (folderErr) throw folderErr;
       setCompany(folderData.companies);
       
-      // If we have a pageId, fetch it. If 'new', don't fetch.
       if (pageId && pageId !== 'new') {
         const { data: pageData, error: pageErr } = await supabase
           .from('pages')
@@ -123,7 +122,6 @@ export const MagazineEditor: React.FC = () => {
           .single();
         if (error) throw error;
         setPage(data);
-        // Update URL to reflect the new ID without refreshing
         navigate(`/folder/${folderId}/editor/${data.id}`, { replace: true });
       }
       showNotification('success', 'Publication saved successfully');
@@ -184,15 +182,27 @@ export const MagazineEditor: React.FC = () => {
     setExporting(true);
     try {
       const element = canvasRef.current;
-      const opt = {
-        margin: 0,
-        filename: `${editorData.title}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
-
-      await html2pdf().set(opt).from(element).save();
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+      
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`${editorData.title}.pdf`);
+      
       showNotification('success', 'PDF exported successfully');
     } catch (err: any) {
       console.error('PDF Export Error:', err);
@@ -218,7 +228,6 @@ export const MagazineEditor: React.FC = () => {
       onHome={() => navigate('/')}
     >
       <div className="flex flex-col h-[calc(100vh-5rem)] bg-gray-50/50">
-        {/* Editor Toolbar */}
         <div className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-12 shrink-0">
           <div className="flex items-center gap-6">
             <button 
@@ -274,7 +283,6 @@ export const MagazineEditor: React.FC = () => {
         </div>
 
         <div className="flex-1 flex overflow-hidden">
-          {/* Sidebar Tools */}
           <div className="w-20 bg-white border-r border-gray-100 flex flex-col items-center py-8 gap-6">
             <button className="p-4 bg-blue-50 text-blue-600 rounded-2xl" title="Templates">
               <Layout className="w-6 h-6" />
@@ -287,7 +295,6 @@ export const MagazineEditor: React.FC = () => {
             </button>
           </div>
 
-          {/* Canvas Area */}
           <main className="flex-1 overflow-y-auto p-12 flex justify-center">
             {notification && (
               <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
@@ -296,9 +303,7 @@ export const MagazineEditor: React.FC = () => {
               </div>
             )}
 
-            {/* Publication Canvas */}
             <div ref={canvasRef} className="w-full max-w-[850px] bg-white shadow-2xl shadow-blue-900/5 rounded-sm p-20 flex flex-col min-h-[1100px] border border-gray-100">
-              {/* Template Content */}
               <div className="border-b-4 border-gray-900 pb-12 mb-12">
                 <input 
                   className="w-full text-5xl font-black text-gray-900 border-none p-0 focus:ring-0 placeholder:text-gray-200"
