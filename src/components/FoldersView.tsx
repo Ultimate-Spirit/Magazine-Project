@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { Folder as FolderIcon, Plus, Loader2, ChevronRight, LayoutGrid, X, FolderPlus, AlertCircle, CheckCircle2 } from 'lucide-react';
@@ -15,6 +15,7 @@ export function FoldersView({ onSelectCompany }: Props) {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,19 +23,18 @@ export function FoldersView({ onSelectCompany }: Props) {
   const [isCreating, setIsCreating] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
-  useEffect(() => {
-    if (companyId) {
-      fetchData();
-    }
-  }, [companyId]);
-
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = useCallback(async (isInitial = false) => {
+    if (isInitial) setLoading(true);
+    else setRefreshing(true);
+    
     try {
       const [companyRes, foldersRes] = await Promise.all([
         supabase.from('companies').select('*').eq('id', companyId).single(),
         supabase.from('folders').select('*').eq('company_id', companyId).order('updated_at', { ascending: false })
       ]);
+
+      if (companyRes.error) console.error('Error fetching company:', companyRes.error);
+      if (foldersRes.error) console.error('Error fetching folders:', foldersRes.error);
 
       if (companyRes.data) {
         setCompany(companyRes.data);
@@ -45,11 +45,18 @@ export function FoldersView({ onSelectCompany }: Props) {
         setFolders(foldersRes.data);
       }
     } catch (err: any) {
-      console.error('Error fetching folders:', err);
+      console.error('Data fetch error:', err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [companyId, onSelectCompany]);
+
+  useEffect(() => {
+    if (companyId) {
+      fetchData(true);
+    }
+  }, [companyId, fetchData]);
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
@@ -62,19 +69,22 @@ export function FoldersView({ onSelectCompany }: Props) {
 
     setIsCreating(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('folders')
         .insert([{ 
           name: newFolderName.trim(), 
           company_id: companyId 
-        }]);
+        }])
+        .select();
       
       if (error) throw error;
 
       showNotification('success', `Folder "${newFolderName}" created successfully`);
       setNewFolderName('');
       setIsModalOpen(false);
-      fetchData();
+      
+      // Refresh data
+      await fetchData();
     } catch (err: any) {
       console.error('Folder creation error:', err);
       showNotification('error', err.message || 'Failed to create folder');
@@ -98,7 +108,7 @@ export function FoldersView({ onSelectCompany }: Props) {
       onNavigateBack={() => navigate('/')}
       onHome={() => navigate('/')}
     >
-      <div className="max-w-7xl mx-auto px-8 py-12">
+      <div className="max-w-7xl mx-auto px-8 py-12 relative">
         {notification && (
           <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-[60] px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
             {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
@@ -111,6 +121,7 @@ export function FoldersView({ onSelectCompany }: Props) {
             <div className="flex items-center gap-2 text-sm font-bold text-blue-600 uppercase tracking-widest mb-2">
               <LayoutGrid className="w-4 h-4" />
               Project Directories
+              {refreshing && <Loader2 className="w-3 h-3 animate-spin ml-2" />}
             </div>
             <h1 className="text-4xl font-black text-gray-900 tracking-tight">Workspace Folders</h1>
             <p className="text-gray-400 font-medium mt-2">Organize your magazines and publications into dedicated projects.</p>
