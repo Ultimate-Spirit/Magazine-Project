@@ -15,7 +15,8 @@ import {
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import type { Page, Company } from '../types';
-const html2pdf = require('html2pdf.js');
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
 
 export const MagazineEditor: React.FC = () => {
   const { folderId, pageId } = useParams<{ folderId: string, pageId: string }>();
