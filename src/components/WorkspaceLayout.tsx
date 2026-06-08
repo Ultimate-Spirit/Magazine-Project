@@ -1,4 +1,4 @@
-import { ChevronLeft, Home, User, Shield, LogOut } from 'lucide-react';
+import { Home, User, Shield, LogOut, ChevronLeft, Building2 } from 'lucide-react';
 import type { Company, ViewState } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useState } from 'react';
@@ -18,33 +18,45 @@ export function WorkspaceLayout({ company, currentView, onNavigateBack, onHome, 
 
   return (
     <div className="min-h-screen bg-[#FBFBFB] flex flex-col">
-      <header className="h-16 border-b bg-white px-8 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center space-x-4">
+      <header className="h-20 border-b border-gray-100 bg-white px-8 flex items-center justify-between sticky top-0 z-[100]">
+        <div className="flex items-center space-x-6">
           <button 
             onClick={onHome}
-            className="w-8 h-8 flex items-center justify-center rounded bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-100"
             title="Change Company"
           >
-            <Home size={16} />
+            <Home size={18} />
           </button>
           
-          <div className="h-4 w-[1px] bg-border mx-2" />
+          <div className="h-6 w-[1px] bg-gray-100" />
           
-          {currentView !== 'project_explorer' && currentView !== 'company_selection' && (
-            <button 
-              onClick={onNavigateBack}
-              className="flex items-center text-xs text-muted-foreground hover:text-foreground transition-colors mr-4"
-            >
-              <ChevronLeft size={16} className="mr-1" />
-              Back
-            </button>
-          )}
-
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-semibold tracking-tight text-foreground">
-              {company.name}
-            </span>
-            <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-full bg-secondary border">Workspace</span>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 border border-gray-100 overflow-hidden shrink-0">
+              {company.logoUrl ? (
+                <img src={company.logoUrl} alt={company.name} className="w-full h-full object-contain p-1.5" />
+              ) : (
+                <Building2 size={20} />
+              )}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-base font-black tracking-tight text-gray-900 leading-none">
+                  {company.name}
+                </span>
+                <span className="text-[9px] font-black text-gray-400 px-2 py-0.5 rounded-md bg-gray-50 border border-gray-100 uppercase tracking-widest">
+                  Workspace
+                </span>
+              </div>
+              {currentView !== 'project_explorer' && currentView !== 'company_selection' && (
+                <button 
+                  onClick={onNavigateBack}
+                  className="flex items-center text-[10px] font-bold text-blue-600 hover:text-blue-700 transition-colors mt-1 uppercase tracking-wider"
+                >
+                  <ChevronLeft size={10} className="mr-0.5" />
+                  Return
+                </button>
+              )}
+            </div>
           </div>
         </div>
         
@@ -52,34 +64,35 @@ export function WorkspaceLayout({ company, currentView, onNavigateBack, onHome, 
           {isAdmin && (
             <Link 
               to="/admin"
-              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-100 rounded-lg hover:bg-blue-100 transition-all"
+              className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-100 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm shadow-blue-100"
             >
               <Shield size={14} />
-              Admin
+              Admin Console
             </Link>
           )}
           
           <div className="relative">
             <button 
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all border"
+              className="h-10 w-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 hover:text-gray-900 hover:bg-white transition-all border border-gray-100"
             >
-              <User size={16} />
+              <User size={18} />
             </button>
 
             {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-xl py-2 z-50">
-                <div className="px-4 py-2 border-b border-gray-50 mb-1">
-                  <p className="text-xs font-medium text-gray-500 truncate">{user?.email}</p>
+              <div className="absolute right-0 mt-3 w-56 bg-white border border-gray-100 rounded-2xl shadow-2xl py-3 z-[110] animate-in slide-in-from-top-2 duration-200">
+                <div className="px-5 py-2 border-b border-gray-50 mb-2">
+                  <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1">Authenticated As</p>
+                  <p className="text-xs font-bold text-gray-900 truncate">{user?.email}</p>
                 </div>
                 <button
                   onClick={() => {
                     signOut();
                     setShowUserMenu(false);
                   }}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  className="w-full flex items-center gap-3 px-5 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors"
                 >
-                  <LogOut size={14} />
+                  <LogOut size={16} />
                   Sign Out
                 </button>
               </div>

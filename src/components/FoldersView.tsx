@@ -203,8 +203,8 @@ export function FoldersView({ onSelectCompany }: Props) {
           </div>
         )}
 
-        {/* Dashboard Header */}
-        <header className="flex items-end justify-between mb-16">
+        {/* Dashboard Header - Optimized Single Row */}
+        <header className="flex flex-wrap items-center justify-between gap-6 mb-16 border-b border-gray-100 pb-12">
           <div>
             <div className="flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-4">
               <Zap className="w-3 h-3 fill-current" />
@@ -220,19 +220,19 @@ export function FoldersView({ onSelectCompany }: Props) {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="relative mr-2">
+            <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
               <input
                 type="text"
                 placeholder="Search folders..."
-                className="pl-11 pr-4 py-4 bg-transparent border border-gray-200 rounded-2xl text-sm font-medium text-gray-900 focus:ring-1 focus:ring-gray-300 focus:border-gray-300 focus:outline-none transition-all w-64 placeholder:text-gray-300"
+                className="pl-11 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium text-gray-900 focus:ring-1 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all w-64 placeholder:text-gray-300"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <button 
               onClick={() => fetchData()}
-              className="p-4 bg-gray-50 border border-gray-100 rounded-2xl text-gray-400 hover:text-blue-600 hover:bg-white hover:border-blue-100 transition-all"
+              className="p-4 bg-gray-50 border border-gray-100 rounded-xl text-gray-400 hover:text-blue-600 hover:bg-white hover:border-blue-100 transition-all shadow-sm"
               title="Sync Database"
             >
               <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
@@ -242,7 +242,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                 setFolderNameInput('');
                 setIsCreateModalOpen(true);
               }}
-              className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/10"
+              className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/10"
             >
               <Plus className="w-5 h-5" />
               New Directory
@@ -336,7 +336,7 @@ export function FoldersView({ onSelectCompany }: Props) {
           </div>
 
           {/* Sidebar - Workspace Insights */}
-          <aside className="lg:col-span-4 xl:col-span-3 space-y-6">
+          <aside className="lg:col-span-4 xl:col-span-3 space-y-6 sticky top-28">
             
             {/* Quick Stats Widget */}
             <div className="bg-gray-50/30 rounded-2xl border border-gray-100 p-8">
