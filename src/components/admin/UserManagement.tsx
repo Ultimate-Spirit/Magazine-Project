@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Plus, Trash2, Mail, Loader2, Search, X, CheckCircle2, Building2 } from 'lucide-react';
+import { ConfirmModal } from '../common/ConfirmModal';
 import type { Company, UserProfile } from '../../types';
 
 export const UserManagement: React.FC = () => {
@@ -15,6 +16,7 @@ export const UserManagement: React.FC = () => {
   const [newUserRole, setNewUserRole] = useState<'admin' | 'editor' | 'viewer'>('viewer');
   const [newUserCompany, setNewUserCompany] = useState('');
   
+  const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
@@ -92,14 +94,20 @@ export const UserManagement: React.FC = () => {
     }
   };
 
-  const handleDeleteUser = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
     
-    const { error } = await supabase.from('profiles').delete().eq('id', id);
-    if (error) showNotification('error', error.message);
-    else {
+    setActionLoading(true);
+    try {
+      const { error } = await supabase.from('profiles').delete().eq('id', userToDelete.id);
+      if (error) throw error;
       showNotification('success', 'User deleted');
+      setUserToDelete(null);
       fetchData();
+    } catch (err: any) {
+      showNotification('error', err.message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -184,7 +192,7 @@ export const UserManagement: React.FC = () => {
                     </td>
                     <td className="px-8 py-6 text-right">
                       <button 
-                        onClick={() => handleDeleteUser(profile.id)}
+                        onClick={() => setUserToDelete(profile)}
                         className="p-3 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                       >
                         <Trash2 className="w-5 h-5" />
@@ -270,6 +278,17 @@ export const UserManagement: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!userToDelete}
+        title="Revoke Access"
+        message={`Are you sure you want to remove access for ${userToDelete?.email}? This will immediately terminate their ability to access any workspace tools.`}
+        confirmLabel="Revoke Access"
+        onConfirm={confirmDeleteUser}
+        onCancel={() => setUserToDelete(null)}
+        isLoading={actionLoading}
+        variant="danger"
+      />
     </div>
   );
 };

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { useAuth } from '../contexts/AuthContext';
+import { ConfirmModal } from './common/ConfirmModal';
 import type { Folder, Company } from '../types';
 
 interface Props {
@@ -29,6 +30,7 @@ export function FoldersView({ onSelectCompany }: Props) {
   const { profile } = useAuth();
   
   const targetCid = (companyId || '').toLowerCase();
+  const isAdmin = profile?.role === 'admin';
 
   const [folders, setFolders] = useState<Folder[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
@@ -40,6 +42,7 @@ export function FoldersView({ onSelectCompany }: Props) {
   // Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
+  const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
   const [folderNameInput, setFolderNameInput] = useState('');
   const [isActionLoading, setIsActionLoading] = useState(false);
 
@@ -131,17 +134,20 @@ export function FoldersView({ onSelectCompany }: Props) {
     }
   };
 
-  const handleDeleteFolder = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    if (!confirm('Permanently delete this folder? All magazines inside will be lost.')) return;
+  const confirmDeleteFolder = async () => {
+    if (!folderToDelete) return;
     
+    setIsActionLoading(true);
     try {
-      const { error } = await supabase.from('folders').delete().eq('id', id);
+      const { error } = await supabase.from('folders').delete().eq('id', folderToDelete.id);
       if (error) throw error;
       showNotification('success', 'Folder deleted');
+      setFolderToDelete(null);
       await fetchData();
     } catch (err: any) {
       showNotification('error', err.message);
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
@@ -240,7 +246,10 @@ export function FoldersView({ onSelectCompany }: Props) {
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={(e) => handleDeleteFolder(e, folder.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFolderToDelete(folder);
+                    }}
                     className="p-3 bg-white border border-gray-100 rounded-xl text-gray-400 hover:text-red-600 hover:border-red-100 transition-all"
                     title="Delete Directory"
                   >
@@ -303,7 +312,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                   <FolderPlus className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
                   <input
                     type="text"
-                    className="w-full pl-16 pr-8 py-5 bg-gray-50 border-transparent rounded-[1.5rem] focus:bg-white focus:ring-4 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all font-bold text-gray-900 text-lg"
+                    className="w-full pl-14 pr-8 py-5 bg-gray-50 border-transparent rounded-[1.5rem] focus:bg-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-bold text-gray-900 text-lg"
                     placeholder="e.g. FY26 Executive Summits"
                     value={folderNameInput}
                     onChange={(e) => setFolderNameInput(e.target.value)}
@@ -316,7 +325,7 @@ export function FoldersView({ onSelectCompany }: Props) {
               <button
                 type="submit"
                 disabled={isActionLoading || !folderNameInput.trim()}
-                className="w-full py-6 bg-blue-600 text-white font-black rounded-[1.5rem] hover:bg-blue-700 disabled:opacity-50 transition-all shadow-2xl shadow-blue-500/20 flex items-center justify-center gap-3 text-lg uppercase tracking-widest"
+                className="w-full py-6 bg-blue-600 text-white font-black rounded-[1.5rem] hover:bg-blue-700 disabled:opacity-50 transition-all shadow-xl shadow-blue-500/20 flex items-center justify-center gap-3 text-lg uppercase tracking-widest"
               >
                 {isActionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : editingFolder ? 'Update Registry' : 'Initialize Context'}
               </button>
@@ -324,6 +333,17 @@ export function FoldersView({ onSelectCompany }: Props) {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!folderToDelete}
+        title="Delete Directory"
+        message={`Are you sure you want to delete "${folderToDelete?.name}"? This action cannot be undone and all magazines within this folder will be permanently removed.`}
+        confirmLabel="Delete Permanently"
+        onConfirm={confirmDeleteFolder}
+        onCancel={() => setFolderToDelete(null)}
+        isLoading={isActionLoading}
+        variant="danger"
+      />
     </WorkspaceLayout>
   );
 }

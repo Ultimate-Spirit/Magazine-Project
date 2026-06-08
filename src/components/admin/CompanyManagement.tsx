@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { Plus, Trash2, Building2, Loader2, Search, X, CheckCircle2, Users, Edit2, ExternalLink } from 'lucide-react';
+import { ConfirmModal } from '../common/ConfirmModal';
 import type { Company, UserProfile } from '../../types';
 
 export const CompanyManagement: React.FC = () => {
@@ -14,6 +15,7 @@ export const CompanyManagement: React.FC = () => {
   // Form states
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
   const [newCompanyName, setNewCompanyName] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -121,15 +123,20 @@ export const CompanyManagement: React.FC = () => {
     }
   };
 
-  const handleDeleteCompany = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this company? All associated data will be affected.')) return;
+  const confirmDeleteCompany = async () => {
+    if (!companyToDelete) return;
     
-    const { error } = await supabase.from('companies').delete().eq('id', id);
-    if (error) showNotification('error', error.message);
-    else {
+    setActionLoading(true);
+    try {
+      const { error } = await supabase.from('companies').delete().eq('id', companyToDelete.id);
+      if (error) throw error;
       showNotification('success', 'Company deleted');
+      setCompanyToDelete(null);
       fetchData();
+    } catch (err: any) {
+      showNotification('error', err.message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -139,7 +146,7 @@ export const CompanyManagement: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <header className="h-24 bg-white flex items-center justify-between px-12">
+      <header className="h-24 bg-white flex items-center justify-between px-12 border-b border-gray-50">
         <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Workspace Directory</h1>
         
         <div className="flex items-center gap-6">
@@ -163,7 +170,7 @@ export const CompanyManagement: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-12 pb-12">
+      <main className="flex-1 overflow-y-auto px-12 pb-12 pt-12">
         {notification && (
           <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
             <CheckCircle2 className="w-5 h-5" />
@@ -181,33 +188,36 @@ export const CompanyManagement: React.FC = () => {
               <div 
                 key={company.id} 
                 onClick={() => navigate(`/company/${company.id}/folders`)}
-                className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all group relative cursor-pointer"
+                className="bg-white p-8 rounded-[2.5rem] border border-gray-100 hover:border-blue-500/20 hover:bg-gray-50/30 transition-all duration-300 group relative cursor-pointer"
               >
                 <div className="flex items-start justify-between mb-6">
-                  <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 overflow-hidden border border-gray-100">
+                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-blue-600 overflow-hidden border border-gray-100 shadow-sm group-hover:border-blue-100 transition-all">
                     {company.logoUrl ? (
                       <img src={company.logoUrl} alt={company.name} className="w-full h-full object-cover" />
                     ) : (
                       <Building2 className="w-8 h-8" />
                     )}
                   </div>
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
                         openModal(company);
                       }}
-                      className="p-3 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl"
+                      className="p-3 bg-white border border-gray-100 rounded-xl text-gray-400 hover:text-blue-600 hover:border-blue-100 transition-all"
                       title="Edit Company"
                     >
-                      <Edit2 className="w-5 h-5" />
+                      <Edit2 className="w-4 h-4" />
                     </button>
                     <button 
-                      onClick={(e) => handleDeleteCompany(e, company.id)}
-                      className="p-3 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-xl"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCompanyToDelete(company);
+                      }}
+                      className="p-3 bg-white border border-gray-100 rounded-xl text-gray-400 hover:text-red-600 hover:border-red-100 transition-all"
                       title="Delete Company"
                     >
-                      <Trash2 className="w-5 h-5" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -229,8 +239,8 @@ export const CompanyManagement: React.FC = () => {
 
       {/* Company Modal (Create/Edit) */}
       {isCompanyModalOpen && (
-        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-md z-50 flex items-center justify-center p-6">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-md z-[150] flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-gray-100 animate-in zoom-in-95 duration-200">
             <div className="p-10 border-b border-gray-50 flex items-center justify-between">
               <div>
                 <h2 className="text-3xl font-bold text-gray-900 tracking-tight">
@@ -298,7 +308,7 @@ export const CompanyManagement: React.FC = () => {
               <button
                 type="submit"
                 disabled={actionLoading}
-                className="w-full py-5 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3 text-lg"
+                className="w-full py-5 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-xl shadow-blue-500/10 flex items-center justify-center gap-3 text-lg"
               >
                 {actionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : editingCompany ? 'Update Workspace' : 'Create Workspace'}
               </button>
@@ -306,6 +316,17 @@ export const CompanyManagement: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!companyToDelete}
+        title="Delete Workspace"
+        message={`Are you sure you want to delete "${companyToDelete?.name}"? This will permanently remove the organization and all associated data, including its directories and publications.`}
+        confirmLabel="Delete Workspace"
+        onConfirm={confirmDeleteCompany}
+        onCancel={() => setCompanyToDelete(null)}
+        isLoading={actionLoading}
+        variant="danger"
+      />
     </div>
   );
 };
