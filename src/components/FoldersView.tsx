@@ -16,7 +16,8 @@ import {
   Activity,
   BarChart3,
   Clock,
-  Zap
+  Zap,
+  Search
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { useAuth } from '../contexts/AuthContext';
@@ -38,6 +39,7 @@ export function FoldersView({ onSelectCompany }: Props) {
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Live Insights State
   const [stats, setStats] = useState({
@@ -78,16 +80,11 @@ export function FoldersView({ onSelectCompany }: Props) {
       if (folderData.error) throw folderData.error;
       setFolders(folderData.data || []);
 
-      // If we don't have folder IDs yet (initial load), we need to re-query pages once folders are set
-      // But for better efficiency, let's query pages using a join-like logic if possible, 
-      // or just handle the second fetch for stats.
-      
       setStats({
         collaborators: membersData.count || 0,
-        publications: 0 // Will update below
+        publications: 0
       });
 
-      // Fetch publications count properly based on active folders
       if (folderData.data && folderData.data.length > 0) {
         const { count } = await supabase
           .from('pages')
@@ -179,6 +176,10 @@ export function FoldersView({ onSelectCompany }: Props) {
     }
   };
 
+  const filteredFolders = folders.filter(f => 
+    f.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -219,6 +220,16 @@ export function FoldersView({ onSelectCompany }: Props) {
           </div>
 
           <div className="flex items-center gap-3">
+            <div className="relative mr-2">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+              <input
+                type="text"
+                placeholder="Search folders..."
+                className="pl-11 pr-4 py-4 bg-transparent border border-gray-200 rounded-2xl text-sm font-medium text-gray-900 focus:ring-1 focus:ring-gray-300 focus:border-gray-300 focus:outline-none transition-all w-64 placeholder:text-gray-300"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
             <button 
               onClick={() => fetchData()}
               className="p-4 bg-gray-50 border border-gray-100 rounded-2xl text-gray-400 hover:text-blue-600 hover:bg-white hover:border-blue-100 transition-all"
@@ -258,9 +269,19 @@ export function FoldersView({ onSelectCompany }: Props) {
                   Initialize Registry
                 </button>
               </div>
+            ) : filteredFolders.length === 0 ? (
+              <div className="py-32 text-center">
+                <p className="text-lg font-medium text-gray-400">No folders match "<span className="text-gray-900">{searchQuery}</span>"</p>
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="mt-4 text-sm font-bold text-blue-600 hover:underline"
+                >
+                  Clear search
+                </button>
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {folders.map((folder) => (
+                {filteredFolders.map((folder) => (
                   <div
                     key={folder.id}
                     className="group relative bg-white rounded-2xl border border-gray-100 hover:border-blue-500/20 hover:bg-gray-50/30 transition-all duration-300 p-8 flex flex-col justify-between min-h-[220px] cursor-pointer"
