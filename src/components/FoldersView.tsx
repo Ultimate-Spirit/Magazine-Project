@@ -285,7 +285,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                   <div
                     key={folder.id}
                     className="group relative bg-white rounded-2xl border border-gray-100 hover:border-blue-500/20 hover:bg-gray-50/30 transition-all duration-300 p-8 flex flex-col justify-between min-h-[220px] cursor-pointer"
-                    onClick={() => navigate(`/folder/${folder.id}/editor`)}
+                    onClick={() => navigate(`/folder/${folder.id}`)}
                   >
                     {/* Actions Group - Top Right */}
                     <div className="absolute top-6 right-6 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0">

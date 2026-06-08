@@ -4,6 +4,7 @@ import { Loader2, Shield } from 'lucide-react';
 import { CompanySelection } from './components/CompanySelection';
 import { WorkspaceLayout } from './components/WorkspaceLayout';
 import { FoldersView } from './components/FoldersView';
+import { FolderContents } from './components/FolderContents';
 import { MagazineEditor } from './components/MagazineEditor';
 import { useAuth } from './contexts/AuthContext';
 import { Login } from './components/Login';
@@ -72,7 +73,15 @@ function App() {
           } 
         />
         <Route 
-          path="/folder/:folderId/editor" 
+          path="/folder/:folderId" 
+          element={
+            <ProtectedRoute>
+              <FolderContents />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/folder/:folderId/editor/:pageId" 
           element={
             <ProtectedRoute>
               <MagazineEditor />

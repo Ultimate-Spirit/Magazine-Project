@@ -15,9 +15,10 @@ import {
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import type { Page, Company } from '../types';
+import html2pdf from 'html2pdf.js';
 
 export const MagazineEditor: React.FC = () => {
-  const { folderId } = useParams<{ folderId: string }>();
+  const { folderId, pageId } = useParams<{ folderId: string, pageId: string }>();
   const navigate = useNavigate();
   
   const [company, setCompany] = useState<Company | null>(null);
@@ -45,41 +46,51 @@ export const MagazineEditor: React.FC = () => {
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (folderId) {
       fetchData();
     }
-  }, [folderId]);
+  }, [folderId, pageId]);
 
   const fetchData = async () => {
     setLoading(true);
-    const { data: folderData } = await supabase
-      .from('folders')
-      .select('*, companies(*)')
-      .eq('id', folderId)
-      .single();
+    try {
+      const { data: folderData, error: folderErr } = await supabase
+        .from('folders')
+        .select('*, companies(*)')
+        .eq('id', folderId)
+        .single();
 
-    if (folderData) {
+      if (folderErr) throw folderErr;
       setCompany(folderData.companies);
       
-      // Try to fetch existing page for this folder
-      const { data: pageData } = await supabase
-        .from('pages')
-        .select('*')
-        .eq('folder_id', folderId)
-        .single();
-      
-      if (pageData) {
-        setPage(pageData);
-        setEditorData({
-          ...editorData,
-          title: pageData.title,
-          ...pageData.data
-        });
+      // If we have a pageId, fetch it. If 'new', don't fetch.
+      if (pageId && pageId !== 'new') {
+        const { data: pageData, error: pageErr } = await supabase
+          .from('pages')
+          .select('*')
+          .eq('id', pageId)
+          .single();
+        
+        if (pageErr) throw pageErr;
+        
+        if (pageData) {
+          setPage(pageData);
+          setEditorData({
+            ...editorData,
+            title: pageData.title,
+            ...pageData.data
+          });
+        }
       }
+    } catch (err: any) {
+      console.error('Fetch Error:', err);
+      showNotification('error', err.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const showNotification = (type: 'success' | 'error', message: string) => {
@@ -111,6 +122,8 @@ export const MagazineEditor: React.FC = () => {
           .single();
         if (error) throw error;
         setPage(data);
+        // Update URL to reflect the new ID without refreshing
+        navigate(`/folder/${folderId}/editor/${data.id}`, { replace: true });
       }
       showNotification('success', 'Publication saved successfully');
     } catch (err: any) {
@@ -165,33 +178,24 @@ export const MagazineEditor: React.FC = () => {
   };
 
   const handleDownloadPDF = async () => {
+    if (!canvasRef.current) return;
+    
     setExporting(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const response = await fetch('/_/backend/generate-pdf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
-        },
-        body: JSON.stringify({
-          ...editorData,
-          companyName: company?.name
-        })
-      });
+      const element = canvasRef.current;
+      const opt = {
+        margin: 0,
+        filename: `${editorData.title}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
 
-      if (!response.ok) throw new Error('Failed to generate PDF');
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${editorData.title}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
+      await html2pdf().set(opt).from(element).save();
+      showNotification('success', 'PDF exported successfully');
     } catch (err: any) {
-      showNotification('error', err.message);
+      console.error('PDF Export Error:', err);
+      showNotification('error', 'Failed to generate PDF');
     } finally {
       setExporting(false);
     }
@@ -209,7 +213,7 @@ export const MagazineEditor: React.FC = () => {
     <WorkspaceLayout 
       company={company || { id: 'none', name: 'Select Company' }}
       currentView="page_builder"
-      onNavigateBack={() => navigate(`/company/${company?.id}/folders`)}
+      onNavigateBack={() => navigate(`/folder/${folderId}`)}
       onHome={() => navigate('/')}
     >
       <div className="flex flex-col h-[calc(100vh-5rem)] bg-gray-50/50">
@@ -217,7 +221,7 @@ export const MagazineEditor: React.FC = () => {
         <div className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-12 shrink-0">
           <div className="flex items-center gap-6">
             <button 
-              onClick={() => navigate(`/company/${company?.id}/folders`)}
+              onClick={() => navigate(`/folder/${folderId}`)}
               className="p-2 hover:bg-gray-50 rounded-xl text-gray-400 hover:text-gray-900 transition-all"
             >
               <ChevronLeft className="w-6 h-6" />
@@ -292,7 +296,7 @@ export const MagazineEditor: React.FC = () => {
             )}
 
             {/* Publication Canvas */}
-            <div className="w-full max-w-[850px] bg-white shadow-2xl shadow-blue-900/5 rounded-sm p-20 flex flex-col min-h-[1100px] border border-gray-100">
+            <div ref={canvasRef} className="w-full max-w-[850px] bg-white shadow-2xl shadow-blue-900/5 rounded-sm p-20 flex flex-col min-h-[1100px] border border-gray-100">
               {/* Template Content */}
               <div className="border-b-4 border-gray-900 pb-12 mb-12">
                 <input 
@@ -323,7 +327,7 @@ export const MagazineEditor: React.FC = () => {
                   <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Key Performance</h3>
                   <div className="space-y-8">
                     {editorData.metrics.map((metric, idx) => (
-                      <div key={idx} className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
+                      <div key={idx} className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
                         <input 
                           className="w-full text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] bg-transparent border-none p-0 focus:ring-0"
                           value={metric.label}
