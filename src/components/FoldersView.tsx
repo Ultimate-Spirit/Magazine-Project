@@ -13,8 +13,7 @@ import {
   CheckCircle2, 
   RefreshCw, 
   Trash2, 
-  Edit2,
-  MoreVertical
+  Edit2
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { useAuth } from '../contexts/AuthContext';
@@ -30,7 +29,6 @@ export function FoldersView({ onSelectCompany }: Props) {
   const { profile } = useAuth();
   
   const targetCid = (companyId || '').toLowerCase();
-  const isAdmin = profile?.role === 'admin';
 
   const [folders, setFolders] = useState<Folder[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
