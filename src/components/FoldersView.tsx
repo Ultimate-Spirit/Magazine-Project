@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import { Folder as FolderIcon, Plus, Loader2, ChevronRight, LayoutGrid, X, FolderPlus, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Folder as FolderIcon, Plus, Loader2, ChevronRight, LayoutGrid, X, FolderPlus, AlertCircle, CheckCircle2, RefreshCw, Database } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { useAuth } from '../contexts/AuthContext';
 import type { Folder, Company } from '../types';
@@ -18,6 +18,7 @@ export function FoldersView({ onSelectCompany }: Props) {
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [totalSystemFolders, setTotalSystemFolders] = useState<number | null>(null);
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,31 +36,55 @@ export function FoldersView({ onSelectCompany }: Props) {
     else setRefreshing(true);
     
     try {
-      const [companyRes, foldersRes] = await Promise.all([
-        supabase.from('companies').select('*').eq('id', companyId).single(),
-        supabase.from('folders').select('*').eq('company_id', companyId).order('updated_at', { ascending: false })
-      ]);
+      console.log('--- DIAGNOSTIC FETCH START ---');
+      console.log('Company ID Parameter:', companyId);
+      
+      // 1. Fetch Company Info
+      const { data: compData, error: compError } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('id', companyId)
+        .single();
 
-      if (companyRes.error) {
-        console.error('Error fetching company:', companyRes.error);
-        showNotification('error', `Company Fetch Error: ${companyRes.error.message}`);
-      }
-      if (foldersRes.error) {
-        console.error('Error fetching folders:', foldersRes.error);
-        showNotification('error', `Folders Fetch Error: ${foldersRes.error.message}`);
+      if (compError) {
+        console.error('Company Error:', compError);
+        showNotification('error', `Company ID ${companyId?.slice(0,8)} not found`);
+      } else {
+        setCompany(compData);
+        onSelectCompany(compData);
       }
 
-      if (companyRes.data) {
-        setCompany(companyRes.data);
-        onSelectCompany(companyRes.data);
+      // 2. Fetch Folders for this Company
+      const { data: folderData, error: folderError } = await supabase
+        .from('folders')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('updated_at', { ascending: false });
+
+      if (folderError) {
+        console.error('Folders Fetch Error:', folderError);
+        showNotification('error', `Folders Error: ${folderError.message}`);
       }
       
-      if (foldersRes.data) {
-        setFolders(foldersRes.data);
+      console.log(`Folders for ${companyId}:`, folderData);
+      setFolders(folderData || []);
+
+      // 3. Admin Global Check (Diagnostic)
+      if (profile?.role === 'admin') {
+        const { count, error: countError } = await supabase
+          .from('folders')
+          .select('*', { count: 'exact', head: true });
+        
+        if (!countError) {
+          setTotalSystemFolders(count);
+          console.log('Total folders in system (Admin view):', count);
+        }
       }
+
+      console.log('--- DIAGNOSTIC FETCH END ---');
     } catch (err: any) {
-      console.error('Data fetch error:', err);
-      showNotification('error', `Unexpected Error: ${err.message}`);
+      console.error('Fatal Fetch Error:', err);
+      showNotification('error', `System Crash: ${err.message}`);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -67,10 +92,10 @@ export function FoldersView({ onSelectCompany }: Props) {
   }, [companyId, onSelectCompany, profile]);
 
   useEffect(() => {
-    if (companyId) {
+    if (companyId && profile) {
       fetchData(true);
     }
-  }, [companyId, fetchData]);
+  }, [companyId, profile, fetchData]);
 
   const handleCreateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,27 +103,29 @@ export function FoldersView({ onSelectCompany }: Props) {
 
     setIsCreating(true);
     try {
-      const { error } = await supabase
-        .from('folders')
-        .insert([{ 
-          name: newFolderName.trim(), 
-          company_id: companyId 
-        }]);
+      const payload = { 
+        name: newFolderName.trim(), 
+        company_id: companyId 
+      };
       
-      if (error) {
-        console.error('Supabase insert error:', error);
-        throw error;
-      }
+      console.log('Attempting Insert:', payload);
+      
+      const { data, error } = await supabase
+        .from('folders')
+        .insert([payload])
+        .select();
+      
+      if (error) throw error;
 
-      showNotification('success', `Folder "${newFolderName}" created successfully`);
+      console.log('Insert Success:', data);
+      showNotification('success', `Folder "${newFolderName}" created!`);
       setNewFolderName('');
       setIsModalOpen(false);
       
-      // Refresh data
       await fetchData();
     } catch (err: any) {
-      console.error('Folder creation exception:', err);
-      showNotification('error', `Creation Error: ${err.message}`);
+      console.error('Insert Error:', err);
+      showNotification('error', `Creation Failed: ${err.message}`);
     } finally {
       setIsCreating(false);
     }
@@ -137,12 +164,45 @@ export function FoldersView({ onSelectCompany }: Props) {
             <h1 className="text-4xl font-black text-gray-900 tracking-tight">Workspace Folders</h1>
             <p className="text-gray-400 font-medium mt-2">Organize your magazines and publications into dedicated projects.</p>
             
-            <div className="mt-4 p-2 bg-gray-100 rounded text-[10px] font-mono text-gray-500 flex flex-wrap gap-x-4">
-              <span>Role: {profile?.role || 'null'}</span>
-              <span>C_ID: {profile?.company_id || 'null'}</span>
-              <span>U_ID: {profile?.id?.slice(0, 8) || 'null'}</span>
-              <span>Loaded: {folders.length}</span>
-              <span>Target C_ID: {companyId?.slice(0, 8)}</span>
+            {/* Super Debug Bar */}
+            <div className="mt-6 bg-white border border-gray-200 rounded-[2rem] p-6 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                    <Database className="w-4 h-4" />
+                  </div>
+                  <h2 className="text-sm font-bold text-gray-900">System Diagnostic</h2>
+                </div>
+                <button 
+                  onClick={() => fetchData()}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-xl text-xs font-bold text-gray-600 transition-all"
+                >
+                  <RefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin' : ''}`} />
+                  Sync Database
+                </button>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-6 text-[10px] font-mono">
+                <div className="space-y-1">
+                  <p className="text-gray-400 uppercase tracking-wider">Role</p>
+                  <p className="text-gray-900 font-bold">{profile?.role || 'None'}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-gray-400 uppercase tracking-wider">Assigned C_ID</p>
+                  <p className="text-gray-900 font-bold truncate">{profile?.company_id || 'Global Admin'}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-gray-400 uppercase tracking-wider">Current C_ID</p>
+                  <p className="text-blue-600 font-bold">{companyId?.slice(0, 8)}...</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-gray-400 uppercase tracking-wider">Visible Here</p>
+                  <p className="text-gray-900 font-bold">{folders.length}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-gray-400 uppercase tracking-wider">Total in DB</p>
+                  <p className="text-purple-600 font-bold">{totalSystemFolders ?? 'Checking...'}</p>
+                </div>
+              </div>
             </div>
           </div>
           <button 
@@ -248,6 +308,6 @@ export function FoldersView({ onSelectCompany }: Props) {
           </div>
         </div>
       )}
-    </WorkspaceLayout>
+    </div>
   );
 }
