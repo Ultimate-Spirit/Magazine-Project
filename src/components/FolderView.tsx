@@ -63,7 +63,7 @@ export function FolderView({ folder, pages, onCreatePage, onOpenPage }: Props) {
                 </div>
                 <h4 className="font-medium text-sm text-foreground truncate">{page.title || 'Untitled Page'}</h4>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Updated {new Date(page.updatedAt).toLocaleDateString()}
+                  Updated {new Date(page.updated_at).toLocaleDateString()}
                 </p>
               </button>
             ))}

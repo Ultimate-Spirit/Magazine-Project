@@ -12,6 +12,8 @@ export const CompanyManagement: React.FC = () => {
   // Form states
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState('');
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   
   const [actionLoading, setActionLoading] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
@@ -19,6 +21,18 @@ export const CompanyManagement: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLogoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -42,9 +56,29 @@ export const CompanyManagement: React.FC = () => {
     setActionLoading(true);
 
     try {
+      let logoUrl = '';
+      
+      if (logoFile) {
+        const fileExt = logoFile.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `logos/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('company-logos')
+          .upload(filePath, logoFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('company-logos')
+          .getPublicUrl(filePath);
+          
+        logoUrl = publicUrl;
+      }
+
       const { error } = await supabase
         .from('companies')
-        .insert([{ name: newCompanyName }]);
+        .insert([{ name: newCompanyName, logoUrl }]);
 
       if (error) throw error;
 
@@ -52,6 +86,8 @@ export const CompanyManagement: React.FC = () => {
       fetchData();
       setIsCompanyModalOpen(false);
       setNewCompanyName('');
+      setLogoFile(null);
+      setLogoPreview(null);
     } catch (err: any) {
       showNotification('error', err.message);
     } finally {
@@ -156,18 +192,49 @@ export const CompanyManagement: React.FC = () => {
             </div>
 
             <form onSubmit={handleCreateCompany} className="p-10 space-y-8">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] ml-1">Company Name</label>
-                <div className="relative">
-                  <Building2 className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
-                  <input
-                    type="text"
-                    placeholder="Enterprise Name"
-                    className="w-full pl-14 pr-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-medium"
-                    value={newCompanyName}
-                    onChange={(e) => setNewCompanyName(e.target.value)}
-                    required
-                  />
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] ml-1">Company Name</label>
+                  <div className="relative">
+                    <Building2 className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+                    <input
+                      type="text"
+                      placeholder="Enterprise Name"
+                      className="w-full pl-14 pr-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-medium"
+                      value={newCompanyName}
+                      onChange={(e) => setNewCompanyName(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] ml-1">Company Logo</label>
+                  <div className="flex items-center gap-6">
+                    <div className="w-20 h-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden">
+                      {logoPreview ? (
+                        <img src={logoPreview} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <Building2 className="w-8 h-8 text-gray-300" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        id="logo-upload"
+                      />
+                      <label 
+                        htmlFor="logo-upload"
+                        className="inline-block px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 cursor-pointer transition-all"
+                      >
+                        Choose Image
+                      </label>
+                      <p className="text-[10px] text-gray-400 mt-2 font-medium">PNG, JPG or SVG. Max 2MB.</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 

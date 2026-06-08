@@ -59,7 +59,7 @@ export function ProjectExplorer({ folders, onCreateFolder, onOpenFolder }: Props
                 </div>
                 <h4 className="font-medium text-foreground truncate w-full">{folder.name}</h4>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Updated {new Date(folder.updatedAt).toLocaleDateString()}
+                  Updated {new Date(folder.updated_at).toLocaleDateString()}
                 </p>
               </button>
             ))}

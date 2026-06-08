@@ -18,16 +18,16 @@ export interface Company {
 
 export interface Folder {
   id: string;
-  companyId: string;
+  company_id: string;
   name: string;
-  updatedAt: string;
+  updated_at: string;
 }
 
 export interface Page {
   id: string;
-  folderId: string;
+  folder_id: string;
   title: string;
   thumbnailUrl?: string;
   data: any;
-  updatedAt: string;
+  updated_at: string;
 }

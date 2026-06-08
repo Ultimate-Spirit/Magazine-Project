@@ -1,0 +1,395 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabaseClient';
+import { 
+  Save, 
+  Download, 
+  Upload, 
+  Image as ImageIcon, 
+  Layout, 
+  ChevronLeft, 
+  Loader2,
+  CheckCircle2,
+  FileText,
+  AlertCircle
+} from 'lucide-react';
+import { WorkspaceLayout } from './WorkspaceLayout';
+import type { Page, Company } from '../types';
+
+export const MagazineEditor: React.FC = () => {
+  const { folderId } = useParams<{ folderId: string }>();
+  const navigate = useNavigate();
+  
+  const [company, setCompany] = useState<Company | null>(null);
+  const [page, setPage] = useState<Page | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+  const [editorData, setEditorData] = useState({
+    title: 'Untitled Report',
+    headline: 'Enter Main Headline',
+    subheadline: 'Enter subheadline or report description here...',
+    summaryText: '',
+    growthDriversText: '',
+    outlookText: '',
+    footerConfidentiality: 'Internal / Strictly Confidential',
+    footerDate: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+    metrics: [
+      { label: 'Key Metric 1', value: '0.0', percentage: 0 },
+      { label: 'Key Metric 2', value: '0.0', percentage: 0 }
+    ],
+    templateId: 'modern-executive'
+  });
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (folderId) {
+      fetchData();
+    }
+  }, [folderId]);
+
+  const fetchData = async () => {
+    setLoading(true);
+    const { data: folderData } = await supabase
+      .from('folders')
+      .select('*, companies(*)')
+      .eq('id', folderId)
+      .single();
+
+    if (folderData) {
+      setCompany(folderData.companies);
+      
+      // Try to fetch existing page for this folder
+      const { data: pageData } = await supabase
+        .from('pages')
+        .select('*')
+        .eq('folder_id', folderId)
+        .single();
+      
+      if (pageData) {
+        setPage(pageData);
+        setEditorData({
+          ...editorData,
+          title: pageData.title,
+          ...pageData.data
+        });
+      }
+    }
+    setLoading(false);
+  };
+
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const pagePayload = {
+        folder_id: folderId,
+        title: editorData.title,
+        data: editorData,
+        updated_at: new Date().toISOString()
+      };
+
+      if (page) {
+        const { error } = await supabase
+          .from('pages')
+          .update(pagePayload)
+          .eq('id', page.id);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase
+          .from('pages')
+          .insert([pagePayload])
+          .select()
+          .single();
+        if (error) throw error;
+        setPage(data);
+      }
+      showNotification('success', 'Publication saved successfully');
+    } catch (err: any) {
+      showNotification('error', err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch('/_/backend/upload-excel', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) throw new Error('Failed to process Excel file');
+      
+      const result = await response.json();
+      const imported = result.data;
+      
+      setEditorData({
+        ...editorData,
+        headline: imported.title || editorData.headline,
+        subheadline: imported.reportType || editorData.subheadline,
+        summaryText: imported.summaryText || editorData.summaryText,
+        growthDriversText: imported.growthDriversText || editorData.growthDriversText,
+        outlookText: imported.outlookText || editorData.outlookText,
+        footerConfidentiality: imported.footerConfidentiality || editorData.footerConfidentiality,
+        footerDate: imported.footerDate || editorData.footerDate,
+        metrics: imported.metrics || editorData.metrics
+      });
+
+      showNotification('success', 'Data imported from Excel successfully');
+    } catch (err: any) {
+      showNotification('error', err.message);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    setExporting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch('/_/backend/generate-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({
+          ...editorData,
+          companyName: company?.name
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to generate PDF');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${editorData.title}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      showNotification('error', err.message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  return (
+    <WorkspaceLayout 
+      company={company || { id: 'none', name: 'Select Company' }}
+      currentView="page_builder"
+      onNavigateBack={() => navigate(`/company/${company?.id}/folders`)}
+      onHome={() => navigate('/')}
+    >
+      <div className="flex flex-col h-[calc(100vh-5rem)] bg-gray-50/50">
+        {/* Editor Toolbar */}
+        <div className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-12 shrink-0">
+          <div className="flex items-center gap-6">
+            <button 
+              onClick={() => navigate(`/company/${company?.id}/folders`)}
+              className="p-2 hover:bg-gray-50 rounded-xl text-gray-400 hover:text-gray-900 transition-all"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <div>
+              <input 
+                type="text" 
+                value={editorData.title}
+                onChange={(e) => setEditorData({ ...editorData, title: e.target.value })}
+                className="text-xl font-black text-gray-900 bg-transparent border-none focus:ring-0 p-0 w-64"
+              />
+              <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-0.5">Editor Mode</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleImportExcel}
+              className="hidden" 
+              accept=".xlsx,.xls"
+            />
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all shadow-sm disabled:opacity-50"
+            >
+              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+              Import Excel
+            </button>
+            <button 
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all shadow-sm disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Save Progress
+            </button>
+            <button 
+              onClick={handleDownloadPDF}
+              disabled={exporting}
+              className="flex items-center gap-2 px-8 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-black transition-all shadow-lg shadow-gray-200 disabled:opacity-50"
+            >
+              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              Export PDF
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 flex overflow-hidden">
+          {/* Sidebar Tools */}
+          <div className="w-20 bg-white border-r border-gray-100 flex flex-col items-center py-8 gap-6">
+            <button className="p-4 bg-blue-50 text-blue-600 rounded-2xl" title="Templates">
+              <Layout className="w-6 h-6" />
+            </button>
+            <button className="p-4 text-gray-300 hover:text-gray-900 hover:bg-gray-50 rounded-2xl transition-all" title="Structure">
+              <FileText className="w-6 h-6" />
+            </button>
+            <button className="p-4 text-gray-300 hover:text-gray-900 hover:bg-gray-50 rounded-2xl transition-all" title="Assets">
+              <ImageIcon className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Canvas Area */}
+          <main className="flex-1 overflow-y-auto p-12 flex justify-center">
+            {notification && (
+              <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+                {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+                <p className="font-bold text-sm">{notification.message}</p>
+              </div>
+            )}
+
+            {/* Publication Canvas */}
+            <div className="w-full max-w-[850px] bg-white shadow-2xl shadow-blue-900/5 rounded-sm p-20 flex flex-col min-h-[1100px] border border-gray-100">
+              {/* Template Content */}
+              <div className="border-b-4 border-gray-900 pb-12 mb-12">
+                <input 
+                  className="w-full text-5xl font-black text-gray-900 border-none p-0 focus:ring-0 placeholder:text-gray-200"
+                  value={editorData.headline}
+                  onChange={(e) => setEditorData({ ...editorData, headline: e.target.value })}
+                  placeholder="Enter Headline"
+                />
+                <input 
+                  className="w-full text-xl font-bold text-blue-600 mt-4 border-none p-0 focus:ring-0 placeholder:text-gray-200 uppercase tracking-widest"
+                  value={editorData.subheadline}
+                  onChange={(e) => setEditorData({ ...editorData, subheadline: e.target.value })}
+                  placeholder="REPORT CATEGORY"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-20 mb-12">
+                <div className="space-y-6">
+                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Executive Summary</h3>
+                  <textarea 
+                    className="w-full text-gray-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[150px] resize-none"
+                    value={editorData.summaryText}
+                    onChange={(e) => setEditorData({ ...editorData, summaryText: e.target.value })}
+                    placeholder="Enter summary text here..."
+                  />
+                </div>
+                <div className="space-y-8">
+                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Key Performance</h3>
+                  <div className="space-y-8">
+                    {editorData.metrics.map((metric, idx) => (
+                      <div key={idx} className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
+                        <input 
+                          className="w-full text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] bg-transparent border-none p-0 focus:ring-0"
+                          value={metric.label}
+                          onChange={(e) => {
+                            const newMetrics = [...editorData.metrics];
+                            newMetrics[idx].label = e.target.value;
+                            setEditorData({ ...editorData, metrics: newMetrics });
+                          }}
+                        />
+                        <div className="flex items-baseline gap-2 mt-2">
+                          <input 
+                            className="text-3xl font-black text-gray-900 bg-transparent border-none p-0 focus:ring-0 w-32"
+                            value={metric.value}
+                            onChange={(e) => {
+                              const newMetrics = [...editorData.metrics];
+                              newMetrics[idx].value = e.target.value;
+                              setEditorData({ ...editorData, metrics: newMetrics });
+                            }}
+                          />
+                          <span className={`text-sm font-bold ${metric.percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {metric.percentage >= 0 ? '+' : ''}{metric.percentage}%
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-20 mb-auto">
+                <div className="space-y-6">
+                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Strategic Drivers</h3>
+                  <textarea 
+                    className="w-full text-gray-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none"
+                    value={editorData.growthDriversText}
+                    onChange={(e) => setEditorData({ ...editorData, growthDriversText: e.target.value })}
+                    placeholder="Enter growth drivers..."
+                  />
+                </div>
+                <div className="space-y-6">
+                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Future Outlook</h3>
+                  <textarea 
+                    className="w-full text-gray-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none"
+                    value={editorData.outlookText}
+                    onChange={(e) => setEditorData({ ...editorData, outlookText: e.target.value })}
+                    placeholder="Enter outlook details..."
+                  />
+                </div>
+              </div>
+
+              <footer className="mt-20 pt-8 border-t border-gray-100 flex justify-between items-center text-[10px] font-bold text-gray-300 uppercase tracking-widest">
+                <input 
+                  className="bg-transparent border-none p-0 focus:ring-0 w-64"
+                  value={editorData.footerConfidentiality}
+                  onChange={(e) => setEditorData({ ...editorData, footerConfidentiality: e.target.value })}
+                />
+                <input 
+                  className="bg-transparent border-none p-0 focus:ring-0 text-right w-48"
+                  value={editorData.footerDate}
+                  onChange={(e) => setEditorData({ ...editorData, footerDate: e.target.value })}
+                />
+              </footer>
+            </div>
+          </main>
+        </div>
+      </div>
+    </WorkspaceLayout>
+  );
+};

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import { Users, Building2, Shield, ArrowUpRight, Loader2, Calendar } from 'lucide-react';
+import { Users, Building2, ArrowUpRight, Loader2, Calendar } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -42,7 +42,6 @@ export const AdminDashboard: React.FC = () => {
   const cards = [
     { label: 'Total Users', value: stats.userCount, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
     { label: 'Workspaces', value: stats.companyCount, icon: Building2, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Active Now', value: stats.activeSessions, icon: Shield, color: 'text-green-600', bg: 'bg-green-50' },
   ];
 
   return (
@@ -56,7 +55,7 @@ export const AdminDashboard: React.FC = () => {
         <p className="text-gray-400 font-medium mt-2 text-lg">Manage your organization and monitor platform health.</p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
         {cards.map((card) => (
           <div key={card.label} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all group">
             <div className="flex items-center justify-between mb-6">
