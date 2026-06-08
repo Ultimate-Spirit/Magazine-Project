@@ -13,7 +13,7 @@ interface Props {
 export function FoldersView({ onSelectCompany }: Props) {
   const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { profile, isAdmin } = useAuth();
   const [folders, setFolders] = useState<Folder[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,24 +25,29 @@ export function FoldersView({ onSelectCompany }: Props) {
   const [isCreating, setIsCreating] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 5000);
+  };
+
   const fetchData = useCallback(async (isInitial = false) => {
     if (isInitial) setLoading(true);
     else setRefreshing(true);
     
     try {
-      console.log('Fetching data for company:', companyId);
-      console.log('Current user profile:', profile);
-
       const [companyRes, foldersRes] = await Promise.all([
         supabase.from('companies').select('*').eq('id', companyId).single(),
         supabase.from('folders').select('*').eq('company_id', companyId).order('updated_at', { ascending: false })
       ]);
 
-      if (companyRes.error) console.error('Error fetching company:', companyRes.error);
-      if (foldersRes.error) console.error('Error fetching folders:', foldersRes.error);
-
-      console.log('Folders response count:', foldersRes.data?.length);
-      console.log('Folders data:', foldersRes.data);
+      if (companyRes.error) {
+        console.error('Error fetching company:', companyRes.error);
+        showNotification('error', `Company Fetch Error: ${companyRes.error.message}`);
+      }
+      if (foldersRes.error) {
+        console.error('Error fetching folders:', foldersRes.error);
+        showNotification('error', `Folders Fetch Error: ${foldersRes.error.message}`);
+      }
 
       if (companyRes.data) {
         setCompany(companyRes.data);
@@ -54,6 +59,7 @@ export function FoldersView({ onSelectCompany }: Props) {
       }
     } catch (err: any) {
       console.error('Data fetch error:', err);
+      showNotification('error', `Unexpected Error: ${err.message}`);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -66,33 +72,23 @@ export function FoldersView({ onSelectCompany }: Props) {
     }
   }, [companyId, fetchData]);
 
-  const showNotification = (type: 'success' | 'error', message: string) => {
-    setNotification({ type, message });
-    setTimeout(() => setNotification(null), 3000);
-  };
-
   const handleCreateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFolderName.trim()) return;
 
     setIsCreating(true);
     try {
-      console.log('Creating folder with name:', newFolderName.trim(), 'for company:', companyId);
-      
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('folders')
         .insert([{ 
           name: newFolderName.trim(), 
           company_id: companyId 
-        }])
-        .select();
+        }]);
       
       if (error) {
         console.error('Supabase insert error:', error);
         throw error;
       }
-
-      console.log('Folder created successfully:', data);
 
       showNotification('success', `Folder "${newFolderName}" created successfully`);
       setNewFolderName('');
@@ -102,7 +98,7 @@ export function FoldersView({ onSelectCompany }: Props) {
       await fetchData();
     } catch (err: any) {
       console.error('Folder creation exception:', err);
-      showNotification('error', err.message || 'Failed to create folder');
+      showNotification('error', `Creation Error: ${err.message}`);
     } finally {
       setIsCreating(false);
     }
@@ -141,9 +137,12 @@ export function FoldersView({ onSelectCompany }: Props) {
             <h1 className="text-4xl font-black text-gray-900 tracking-tight">Workspace Folders</h1>
             <p className="text-gray-400 font-medium mt-2">Organize your magazines and publications into dedicated projects.</p>
             
-            {/* Debug Info (Only for dev/admin) */}
-            <div className="mt-4 p-2 bg-gray-100 rounded text-[10px] font-mono text-gray-500 overflow-hidden">
-              User Role: {profile?.role} | User Company: {profile?.company_id || 'Global Admin'} | Folders Loaded: {folders.length}
+            <div className="mt-4 p-2 bg-gray-100 rounded text-[10px] font-mono text-gray-500 flex flex-wrap gap-x-4">
+              <span>Role: {profile?.role || 'null'}</span>
+              <span>C_ID: {profile?.company_id || 'null'}</span>
+              <span>U_ID: {profile?.id?.slice(0, 8) || 'null'}</span>
+              <span>Loaded: {folders.length}</span>
+              <span>Target C_ID: {companyId?.slice(0, 8)}</span>
             </div>
           </div>
           <button 
