@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { Folder as FolderIcon, Plus, Loader2, ChevronRight, LayoutGrid, X, FolderPlus, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
+import { useAuth } from '../contexts/AuthContext';
 import type { Folder, Company } from '../types';
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 export function FoldersView({ onSelectCompany }: Props) {
   const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [folders, setFolders] = useState<Folder[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,6 +30,9 @@ export function FoldersView({ onSelectCompany }: Props) {
     else setRefreshing(true);
     
     try {
+      console.log('Fetching data for company:', companyId);
+      console.log('Current user profile:', profile);
+
       const [companyRes, foldersRes] = await Promise.all([
         supabase.from('companies').select('*').eq('id', companyId).single(),
         supabase.from('folders').select('*').eq('company_id', companyId).order('updated_at', { ascending: false })
@@ -35,6 +40,9 @@ export function FoldersView({ onSelectCompany }: Props) {
 
       if (companyRes.error) console.error('Error fetching company:', companyRes.error);
       if (foldersRes.error) console.error('Error fetching folders:', foldersRes.error);
+
+      console.log('Folders response count:', foldersRes.data?.length);
+      console.log('Folders data:', foldersRes.data);
 
       if (companyRes.data) {
         setCompany(companyRes.data);
@@ -50,7 +58,7 @@ export function FoldersView({ onSelectCompany }: Props) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [companyId, onSelectCompany]);
+  }, [companyId, onSelectCompany, profile]);
 
   useEffect(() => {
     if (companyId) {
@@ -69,14 +77,22 @@ export function FoldersView({ onSelectCompany }: Props) {
 
     setIsCreating(true);
     try {
-      const { error } = await supabase
+      console.log('Creating folder with name:', newFolderName.trim(), 'for company:', companyId);
+      
+      const { data, error } = await supabase
         .from('folders')
         .insert([{ 
           name: newFolderName.trim(), 
           company_id: companyId 
-        }]);
+        }])
+        .select();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase insert error:', error);
+        throw error;
+      }
+
+      console.log('Folder created successfully:', data);
 
       showNotification('success', `Folder "${newFolderName}" created successfully`);
       setNewFolderName('');
@@ -85,7 +101,7 @@ export function FoldersView({ onSelectCompany }: Props) {
       // Refresh data
       await fetchData();
     } catch (err: any) {
-      console.error('Folder creation error:', err);
+      console.error('Folder creation exception:', err);
       showNotification('error', err.message || 'Failed to create folder');
     } finally {
       setIsCreating(false);
@@ -124,6 +140,11 @@ export function FoldersView({ onSelectCompany }: Props) {
             </div>
             <h1 className="text-4xl font-black text-gray-900 tracking-tight">Workspace Folders</h1>
             <p className="text-gray-400 font-medium mt-2">Organize your magazines and publications into dedicated projects.</p>
+            
+            {/* Debug Info (Only for dev/admin) */}
+            <div className="mt-4 p-2 bg-gray-100 rounded text-[10px] font-mono text-gray-500 overflow-hidden">
+              User Role: {profile?.role} | User Company: {profile?.companyId || 'Global Admin'} | Folders Loaded: {folders.length}
+            </div>
           </div>
           <button 
             onClick={() => setIsModalOpen(true)}
