@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import { Folder as FolderIcon, Plus, Loader2, ChevronRight, LayoutGrid, X, FolderPlus } from 'lucide-react';
+import { Folder as FolderIcon, Plus, Loader2, ChevronRight, LayoutGrid, X, FolderPlus, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import type { Folder, Company } from '../types';
 
@@ -20,6 +20,7 @@ export function FoldersView({ onSelectCompany }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
   useEffect(() => {
     if (companyId) {
@@ -29,35 +30,55 @@ export function FoldersView({ onSelectCompany }: Props) {
 
   const fetchData = async () => {
     setLoading(true);
-    const [companyRes, foldersRes] = await Promise.all([
-      supabase.from('companies').select('*').eq('id', companyId).single(),
-      supabase.from('folders').select('*').eq('company_id', companyId).order('updated_at', { ascending: false })
-    ]);
+    try {
+      const [companyRes, foldersRes] = await Promise.all([
+        supabase.from('companies').select('*').eq('id', companyId).single(),
+        supabase.from('folders').select('*').eq('company_id', companyId).order('updated_at', { ascending: false })
+      ]);
 
-    if (companyRes.data) {
-      setCompany(companyRes.data);
-      onSelectCompany(companyRes.data);
+      if (companyRes.data) {
+        setCompany(companyRes.data);
+        onSelectCompany(companyRes.data);
+      }
+      
+      if (foldersRes.data) {
+        setFolders(foldersRes.data);
+      }
+    } catch (err: any) {
+      console.error('Error fetching folders:', err);
+    } finally {
+      setLoading(false);
     }
-    
-    if (foldersRes.data) {
-      setFolders(foldersRes.data);
-    }
-    setLoading(false);
+  };
+
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 3000);
   };
 
   const handleCreateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newFolderName.trim()) {
-      setIsCreating(true);
+    if (!newFolderName.trim()) return;
+
+    setIsCreating(true);
+    try {
       const { error } = await supabase
         .from('folders')
-        .insert([{ name: newFolderName.trim(), company_id: companyId }]);
+        .insert([{ 
+          name: newFolderName.trim(), 
+          company_id: companyId 
+        }]);
       
-      if (!error) {
-        setNewFolderName('');
-        setIsModalOpen(false);
-        fetchData();
-      }
+      if (error) throw error;
+
+      showNotification('success', `Folder "${newFolderName}" created successfully`);
+      setNewFolderName('');
+      setIsModalOpen(false);
+      fetchData();
+    } catch (err: any) {
+      console.error('Folder creation error:', err);
+      showNotification('error', err.message || 'Failed to create folder');
+    } finally {
       setIsCreating(false);
     }
   };
@@ -78,6 +99,13 @@ export function FoldersView({ onSelectCompany }: Props) {
       onHome={() => navigate('/')}
     >
       <div className="max-w-7xl mx-auto px-8 py-12">
+        {notification && (
+          <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-[60] px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+            {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+            <p className="font-bold text-sm">{notification.message}</p>
+          </div>
+        )}
+
         <header className="flex items-center justify-between mb-12">
           <div>
             <div className="flex items-center gap-2 text-sm font-bold text-blue-600 uppercase tracking-widest mb-2">
