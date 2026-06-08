@@ -7,7 +7,7 @@ import pandas as pd
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
-from playwright.sync_api import sync_playwright
+from xhtml2pdf import pisa
 from dotenv import load_dotenv
 from database import get_supabase
 import schemas
@@ -104,160 +104,115 @@ async def upload_excel(file: UploadFile = File(...)):
 
 @app.post("/generate-pdf", dependencies=[Depends(get_current_user)])
 async def generate_pdf(data: dict):
-    def _generate_sync():
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            context = browser.new_context(viewport={"width": 794, "height": 1123})
-            page = context.new_page()
-            
-            metrics_html = "".join([f"""
-                <div style="background: #f9fafb; padding: 24px; border-radius: 16px; border: 1px solid #f3f4f6; margin-bottom: 24px;">
-                    <div style="font-size: 10px; font-weight: 900; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 8px;">{m.get('label', '')}</div>
-                    <div style="display: flex; align-items: baseline; gap: 8px;">
-                        <div style="font-size: 32px; font-weight: 900; color: #111827;">{m.get('value', '0')}</div>
-                        <div style="font-size: 14px; font-weight: 700; color: {'#059669' if float(m.get('percentage', 0)) >= 0 else '#dc2626'};">
-                            {'+' if float(m.get('percentage', 0)) >= 0 else ''}{m.get('percentage', 0)}%
-                        </div>
-                    </div>
-                </div>
-            """ for m in data.get('metrics', [])])
-
-            html_content = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    body {{
-                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-                        margin: 0;
-                        padding: 0;
-                        background: white;
-                    }}
-                    .page {{
-                        width: 210mm;
-                        min-height: 297mm;
-                        padding: 20mm;
-                        margin: 0 auto;
-                        box-sizing: border-box;
-                        position: relative;
-                        display: flex;
-                        flex-direction: column;
-                    }}
-                    .header {{
-                        border-bottom: 4px solid #111827;
-                        padding-bottom: 48px;
-                        margin-bottom: 48px;
-                    }}
-                    .headline {{
-                        font-size: 48px;
-                        font-weight: 900;
-                        color: #111827;
-                        margin: 0;
-                        line-height: 1.2;
-                    }}
-                    .subheadline {{
-                        font-size: 20px;
-                        font-weight: 700;
-                        color: #2563eb;
-                        margin: 16px 0 0 0;
-                        text-transform: uppercase;
-                        letter-spacing: 0.1em;
-                    }}
-                    .content-grid {{
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 80px;
-                        margin-bottom: 48px;
-                    }}
-                    .section-title {{
-                        font-size: 12px;
-                        font-weight: 900;
-                        color: #9ca3af;
-                        text-transform: uppercase;
-                        letter-spacing: 0.1em;
-                        margin-bottom: 24px;
-                    }}
-                    .section-text {{
-                        font-size: 14px;
-                        line-height: 1.6;
-                        color: #4b5563;
-                        white-space: pre-wrap;
-                    }}
-                    .footer {{
-                        margin-top: auto;
-                        padding-top: 32px;
-                        border-top: 1px solid #f3f4f6;
-                        display: flex;
-                        justify-content: space-between;
-                        font-size: 10px;
-                        font-weight: 700;
-                        color: #d1d5db;
-                        text-transform: uppercase;
-                        letter-spacing: 0.1em;
-                    }}
-                </style>
-            </head>
-            <body>
-                <div class="page">
-                    <div class="header">
-                        <div class="headline">{data.get('headline', 'Untitled Report')}</div>
-                        <div class="subheadline">{data.get('subheadline', 'EXECUTIVE SUMMARY')}</div>
-                    </div>
-
-                    <div class="content-grid">
-                        <div>
-                            <div class="section-title">Executive Summary</div>
-                            <div class="section-text">{data.get('summaryText', '')}</div>
-                        </div>
-                        <div>
-                            <div class="section-title">Key Performance</div>
-                            {metrics_html}
-                        </div>
-                    </div>
-
-                    <div class="content-grid" style="margin-bottom: auto;">
-                        <div>
-                            <div class="section-title">Strategic Drivers</div>
-                            <div class="section-text">{data.get('growthDriversText', '')}</div>
-                        </div>
-                        <div>
-                            <div class="section-title">Future Outlook</div>
-                            <div class="section-text">{data.get('outlookText', '')}</div>
-                        </div>
-                    </div>
-
-                    <div class="footer">
-                        <div>{data.get('footerConfidentiality', '')}</div>
-                        <div>{data.get('footerDate', '')}</div>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """
-            
-            page.set_content(html_content)
-            page.wait_for_timeout(500)
-            
-            pdf_bytes = page.pdf(
-                format="A4",
-                print_background=True,
-                margin={"top": "0px", "right": "0px", "bottom": "0px", "left": "0px"},
-                display_header_footer=False,
-                scale=1.0
-            )
-            
-            browser.close()
-            return pdf_bytes
-
     try:
-        from concurrent.futures import ThreadPoolExecutor
-        loop = asyncio.get_event_loop()
-        with ThreadPoolExecutor() as executor:
-            pdf_bytes = await loop.run_in_executor(executor, _generate_sync)
+        # Create metrics HTML
+        metrics_html = "".join([f"""
+            <div style="background-color: #f9fafb; padding: 15px; border: 1px solid #f3f4f6; margin-bottom: 15px;">
+                <div style="font-size: 8pt; font-weight: bold; color: #9ca3af; text-transform: uppercase;">{m.get('label', '')}</div>
+                <div style="font-size: 20pt; font-weight: bold; color: #111827;">{m.get('value', '0')}</div>
+                <div style="font-size: 10pt; font-weight: bold; color: {'#059669' if float(m.get('percentage', 0)) >= 0 else '#dc2626'};">
+                    {'+' if float(m.get('percentage', 0)) >= 0 else ''}{m.get('percentage', 0)}%
+                </div>
+            </div>
+        """ for m in data.get('metrics', [])])
+
+        # HTML content tailored for xhtml2pdf (it prefers older CSS/HTML styles)
+        html_content = f"""
+        <html>
+        <head>
+            <style>
+                @page {{
+                    size: a4 portrait;
+                    margin: 2cm;
+                }}
+                body {{
+                    font-family: Helvetica, Arial, sans-serif;
+                    font-size: 10pt;
+                    color: #4b5563;
+                }}
+                .header {{
+                    border-bottom: 2px solid #111827;
+                    padding-bottom: 20px;
+                    margin-bottom: 20px;
+                }}
+                .headline {{
+                    font-size: 24pt;
+                    font-weight: bold;
+                    color: #111827;
+                }}
+                .subheadline {{
+                    font-size: 14pt;
+                    color: #2563eb;
+                    margin-top: 10px;
+                }}
+                .content-table {{
+                    width: 100%;
+                }}
+                .section-title {{
+                    font-size: 9pt;
+                    font-weight: bold;
+                    color: #9ca3af;
+                    text-transform: uppercase;
+                    margin-bottom: 10px;
+                }}
+                .footer {{
+                    margin-top: 20px;
+                    border-top: 1px solid #d1d5db;
+                    padding-top: 10px;
+                    font-size: 8pt;
+                    color: #d1d5db;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="headline">{data.get('headline', 'Untitled Report')}</div>
+                <div class="subheadline">{data.get('subheadline', 'EXECUTIVE SUMMARY')}</div>
+            </div>
+
+            <table class="content-table">
+                <tr>
+                    <td style="width: 50%; vertical-align: top; padding-right: 20px;">
+                        <div class="section-title">Executive Summary</div>
+                        <div>{data.get('summaryText', '').replace('\n', '<br/>')}</div>
+                    </td>
+                    <td style="width: 50%; vertical-align: top;">
+                        <div class="section-title">Key Performance</div>
+                        {metrics_html}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="vertical-align: top; padding-right: 20px; padding-top: 20px;">
+                        <div class="section-title">Strategic Drivers</div>
+                        <div>{data.get('growthDriversText', '').replace('\n', '<br/>')}</div>
+                    </td>
+                    <td style="vertical-align: top; padding-top: 20px;">
+                        <div class="section-title">Future Outlook</div>
+                        <div>{data.get('outlookText', '').replace('\n', '<br/>')}</div>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="footer">
+                <table style="width: 100%;">
+                    <tr>
+                        <td>{data.get('footerConfidentiality', '')}</td>
+                        <td style="text-align: right;">{data.get('footerDate', '')}</td>
+                    </tr>
+                </table>
+            </div>
+        </body>
+        </html>
+        """
+        
+        result = io.BytesIO()
+        pisa_status = pisa.CreatePDF(html_content, dest=result)
+        
+        if pisa_status.err:
+            raise HTTPException(status_code=500, detail="Error converting HTML to PDF")
             
         return Response(
-            content=pdf_bytes,
+            content=result.getvalue(),
             media_type="application/pdf",
             headers={"Content-Disposition": f"attachment; filename={data.get('title', 'report')}.pdf"}
         )

@@ -3,6 +3,7 @@ uvicorn[standard]
 pandas
 openpyxl
 python-multipart
-playwright
+xhtml2pdf
+fpdf2
 supabase
 python-dotenv
