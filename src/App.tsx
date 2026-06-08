@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
 import { Loader2, Shield } from 'lucide-react';
 import { CompanySelection } from './components/CompanySelection';
@@ -20,6 +20,15 @@ function App() {
   const navigate = useNavigate();
   const [activeCompany, setActiveCompany] = useState<Company | null>(null);
 
+  const handleCompanySelect = useCallback((company: Company) => {
+    setActiveCompany(company);
+    navigate(`/company/${company.id}/folders`);
+  }, [navigate]);
+
+  const handleSelectCompany = useCallback((company: Company) => {
+    setActiveCompany(company);
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -30,11 +39,6 @@ function App() {
       </div>
     );
   }
-
-  const handleCompanySelect = (company: Company) => {
-    setActiveCompany(company);
-    navigate(`/company/${company.id}/folders`);
-  };
 
   return (
     <div className="relative min-h-screen">
@@ -63,7 +67,7 @@ function App() {
           path="/company/:companyId/folders" 
           element={
             <ProtectedRoute>
-              <FoldersView onSelectCompany={(company) => setActiveCompany(company)} />
+              <FoldersView onSelectCompany={handleSelectCompany} />
             </ProtectedRoute>
           } 
         />
