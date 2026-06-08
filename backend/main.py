@@ -110,20 +110,133 @@ async def generate_pdf(data: dict):
             context = browser.new_context(viewport={"width": 794, "height": 1123})
             page = context.new_page()
             
-            frontend_url = "http://localhost:5173/print"
-            page.goto(frontend_url)
+            metrics_html = "".join([f"""
+                <div style="background: #f9fafb; padding: 24px; border-radius: 16px; border: 1px solid #f3f4f6; margin-bottom: 24px;">
+                    <div style="font-size: 10px; font-weight: 900; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 8px;">{m.get('label', '')}</div>
+                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                        <div style="font-size: 32px; font-weight: 900; color: #111827;">{m.get('value', '0')}</div>
+                        <div style="font-size: 14px; font-weight: 700; color: {'#059669' if float(m.get('percentage', 0)) >= 0 else '#dc2626'};">
+                            {'+' if float(m.get('percentage', 0)) >= 0 else ''}{m.get('percentage', 0)}%
+                        </div>
+                    </div>
+                </div>
+            """ for m in data.get('metrics', [])])
+
+            html_content = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body {{
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                        margin: 0;
+                        padding: 0;
+                        background: white;
+                    }}
+                    .page {{
+                        width: 210mm;
+                        min-height: 297mm;
+                        padding: 20mm;
+                        margin: 0 auto;
+                        box-sizing: border-box;
+                        position: relative;
+                        display: flex;
+                        flex-direction: column;
+                    }}
+                    .header {{
+                        border-bottom: 4px solid #111827;
+                        padding-bottom: 48px;
+                        margin-bottom: 48px;
+                    }}
+                    .headline {{
+                        font-size: 48px;
+                        font-weight: 900;
+                        color: #111827;
+                        margin: 0;
+                        line-height: 1.2;
+                    }}
+                    .subheadline {{
+                        font-size: 20px;
+                        font-weight: 700;
+                        color: #2563eb;
+                        margin: 16px 0 0 0;
+                        text-transform: uppercase;
+                        letter-spacing: 0.1em;
+                    }}
+                    .content-grid {{
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 80px;
+                        margin-bottom: 48px;
+                    }}
+                    .section-title {{
+                        font-size: 12px;
+                        font-weight: 900;
+                        color: #9ca3af;
+                        text-transform: uppercase;
+                        letter-spacing: 0.1em;
+                        margin-bottom: 24px;
+                    }}
+                    .section-text {{
+                        font-size: 14px;
+                        line-height: 1.6;
+                        color: #4b5563;
+                        white-space: pre-wrap;
+                    }}
+                    .footer {{
+                        margin-top: auto;
+                        padding-top: 32px;
+                        border-top: 1px solid #f3f4f6;
+                        display: flex;
+                        justify-content: space-between;
+                        font-size: 10px;
+                        font-weight: 700;
+                        color: #d1d5db;
+                        text-transform: uppercase;
+                        letter-spacing: 0.1em;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class="page">
+                    <div class="header">
+                        <div class="headline">{data.get('headline', 'Untitled Report')}</div>
+                        <div class="subheadline">{data.get('subheadline', 'EXECUTIVE SUMMARY')}</div>
+                    </div>
+
+                    <div class="content-grid">
+                        <div>
+                            <div class="section-title">Executive Summary</div>
+                            <div class="section-text">{data.get('summaryText', '')}</div>
+                        </div>
+                        <div>
+                            <div class="section-title">Key Performance</div>
+                            {metrics_html}
+                        </div>
+                    </div>
+
+                    <div class="content-grid" style="margin-bottom: auto;">
+                        <div>
+                            <div class="section-title">Strategic Drivers</div>
+                            <div class="section-text">{data.get('growthDriversText', '')}</div>
+                        </div>
+                        <div>
+                            <div class="section-title">Future Outlook</div>
+                            <div class="section-text">{data.get('outlookText', '')}</div>
+                        </div>
+                    </div>
+
+                    <div class="footer">
+                        <div>{data.get('footerConfidentiality', '')}</div>
+                        <div>{data.get('footerDate', '')}</div>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
             
-            data_json = json.dumps(data)
-            page.evaluate(f"window.__PRINT_DATA__ = {data_json}")
-            
-            page.wait_for_selector("h1", timeout=5000)
-            
-            page.add_style_tag(content="""
-                @page { margin: 0; size: A4; }
-                body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; }
-                #print-container { margin: 0 !important; border: none !important; shadow: none !important; box-shadow: none !important; }
-            """)
-            
+            page.set_content(html_content)
             page.wait_for_timeout(500)
             
             pdf_bytes = page.pdf(
@@ -146,13 +259,13 @@ async def generate_pdf(data: dict):
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename={data.get('companyName', 'report')}.pdf"}
+            headers={"Content-Disposition": f"attachment; filename={data.get('title', 'report')}.pdf"}
         )
     except Exception as e:
         print(f"Error generating PDF: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error generating PDF: {str(e)}")
 
-# Articles Endpoints
+# Articles Endpoints (Legacy)
 
 @app.get("/articles", response_model=list[schemas.Article], dependencies=[Depends(get_current_user)])
 async def get_articles():

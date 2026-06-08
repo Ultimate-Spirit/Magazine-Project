@@ -15,10 +15,6 @@ import {
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import type { Page, Company } from '../types';
-// @ts-ignore
-import html2canvas from 'html2canvas';
-// @ts-ignore
-import jsPDF from 'jspdf';
 
 export const MagazineEditor: React.FC = () => {
   const { folderId, pageId } = useParams<{ folderId: string, pageId: string }>();
@@ -179,41 +175,34 @@ export const MagazineEditor: React.FC = () => {
   };
 
   const handleDownloadPDF = async () => {
-    const element = document.getElementById('pdf-export-canvas');
-    if (!element) return;
-    
     setExporting(true);
     try {
-      const currentScroll = window.scrollY;
-      window.scrollTo(0, 0);
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch('/_/backend/generate-pdf', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(editorData)
+      });
 
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        scrollY: -window.scrollY
-      });
+      if (!response.ok) throw new Error('Failed to generate PDF on server');
       
-      const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${editorData.title}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
       
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`${editorData.title}.pdf`);
-      
-      window.scrollTo(0, currentScroll);
-      showNotification('success', 'PDF exported successfully');
+      showNotification('success', 'PDF exported successfully from server');
     } catch (err: any) {
       console.error('PDF Export Error:', err);
-      showNotification('error', 'Failed to generate PDF');
+      showNotification('error', 'Failed to generate high-fidelity PDF');
     } finally {
       setExporting(false);
     }
@@ -314,104 +303,100 @@ export const MagazineEditor: React.FC = () => {
               </div>
             )}
 
-            <div 
-              id="pdf-export-canvas" 
-              className={`bg-white transition-all duration-300 ${exporting ? 'p-[40px]' : 'p-0'}`}
-            >
-              <div className="w-full max-w-[850px] bg-white shadow-2xl shadow-blue-900/5 rounded-sm p-20 flex flex-col min-h-[1100px] border border-gray-100">
-                <div className="border-b-4 border-gray-900 pb-12 mb-12">
-                  <input 
-                    className="w-full text-5xl font-black text-gray-900 border-none p-0 focus:ring-0 placeholder:text-gray-200 leading-[1.2]"
-                    value={editorData.headline}
-                    onChange={(e) => setEditorData({ ...editorData, headline: e.target.value })}
-                    placeholder="Enter Headline"
-                  />
-                  <input 
-                    className="w-full text-xl font-bold text-blue-600 mt-4 border-none p-0 focus:ring-0 placeholder:text-gray-200 uppercase tracking-widest leading-[1.2]"
-                    value={editorData.subheadline}
-                    onChange={(e) => setEditorData({ ...editorData, subheadline: e.target.value })}
-                    placeholder="REPORT CATEGORY"
+            {/* Publication Canvas (Preview Only) */}
+            <div className="w-full max-w-[850px] bg-white shadow-2xl shadow-blue-900/5 rounded-sm p-20 flex flex-col min-h-[1100px] border border-gray-100">
+              <div className="border-b-4 border-gray-900 pb-12 mb-12">
+                <input 
+                  className="w-full text-5xl font-black text-gray-900 border-none p-0 focus:ring-0 placeholder:text-gray-200 leading-[1.2]"
+                  value={editorData.headline}
+                  onChange={(e) => setEditorData({ ...editorData, headline: e.target.value })}
+                  placeholder="Enter Headline"
+                />
+                <input 
+                  className="w-full text-xl font-bold text-blue-600 mt-4 border-none p-0 focus:ring-0 placeholder:text-gray-200 uppercase tracking-widest leading-[1.2]"
+                  value={editorData.subheadline}
+                  onChange={(e) => setEditorData({ ...editorData, subheadline: e.target.value })}
+                  placeholder="REPORT CATEGORY"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-20 mb-12">
+                <div className="space-y-6">
+                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Executive Summary</h3>
+                  <textarea 
+                    className="w-full text-gray-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[150px] resize-none"
+                    value={editorData.summaryText}
+                    onChange={(e) => setEditorData({ ...editorData, summaryText: e.target.value })}
+                    placeholder="Enter summary text here..."
                   />
                 </div>
-
-                <div className="grid grid-cols-2 gap-20 mb-12">
-                  <div className="space-y-6">
-                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Executive Summary</h3>
-                    <textarea 
-                      className="w-full text-gray-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[150px] resize-none"
-                      value={editorData.summaryText}
-                      onChange={(e) => setEditorData({ ...editorData, summaryText: e.target.value })}
-                      placeholder="Enter summary text here..."
-                    />
-                  </div>
+                <div className="space-y-8">
+                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Key Performance</h3>
                   <div className="space-y-8">
-                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Key Performance</h3>
-                    <div className="space-y-8">
-                      {editorData.metrics.map((metric, idx) => (
-                        <div key={idx} className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                    {editorData.metrics.map((metric, idx) => (
+                      <div key={idx} className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                        <input 
+                          className="w-full text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] bg-transparent border-none p-0 focus:ring-0"
+                          value={metric.label}
+                          onChange={(e) => {
+                            const newMetrics = [...editorData.metrics];
+                            newMetrics[idx].label = e.target.value;
+                            setEditorData({ ...editorData, metrics: newMetrics });
+                          }}
+                        />
+                        <div className="flex items-baseline gap-2 mt-2">
                           <input 
-                            className="w-full text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] bg-transparent border-none p-0 focus:ring-0"
-                            value={metric.label}
+                            className="text-3xl font-black text-gray-900 bg-transparent border-none p-0 focus:ring-0 w-32"
+                            value={metric.value}
                             onChange={(e) => {
                               const newMetrics = [...editorData.metrics];
-                              newMetrics[idx].label = e.target.value;
+                              newMetrics[idx].value = e.target.value;
                               setEditorData({ ...editorData, metrics: newMetrics });
                             }}
                           />
-                          <div className="flex items-baseline gap-2 mt-2">
-                            <input 
-                              className="text-3xl font-black text-gray-900 bg-transparent border-none p-0 focus:ring-0 w-32"
-                              value={metric.value}
-                              onChange={(e) => {
-                                const newMetrics = [...editorData.metrics];
-                                newMetrics[idx].value = e.target.value;
-                                setEditorData({ ...editorData, metrics: newMetrics });
-                              }}
-                            />
-                            <span className={`text-sm font-bold ${metric.percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {metric.percentage >= 0 ? '+' : ''}{metric.percentage}%
-                            </span>
-                          </div>
+                          <span className={`text-sm font-bold ${metric.percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {metric.percentage >= 0 ? '+' : ''}{metric.percentage}%
+                          </span>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-20 mb-auto">
-                  <div className="space-y-6">
-                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Strategic Drivers</h3>
-                    <textarea 
-                      className="w-full text-gray-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none"
-                      value={editorData.growthDriversText}
-                      onChange={(e) => setEditorData({ ...editorData, growthDriversText: e.target.value })}
-                      placeholder="Enter growth drivers..."
-                    />
-                  </div>
-                  <div className="space-y-6">
-                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Future Outlook</h3>
-                    <textarea 
-                      className="w-full text-gray-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none"
-                      value={editorData.outlookText}
-                      onChange={(e) => setEditorData({ ...editorData, outlookText: e.target.value })}
-                      placeholder="Enter outlook details..."
-                    />
-                  </div>
-                </div>
-
-                <footer className="mt-20 pt-8 border-t border-gray-100 flex justify-between items-center text-[10px] font-bold text-gray-300 uppercase tracking-widest">
-                  <input 
-                    className="bg-transparent border-none p-0 focus:ring-0 w-64"
-                    value={editorData.footerConfidentiality}
-                    onChange={(e) => setEditorData({ ...editorData, footerConfidentiality: e.target.value })}
-                  />
-                  <input 
-                    className="bg-transparent border-none p-0 focus:ring-0 text-right w-48"
-                    value={editorData.footerDate}
-                    onChange={(e) => setEditorData({ ...editorData, footerDate: e.target.value })}
-                  />
-                </footer>
               </div>
+
+              <div className="grid grid-cols-2 gap-20 mb-auto">
+                <div className="space-y-6">
+                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Strategic Drivers</h3>
+                  <textarea 
+                    className="w-full text-gray-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none"
+                    value={editorData.growthDriversText}
+                    onChange={(e) => setEditorData({ ...editorData, growthDriversText: e.target.value })}
+                    placeholder="Enter growth drivers..."
+                  />
+                </div>
+                <div className="space-y-6">
+                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Future Outlook</h3>
+                  <textarea 
+                    className="w-full text-gray-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none"
+                    value={editorData.outlookText}
+                    onChange={(e) => setEditorData({ ...editorData, outlookText: e.target.value })}
+                    placeholder="Enter outlook details..."
+                  />
+                </div>
+              </div>
+
+              <footer className="mt-20 pt-8 border-t border-gray-100 flex justify-between items-center text-[10px] font-bold text-gray-300 uppercase tracking-widest">
+                <input 
+                  className="bg-transparent border-none p-0 focus:ring-0 w-64"
+                  value={editorData.footerConfidentiality}
+                  onChange={(e) => setEditorData({ ...editorData, footerConfidentiality: e.target.value })}
+                />
+                <input 
+                  className="bg-transparent border-none p-0 focus:ring-0 text-right w-48"
+                  value={editorData.footerDate}
+                  onChange={(e) => setEditorData({ ...editorData, footerDate: e.target.value })}
+                />
+              </footer>
             </div>
           </main>
         </div>
