@@ -308,6 +308,6 @@ export function FoldersView({ onSelectCompany }: Props) {
           </div>
         </div>
       )}
-    </div>
+    </WorkspaceLayout>
   );
 }
