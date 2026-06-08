@@ -110,7 +110,7 @@ export const UserManagement: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <header className="h-24 bg-white flex items-center justify-between px-12">
+      <header className="h-24 bg-white flex items-center justify-between px-12 border-b border-gray-50">
         <h1 className="text-3xl font-bold text-gray-900 tracking-tight">User Management</h1>
         
         <div className="flex items-center gap-6">
@@ -134,7 +134,7 @@ export const UserManagement: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-12 pb-12">
+      <main className="flex-1 overflow-y-auto px-12 pb-12 pt-12">
         {notification && (
           <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
             <CheckCircle2 className="w-5 h-5" />
@@ -147,10 +147,10 @@ export const UserManagement: React.FC = () => {
             <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
           </div>
         ) : (
-          <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
+          <div className="bg-white rounded-[2rem] border border-gray-100 overflow-hidden">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gray-50/50">
+                <tr className="bg-gray-50/50 border-b border-gray-100">
                   <th className="px-8 py-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Identity</th>
                   <th className="px-8 py-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Access Level</th>
                   <th className="px-8 py-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Workspace Mapping</th>
@@ -201,7 +201,7 @@ export const UserManagement: React.FC = () => {
       {/* User Creation Modal */}
       {isUserModalOpen && (
         <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-md z-50 flex items-center justify-center p-6">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100">
             <div className="p-10 border-b border-gray-50 flex items-center justify-between">
               <div>
                 <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Invite Professional</h2>
