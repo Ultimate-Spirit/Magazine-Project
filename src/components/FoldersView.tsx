@@ -30,7 +30,6 @@ export function FoldersView({ onSelectCompany }: Props) {
   const { profile } = useAuth();
   
   const targetCid = (companyId || '').toLowerCase();
-  const isAdmin = profile?.role === 'admin';
 
   const [folders, setFolders] = useState<Folder[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
