@@ -143,7 +143,7 @@ export function FoldersView({ onSelectCompany }: Props) {
             
             {/* Debug Info (Only for dev/admin) */}
             <div className="mt-4 p-2 bg-gray-100 rounded text-[10px] font-mono text-gray-500 overflow-hidden">
-              User Role: {profile?.role} | User Company: {profile?.companyId || 'Global Admin'} | Folders Loaded: {folders.length}
+              User Role: {profile?.role} | User Company: {profile?.company_id || 'Global Admin'} | Folders Loaded: {folders.length}
             </div>
           </div>
           <button 

@@ -61,94 +61,94 @@ export const UserManagement: React.FC = () => {
             .from('profiles')
             .update({
               role: newUserRole,
-              companyId: newUserCompany || undefined
-            })
-            .eq('id', existingUser.id);
-          
-          if (updateError) throw updateError;
-        } else {
-          throw new Error('User does not exist. In production, this would trigger a secure invite flow.');
-        }
-      } else if (inviteData?.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            role: newUserRole,
-            companyId: newUserCompany || undefined
-          })
-          .eq('id', inviteData.user.id);
-        
-        if (profileError) throw profileError;
-      }
+              company_id: newUserCompany || undefined
+              })
+              .eq('id', existingUser.id);
 
-      showNotification('success', `User ${newUserEmail} invited successfully`);
-      fetchData();
-      setIsUserModalOpen(false);
-      setNewUserEmail('');
-    } catch (err: any) {
-      showNotification('error', err.message);
-    } finally {
-      setActionLoading(false);
-    }
-  };
+              if (updateError) throw updateError;
+              } else {
+              throw new Error('User does not exist. In production, this would trigger a secure invite flow.');
+              }
+              } else if (inviteData?.user) {
+              const { error: profileError } = await supabase
+              .from('profiles')
+              .update({
+              role: newUserRole,
+              company_id: newUserCompany || undefined
+              })
+              .eq('id', inviteData.user.id);
 
-  const handleDeleteUser = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
-    
-    const { error } = await supabase.from('profiles').delete().eq('id', id);
-    if (error) showNotification('error', error.message);
-    else {
-      showNotification('success', 'User deleted');
-      fetchData();
-    }
-  };
+              if (profileError) throw profileError;
+              }
 
-  const filteredProfiles = profiles.filter(p => 
-    p.email.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+              showNotification('success', `User ${newUserEmail} invited successfully`);
+              fetchData();
+              setIsUserModalOpen(false);
+              setNewUserEmail('');
+              } catch (err: any) {
+              showNotification('error', err.message);
+              } finally {
+              setActionLoading(false);
+              }
+              };
 
-  return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <header className="h-24 bg-white flex items-center justify-between px-12">
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">User Management</h1>
-        
-        <div className="flex items-center gap-6">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-            <input 
+              const handleDeleteUser = async (id: string) => {
+              if (!confirm('Are you sure you want to delete this user?')) return;
+
+              const { error } = await supabase.from('profiles').delete().eq('id', id);
+              if (error) showNotification('error', error.message);
+              else {
+              showNotification('success', 'User deleted');
+              fetchData();
+              }
+              };
+
+              const filteredProfiles = profiles.filter(p => 
+              p.email.toLowerCase().includes(searchTerm.toLowerCase()) || 
+              p.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
+              );
+
+              return (
+              <div className="flex-1 flex flex-col overflow-hidden">
+              <header className="h-24 bg-white flex items-center justify-between px-12">
+              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">User Management</h1>
+
+              <div className="flex items-center gap-6">
+              <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+              <input 
               type="text" 
               placeholder="Search users..."
               className="pl-11 pr-6 py-3 bg-gray-50 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all w-72 text-sm font-medium"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <button 
-            onClick={() => setIsUserModalOpen(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
-          >
-            <Plus className="w-4 h-4" />
-            Add User
-          </button>
-        </div>
-      </header>
+              />
+              </div>
+              <button 
+              onClick={() => setIsUserModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+              >
+              <Plus className="w-4 h-4" />
+              Add User
+              </button>
+              </div>
+              </header>
 
-      <main className="flex-1 overflow-y-auto px-12 pb-12">
-        {notification && (
-          <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-            <CheckCircle2 className="w-5 h-5" />
-            <p className="font-bold text-sm">{notification.message}</p>
-          </div>
-        )}
+              <main className="flex-1 overflow-y-auto px-12 pb-12">
+              {notification && (
+              <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+              <CheckCircle2 className="w-5 h-5" />
+              <p className="font-bold text-sm">{notification.message}</p>
+              </div>
+              )}
 
-        {loading ? (
-          <div className="h-full flex items-center justify-center">
-            <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
-          </div>
-        ) : (
-          <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
-            <table className="w-full text-left border-collapse">
+              {loading ? (
+              <div className="h-full flex items-center justify-center">
+              <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+              </div>
+              ) : (
+              <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
+              <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50/50">
                   <th className="px-8 py-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Identity</th>
@@ -166,7 +166,7 @@ export const UserManagement: React.FC = () => {
                           {profile.email[0].toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-bold text-gray-900">{profile.fullName || 'No Name'}</p>
+                          <p className="font-bold text-gray-900">{profile.full_name || 'No Name'}</p>
                           <p className="text-sm text-gray-400 font-medium">{profile.email}</p>
                         </div>
                       </div>
@@ -179,7 +179,7 @@ export const UserManagement: React.FC = () => {
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-2 text-gray-600 font-medium">
                         <Building2 className="w-4 h-4 text-gray-300" />
-                        {companies.find(c => c.id === profile.companyId)?.name || <span className="text-gray-300 italic">No Mapping</span>}
+                        {companies.find(c => c.id === profile.company_id)?.name || <span className="text-gray-300 italic">No Mapping</span>}
                       </div>
                     </td>
                     <td className="px-8 py-6 text-right">

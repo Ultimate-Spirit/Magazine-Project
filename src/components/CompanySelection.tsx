@@ -25,8 +25,8 @@ export function CompanySelection({ onSelect }: Props) {
       if (!error && data) {
         let filtered = data as Company[];
         // If not admin and has a company mapping, only show that company
-        if (!isAdmin && profile?.companyId) {
-          filtered = filtered.filter(c => c.id === profile.companyId);
+        if (!isAdmin && profile?.company_id) {
+          filtered = filtered.filter(c => c.id === profile.company_id);
         }
         setCompanies(filtered);
 

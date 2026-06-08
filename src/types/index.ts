@@ -6,8 +6,8 @@ export interface UserProfile {
   id: string;
   email: string;
   role: UserRole;
-  companyId?: string;
-  fullName?: string;
+  company_id?: string;
+  full_name?: string;
 }
 
 export interface Company {

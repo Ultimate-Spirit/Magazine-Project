@@ -219,7 +219,7 @@ export const CompanyManagement: React.FC = () => {
                 
                 <div className="flex items-center gap-2 text-sm text-gray-400 font-medium mt-2">
                   <Users className="w-4 h-4" />
-                  {profiles.filter(p => p.companyId === company.id).length} Active Members
+                  {profiles.filter(p => p.company_id === company.id).length} Active Members
                 </div>
               </div>
             ))}
