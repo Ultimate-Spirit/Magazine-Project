@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import { Folder as FolderIcon, Plus, Loader2, ChevronRight, LayoutGrid } from 'lucide-react';
+import { Folder as FolderIcon, Plus, Loader2, ChevronRight, LayoutGrid, X, FolderPlus } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import type { Folder, Company } from '../types';
 
@@ -15,6 +15,10 @@ export function FoldersView({ onSelectCompany }: Props) {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
@@ -41,15 +45,17 @@ export function FoldersView({ onSelectCompany }: Props) {
     setLoading(false);
   };
 
-  const handleCreateFolder = async () => {
-    const name = prompt('Enter new project folder name:');
-    if (name && name.trim()) {
+  const handleCreateFolder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newFolderName.trim()) {
       setIsCreating(true);
       const { error } = await supabase
         .from('folders')
-        .insert([{ name: name.trim(), company_id: companyId }]);
+        .insert([{ name: newFolderName.trim(), company_id: companyId }]);
       
       if (!error) {
+        setNewFolderName('');
+        setIsModalOpen(false);
         fetchData();
       }
       setIsCreating(false);
@@ -82,11 +88,10 @@ export function FoldersView({ onSelectCompany }: Props) {
             <p className="text-gray-400 font-medium mt-2">Organize your magazines and publications into dedicated projects.</p>
           </div>
           <button 
-            onClick={handleCreateFolder}
-            disabled={isCreating}
-            className="flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 disabled:opacity-50"
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20"
           >
-            {isCreating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+            <Plus className="w-5 h-5" />
             New Folder
           </button>
         </header>
@@ -99,7 +104,7 @@ export function FoldersView({ onSelectCompany }: Props) {
             <h3 className="text-2xl font-bold text-gray-900 mb-2">This workspace is empty</h3>
             <p className="text-gray-400 font-medium mb-8">Create your first folder to start building magazines.</p>
             <button 
-              onClick={handleCreateFolder}
+              onClick={() => setIsModalOpen(true)}
               className="px-8 py-4 bg-white border border-gray-200 rounded-2xl font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
             >
               Get Started
@@ -137,6 +142,54 @@ export function FoldersView({ onSelectCompany }: Props) {
           </div>
         )}
       </div>
+
+      {/* Folder Creation Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-md z-50 flex items-center justify-center p-6">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-10 border-b border-gray-50 flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 tracking-tight">New Project Folder</h2>
+                <p className="text-gray-400 font-medium mt-1">Organize your publications</p>
+              </div>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="p-4 hover:bg-gray-50 rounded-2xl transition-all group"
+              >
+                <X className="w-6 h-6 text-gray-300 group-hover:text-gray-900" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateFolder} className="p-10 space-y-8">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] ml-1">Folder Name</label>
+                  <div className="relative">
+                    <FolderPlus className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+                    <input
+                      type="text"
+                      placeholder="e.g. Q4 Executive Reports"
+                      className="w-full pl-14 pr-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-medium"
+                      value={newFolderName}
+                      onChange={(e) => setNewFolderName(e.target.value)}
+                      required
+                      autoFocus
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isCreating || !newFolderName.trim()}
+                className="w-full py-5 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3 text-lg"
+              >
+                {isCreating ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Create Folder'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </WorkspaceLayout>
   );
 }
