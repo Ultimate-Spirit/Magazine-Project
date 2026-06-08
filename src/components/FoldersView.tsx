@@ -6,7 +6,6 @@ import {
   Plus, 
   Loader2, 
   ChevronRight, 
-  LayoutGrid, 
   X, 
   FolderPlus, 
   AlertCircle, 
