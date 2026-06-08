@@ -6,8 +6,6 @@ import {
   Plus, 
   Loader2, 
   ChevronRight, 
-  X, 
-  FilePlus, 
   AlertCircle, 
   CheckCircle2, 
   RefreshCw, 
@@ -151,7 +149,7 @@ export function FolderContents() {
             </button>
             <button 
               onClick={() => navigate(`/folder/${folderId}/editor/new`)}
-              className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/10"
+              className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/10"
             >
               <Plus className="w-5 h-5" />
               Create New Page
