@@ -13,7 +13,7 @@ interface Props {
 export function FoldersView({ onSelectCompany }: Props) {
   const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
-  const { profile, isAdmin } = useAuth();
+  const { profile } = useAuth();
   const [folders, setFolders] = useState<Folder[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
