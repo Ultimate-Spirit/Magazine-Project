@@ -22,6 +22,7 @@ import {
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { ConfirmModal } from './common/ConfirmModal';
+import { logActivity } from '../lib/activityLogger';
 import type { Folder, Company, UserProfile } from '../types';
 
 interface Props {
@@ -30,8 +31,8 @@ interface Props {
 
 interface ActivityEvent {
   id: string;
-  type: 'publication' | 'folder';
-  action: 'created' | 'updated';
+  type: string;
+  action: string;
   name: string;
   timestamp: string;
   userInitials: string;
@@ -223,6 +224,8 @@ export function FoldersView({ onSelectCompany }: Props) {
       
       if (error) throw error;
 
+      await logActivity('created', 'folder', folderNameInput.trim(), targetCid, profile?.id || '');
+
       showNotification('success', `Created folder "${folderNameInput}"`);
       setFolderNameInput('');
       setIsCreateModalOpen(false);
@@ -247,6 +250,8 @@ export function FoldersView({ onSelectCompany }: Props) {
       
       if (error) throw error;
 
+      await logActivity('updated', 'folder', folderNameInput.trim(), targetCid, profile?.id || '', `Renamed from ${editingFolder.name}`);
+
       showNotification('success', 'Folder renamed successfully');
       setEditingFolder(null);
       setFolderNameInput('');
@@ -265,6 +270,9 @@ export function FoldersView({ onSelectCompany }: Props) {
     try {
       const { error } = await supabase.from('folders').delete().eq('id', folderToDelete.id);
       if (error) throw error;
+
+      await logActivity('deleted', 'folder', folderToDelete.name, targetCid, profile?.id || '');
+
       showNotification('success', 'Folder deleted');
       setFolderToDelete(null);
       await fetchData();

@@ -21,9 +21,12 @@ import html2canvas from 'html2canvas';
 // @ts-ignore
 import jsPDF from 'jspdf';
 
+import { logActivity } from '../lib/activityLogger';
+
 export const MagazineEditor: React.FC = () => {
   const { folderId, pageId } = useParams<{ folderId: string, pageId: string }>();
   const navigate = useNavigate();
+  const { profile } = useAuth();
   
   const [company, setCompany] = useState<Company | null>(null);
   const [page, setPage] = useState<Page | null>(null);
@@ -117,6 +120,7 @@ export const MagazineEditor: React.FC = () => {
           .update(pagePayload)
           .eq('id', page.id);
         if (error) throw error;
+        await logActivity('updated', 'publication', editorData.title, company?.id || '', profile?.id || '');
       } else {
         const { data, error } = await supabase
           .from('pages')
@@ -125,6 +129,7 @@ export const MagazineEditor: React.FC = () => {
           .single();
         if (error) throw error;
         setPage(data);
+        await logActivity('created', 'publication', editorData.title, company?.id || '', profile?.id || '');
         navigate(`/folder/${folderId}/editor/${data.id}`, { replace: true });
       }
       showNotification('success', 'Publication saved successfully');

@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Plus, Trash2, Mail, Loader2, Search, X, CheckCircle2, Building2 } from 'lucide-react';
 import { ConfirmModal } from '../common/ConfirmModal';
+import { useAuth } from '../../contexts/AuthContext';
+import { logActivity } from '../../lib/activityLogger';
 import type { Company, UserProfile } from '../../types';
 
 export const UserManagement: React.FC = () => {
+  const { profile } = useAuth();
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,6 +86,8 @@ export const UserManagement: React.FC = () => {
         if (profileError) throw profileError;
       }
 
+      await logActivity('invited', 'user', newUserEmail, newUserCompany || companies[0]?.id || '', profile?.id || '');
+
       showNotification('success', `User ${newUserEmail} invited successfully`);
       fetchData();
       setIsUserModalOpen(false);
@@ -101,6 +106,9 @@ export const UserManagement: React.FC = () => {
     try {
       const { error } = await supabase.from('profiles').delete().eq('id', userToDelete.id);
       if (error) throw error;
+
+      await logActivity('deleted', 'user', userToDelete.email, userToDelete.company_id || companies[0]?.id || '', profile?.id || '');
+
       showNotification('success', 'User deleted');
       setUserToDelete(null);
       fetchData();

@@ -89,6 +89,9 @@ export function FolderContents() {
     try {
       const { error } = await supabase.from('pages').delete().eq('id', pageToDelete.id);
       if (error) throw error;
+
+      await logActivity('deleted', 'publication', pageToDelete.title, company?.id || '', profile?.id || '');
+
       showNotification('success', 'Page deleted successfully');
       setPageToDelete(null);
       await fetchData();
