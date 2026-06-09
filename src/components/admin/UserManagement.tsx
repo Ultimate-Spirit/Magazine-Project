@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Plus, Trash2, Mail, Loader2, Search, X, CheckCircle2, Building2 } from 'lucide-react';
+import { Plus, Trash2, Mail, Loader2, Search, X, CheckCircle2, Building2, User, Lock } from 'lucide-react';
 import { ConfirmModal } from '../common/ConfirmModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { logActivity } from '../../lib/activityLogger';
@@ -16,6 +16,8 @@ export const UserManagement: React.FC = () => {
   // Form states
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
   const [newUserRole, setNewUserRole] = useState<'admin' | 'editor' | 'viewer'>('viewer');
   const [newUserCompany, setNewUserCompany] = useState('');
   
@@ -61,6 +63,7 @@ export const UserManagement: React.FC = () => {
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
+            full_name: newUserName,
             role: newUserRole,
             company_id: newUserCompany || null
           })
@@ -69,23 +72,25 @@ export const UserManagement: React.FC = () => {
         if (updateError) throw updateError;
         showNotification('success', `Updated existing user ${newUserEmail}`);
       } else {
-        // Trigger Edge Function to send actual email via Supabase Admin API
-        const { data: edgeData, error: edgeError } = await supabase.functions.invoke('invite-user', {
+        // Trigger Edge Function to directly create a confirmed user
+        const { data: edgeData, error: edgeError } = await supabase.functions.invoke('create-user', {
           body: { 
             email: newUserEmail, 
+            password: newUserPassword,
+            full_name: newUserName,
             role: newUserRole, 
             company_id: newUserCompany || null 
           }
         });
 
         if (edgeError) {
-          throw new Error(edgeError.message || 'Failed to send invitation email.');
+          throw new Error(edgeError.message || 'Failed to create user account.');
         }
         if (edgeData?.error) {
           throw new Error(edgeData.error);
         }
         
-        showNotification('success', edgeData?.message || `Invitation email sent to ${newUserEmail}`);
+        showNotification('success', edgeData?.message || `Account created for ${newUserEmail}`);
       }
 
       await logActivity('invited', 'user', newUserEmail, newUserCompany || companies[0]?.id || '', profile?.id || '');
@@ -93,6 +98,8 @@ export const UserManagement: React.FC = () => {
       fetchData();
       setIsUserModalOpen(false);
       setNewUserEmail('');
+      setNewUserName('');
+      setNewUserPassword('');
     } catch (err: any) {
       showNotification('error', err.message);
     } finally {
@@ -221,8 +228,8 @@ export const UserManagement: React.FC = () => {
           <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100">
             <div className="p-10 border-b border-gray-50 flex items-center justify-between">
               <div>
-                <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Invite Professional</h2>
-                <p className="text-gray-400 font-medium mt-1">Grant access to internal workspace tools</p>
+                <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Create Professional Account</h2>
+                <p className="text-gray-400 font-medium mt-1">Manually provision internal workspace access</p>
               </div>
               <button 
                 onClick={() => setIsUserModalOpen(false)}
@@ -233,18 +240,51 @@ export const UserManagement: React.FC = () => {
             </div>
 
             <form onSubmit={handleCreateUser} className="p-10 space-y-8">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] ml-1">Identity (Email)</label>
-                <div className="relative">
-                  <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
-                  <input
-                    type="email"
-                    placeholder="colleague@organization.com"
-                    className="w-full pl-14 pr-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-medium"
-                    value={newUserEmail}
-                    onChange={(e) => setNewUserEmail(e.target.value)}
-                    required
-                  />
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] ml-1">Full Name</label>
+                  <div className="relative">
+                    <User className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+                    <input
+                      type="text"
+                      placeholder="Jane Doe"
+                      className="w-full pl-14 pr-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-medium"
+                      value={newUserName}
+                      onChange={(e) => setNewUserName(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] ml-1">Identity (Email)</label>
+                  <div className="relative">
+                    <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+                    <input
+                      type="email"
+                      placeholder="colleague@organization.com"
+                      className="w-full pl-14 pr-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-medium"
+                      value={newUserEmail}
+                      onChange={(e) => setNewUserEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] ml-1">Initial Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+                    <input
+                      type="text"
+                      placeholder="Secure temporary password"
+                      className="w-full pl-14 pr-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-medium"
+                      value={newUserPassword}
+                      onChange={(e) => setNewUserPassword(e.target.value)}
+                      required
+                      minLength={6}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -281,7 +321,7 @@ export const UserManagement: React.FC = () => {
                 disabled={actionLoading}
                 className="w-full py-5 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3 text-lg"
               >
-                {actionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Send Invitation Link'}
+                {actionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Create User Account'}
               </button>
             </form>
           </div>
@@ -301,3 +341,4 @@ export const UserManagement: React.FC = () => {
     </div>
   );
 };
+
