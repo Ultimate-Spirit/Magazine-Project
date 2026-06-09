@@ -8,6 +8,7 @@ export interface UserProfile {
   role: UserRole;
   company_id?: string;
   full_name?: string;
+  is_active?: boolean;
 }
 
 export interface Company {

@@ -83,7 +83,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data) {
-        console.log('Profile found:', data.email, 'Role:', data.role);
+        console.log('Profile found:', data.email, 'Role:', data.role, 'Active:', data.is_active);
+        if (data.is_active === false) {
+          console.warn('User is marked as inactive. Logging out.');
+          await supabase.auth.signOut();
+          setProfile(null);
+          setIsAuthorized(false);
+          setIsAdmin(false);
+          return;
+        }
+
         setProfile(data as UserProfile);
         setIsAuthorized(true);
         setIsAdmin(data.role === 'admin');

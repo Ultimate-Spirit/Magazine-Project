@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Plus, Trash2, Mail, Loader2, Search, X, CheckCircle2, Building2, User, Lock } from 'lucide-react';
-import { ConfirmModal } from '../common/ConfirmModal';
+import { Plus, Mail, Loader2, Search, X, CheckCircle2, Building2, User, Lock, Edit2, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { logActivity } from '../../lib/activityLogger';
 import type { Company, UserProfile } from '../../types';
@@ -13,13 +12,18 @@ export const UserManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Form states
+  // Creation Form states
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserName, setNewUserName] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
   
-  const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
+  // Edit Form states
+  const [userToEdit, setUserToEdit] = useState<UserProfile | null>(null);
+  const [editRole, setEditRole] = useState<'admin' | 'editor' | 'viewer'>('viewer');
+  const [editCompany, setEditCompany] = useState('');
+  const [editIsActive, setEditIsActive] = useState(true);
+
   const [actionLoading, setActionLoading] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
@@ -49,7 +53,6 @@ export const UserManagement: React.FC = () => {
     setActionLoading(true);
 
     try {
-      // First check if user already exists in profiles
       const { data: existingUser } = await supabase
         .from('profiles')
         .select('id')
@@ -57,18 +60,8 @@ export const UserManagement: React.FC = () => {
         .single();
 
       if (existingUser) {
-        // Update existing user
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({
-            full_name: newUserName
-          })
-          .eq('id', existingUser.id);
-
-        if (updateError) throw updateError;
-        showNotification('success', `Updated existing user ${newUserEmail}`);
+        showNotification('error', `A user with email ${newUserEmail} already exists.`);
       } else {
-        // Trigger Edge Function to directly create a confirmed user
         const { data: edgeData, error: edgeError } = await supabase.functions.invoke('create-user', {
           body: { 
             email: newUserEmail, 
@@ -77,12 +70,8 @@ export const UserManagement: React.FC = () => {
           }
         });
 
-        if (edgeError) {
-          throw new Error(edgeError.message || 'Failed to create user account.');
-        }
-        if (edgeData?.error) {
-          throw new Error(edgeData.error);
-        }
+        if (edgeError) throw new Error(edgeError.message || 'Failed to create user account.');
+        if (edgeData?.error) throw new Error(edgeData.error);
         
         showNotification('success', edgeData?.message || `Account created for ${newUserEmail}`);
       }
@@ -101,18 +90,34 @@ export const UserManagement: React.FC = () => {
     }
   };
 
-  const confirmDeleteUser = async () => {
-    if (!userToDelete) return;
-    
+  const openEditModal = (p: UserProfile) => {
+    setUserToEdit(p);
+    setEditRole(p.role);
+    setEditCompany(p.company_id || '');
+    setEditIsActive(p.is_active !== false); // Default to true if undefined
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userToEdit) return;
     setActionLoading(true);
+
     try {
-      const { error } = await supabase.from('profiles').delete().eq('id', userToDelete.id);
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          role: editRole,
+          company_id: editCompany || null,
+          is_active: editIsActive
+        })
+        .eq('id', userToEdit.id);
+
       if (error) throw error;
 
-      await logActivity('deleted', 'user', userToDelete.email, userToDelete.company_id || companies[0]?.id || '', profile?.id || '');
+      await logActivity('updated', 'user', userToEdit.email, editCompany || companies[0]?.id || '', profile?.id || '');
 
-      showNotification('success', 'User deleted');
-      setUserToDelete(null);
+      showNotification('success', `Updated profile for ${userToEdit.email}`);
+      setUserToEdit(null);
       fetchData();
     } catch (err: any) {
       showNotification('error', err.message);
@@ -165,47 +170,61 @@ export const UserManagement: React.FC = () => {
             <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
           </div>
         ) : (
-          <div className="bg-white rounded-[2rem] border border-gray-100 overflow-hidden">
+          <div className="bg-white rounded-[2rem] border border-gray-100 overflow-hidden shadow-sm">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gray-50/50 border-b border-gray-100">
+                <tr className="bg-gray-50/80 border-b border-gray-100">
                   <th className="px-8 py-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Identity</th>
+                  <th className="px-8 py-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</th>
                   <th className="px-8 py-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Access Level</th>
                   <th className="px-8 py-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Workspace Mapping</th>
                   <th className="px-8 py-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filteredProfiles.map((profile) => (
-                  <tr key={profile.id} className="group hover:bg-gray-50/30 transition-colors">
+                {filteredProfiles.map((p) => (
+                  <tr key={p.id} className="group hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => openEditModal(p)}>
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-lg">
-                          {profile.email[0].toUpperCase()}
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-lg ${p.is_active === false ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-600'}`}>
+                          {p.email[0].toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-bold text-gray-900">{profile.full_name || 'No Name'}</p>
-                          <p className="text-sm text-gray-400 font-medium">{profile.email}</p>
+                          <p className={`font-bold ${p.is_active === false ? 'text-gray-400 line-through' : 'text-gray-900'}`}>{p.full_name || 'No Name'}</p>
+                          <p className="text-sm text-gray-400 font-medium">{p.email}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-8 py-6">
-                      <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${profile.role === 'admin' ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600'}`}>
-                        {profile.role}
+                      {p.is_active === false ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-red-50 text-red-600">
+                          <ShieldAlert className="w-3 h-3" />
+                          Blocked
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Active
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-8 py-6">
+                      <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${p.role === 'admin' ? 'bg-purple-50 text-purple-600' : 'bg-gray-100 text-gray-600'}`}>
+                        {p.role}
                       </span>
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-2 text-gray-600 font-medium">
                         <Building2 className="w-4 h-4 text-gray-300" />
-                        {companies.find(c => c.id === profile.company_id)?.name || <span className="text-gray-300 italic">No Mapping</span>}
+                        {companies.find(c => c.id === p.company_id)?.name || <span className="text-gray-300 italic">No Mapping</span>}
                       </div>
                     </td>
                     <td className="px-8 py-6 text-right">
                       <button 
-                        onClick={() => setUserToDelete(profile)}
-                        className="p-3 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                        onClick={(e) => { e.stopPropagation(); openEditModal(p); }}
+                        className="p-3 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
                       >
-                        <Trash2 className="w-5 h-5" />
+                        <Edit2 className="w-5 h-5" />
                       </button>
                     </td>
                   </tr>
@@ -294,16 +313,85 @@ export const UserManagement: React.FC = () => {
         </div>
       )}
 
-      <ConfirmModal
-        isOpen={!!userToDelete}
-        title="Revoke Access"
-        message={`Are you sure you want to remove access for ${userToDelete?.email}? This will immediately terminate their ability to access any workspace tools.`}
-        confirmLabel="Revoke Access"
-        onConfirm={confirmDeleteUser}
-        onCancel={() => setUserToDelete(null)}
-        isLoading={actionLoading}
-        variant="danger"
-      />
+      {/* User Edit Modal */}
+      {userToEdit && (
+        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-md z-50 flex items-center justify-center p-6">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100">
+            <div className="p-10 border-b border-gray-50 flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Edit Profile</h2>
+                <p className="text-gray-400 font-medium mt-1">{userToEdit.email}</p>
+              </div>
+              <button 
+                onClick={() => setUserToEdit(null)}
+                className="p-4 hover:bg-gray-50 rounded-2xl transition-all group"
+              >
+                <X className="w-6 h-6 text-gray-300 group-hover:text-gray-900" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateUser} className="p-10 space-y-8">
+              <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-gray-900">Account Status</h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {editIsActive ? 'User can log in and access allowed areas.' : 'User is blocked from logging in.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditIsActive(!editIsActive)}
+                  className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none ${
+                    editIsActive ? 'bg-blue-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                      editIsActive ? 'translate-x-7' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] ml-1">Privilege Level</label>
+                  <select 
+                    className="w-full px-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-bold text-gray-900 appearance-none"
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value as any)}
+                  >
+                    <option value="admin">Administrator</option>
+                    <option value="editor">Editor</option>
+                    <option value="viewer">Viewer</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] ml-1">Workspace Assignment</label>
+                  <select 
+                    className="w-full px-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-bold text-gray-900 appearance-none"
+                    value={editCompany}
+                    onChange={(e) => setEditCompany(e.target.value)}
+                  >
+                    <option value="">No Assignment</option>
+                    {companies.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={actionLoading}
+                className="w-full py-5 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3 text-lg"
+              >
+                {actionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Save Changes'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
