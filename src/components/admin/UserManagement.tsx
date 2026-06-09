@@ -23,6 +23,8 @@ export const UserManagement: React.FC = () => {
   const [editRole, setEditRole] = useState<'admin' | 'editor' | 'viewer'>('viewer');
   const [editCompany, setEditCompany] = useState('');
   const [editIsActive, setEditIsActive] = useState(true);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
 
   const [actionLoading, setActionLoading] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
@@ -95,6 +97,8 @@ export const UserManagement: React.FC = () => {
     setEditRole(p.role);
     setEditCompany(p.company_id || '');
     setEditIsActive(p.is_active !== false); // Default to true if undefined
+    setEditName(p.full_name || '');
+    setEditEmail(p.email || '');
   };
 
   const handleUpdateUser = async (e: React.FormEvent) => {
@@ -103,9 +107,25 @@ export const UserManagement: React.FC = () => {
     setActionLoading(true);
 
     try {
+      // 1. If email changed, call the edge function to update auth.users
+      if (editEmail !== userToEdit.email) {
+        const { data: edgeData, error: edgeError } = await supabase.functions.invoke('update-user', {
+          body: {
+            target_user_id: userToEdit.id,
+            email: editEmail
+          }
+        });
+
+        if (edgeError) throw new Error(edgeError.message || 'Failed to update email.');
+        if (edgeData?.error) throw new Error(edgeData.error);
+      }
+
+      // 2. Update profile table data (name, role, company, active status)
       const { error } = await supabase
         .from('profiles')
         .update({
+          full_name: editName,
+          email: editEmail, // Keep it in sync
           role: editRole,
           company_id: editCompany || null,
           is_active: editIsActive
@@ -114,9 +134,9 @@ export const UserManagement: React.FC = () => {
 
       if (error) throw error;
 
-      await logActivity('updated', 'user', userToEdit.email, editCompany || companies[0]?.id || '', profile?.id || '');
+      await logActivity('updated', 'user', editEmail, editCompany || companies[0]?.id || '', profile?.id || '');
 
-      showNotification('success', `Updated profile for ${userToEdit.email}`);
+      showNotification('success', `Updated profile for ${editEmail}`);
       setUserToEdit(null);
       fetchData();
     } catch (err: any) {
@@ -331,6 +351,36 @@ export const UserManagement: React.FC = () => {
             </div>
 
             <form onSubmit={handleUpdateUser} className="p-10 space-y-8">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] ml-1">Full Name</label>
+                  <div className="relative">
+                    <User className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+                    <input
+                      type="text"
+                      className="w-full pl-14 pr-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-medium"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] ml-1">Identity (Email)</label>
+                  <div className="relative">
+                    <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+                    <input
+                      type="email"
+                      className="w-full pl-14 pr-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-medium"
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between">
                 <div>
                   <h3 className="font-bold text-gray-900">Account Status</h3>
