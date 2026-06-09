@@ -21,6 +21,7 @@ import html2canvas from 'html2canvas';
 // @ts-ignore
 import jsPDF from 'jspdf';
 
+import { useAuth } from '../contexts/AuthContext';
 import { logActivity } from '../lib/activityLogger';
 
 export const MagazineEditor: React.FC = () => {

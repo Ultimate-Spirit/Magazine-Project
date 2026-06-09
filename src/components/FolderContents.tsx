@@ -18,6 +18,7 @@ import {
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { ConfirmModal } from './common/ConfirmModal';
+import { logActivity } from '../lib/activityLogger';
 import type { Page, Folder, Company } from '../types';
 
 export function FolderContents() {
