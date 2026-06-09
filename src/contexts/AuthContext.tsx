@@ -28,7 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) throw error;
-        
+
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -47,10 +47,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initializeAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, session?.user?.email);
       setLoading(true);
       setSession(session);
       setUser(session?.user ?? null);
+
       if (session?.user) {
         await fetchProfile(session.user);
       } else {
@@ -68,24 +70,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchProfile = async (user: User) => {
     try {
+      console.log('Fetching profile for:', user.id);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
 
-      if (!error && data) {
+      if (error) {
+        console.error('Error fetching profile detail:', error.message, error.details);
+        throw error;
+      }
+
+      if (data) {
+        console.log('Profile found:', data.email, 'Role:', data.role);
         setProfile(data as UserProfile);
         setIsAuthorized(true);
         setIsAdmin(data.role === 'admin');
       } else {
+        console.warn('No profile data returned for user');
         setProfile(null);
         setIsAuthorized(false);
         setIsAdmin(false);
       }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
+    } catch (error: any) {
+      console.error('Fetch Profile Exception:', error.message);
       setProfile(null);
+      // Fallback: If we have a user but fetch failed, we might still want to allow access
+      // to basic routes, but for now we stay strict.
       setIsAuthorized(false);
       setIsAdmin(false);
     }
