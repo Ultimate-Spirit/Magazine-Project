@@ -18,8 +18,6 @@ export const UserManagement: React.FC = () => {
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserName, setNewUserName] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
-  const [newUserRole, setNewUserRole] = useState<'admin' | 'editor' | 'viewer'>('viewer');
-  const [newUserCompany, setNewUserCompany] = useState('');
   
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -63,9 +61,7 @@ export const UserManagement: React.FC = () => {
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
-            full_name: newUserName,
-            role: newUserRole,
-            company_id: newUserCompany || null
+            full_name: newUserName
           })
           .eq('id', existingUser.id);
 
@@ -77,9 +73,7 @@ export const UserManagement: React.FC = () => {
           body: { 
             email: newUserEmail, 
             password: newUserPassword,
-            full_name: newUserName,
-            role: newUserRole, 
-            company_id: newUserCompany || null 
+            full_name: newUserName
           }
         });
 
@@ -93,7 +87,7 @@ export const UserManagement: React.FC = () => {
         showNotification('success', edgeData?.message || `Account created for ${newUserEmail}`);
       }
 
-      await logActivity('invited', 'user', newUserEmail, newUserCompany || companies[0]?.id || '', profile?.id || '');
+      await logActivity('invited', 'user', newUserEmail, companies[0]?.id || '', profile?.id || '');
 
       fetchData();
       setIsUserModalOpen(false);
@@ -285,34 +279,6 @@ export const UserManagement: React.FC = () => {
                       minLength={6}
                     />
                   </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] ml-1">Privilege Level</label>
-                  <select 
-                    className="w-full px-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-bold text-gray-900 appearance-none"
-                    value={newUserRole}
-                    onChange={(e) => setNewUserRole(e.target.value as any)}
-                  >
-                    <option value="admin">Administrator</option>
-                    <option value="editor">Editor</option>
-                    <option value="viewer">Viewer</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] ml-1">Workspace Assignment</label>
-                  <select 
-                    className="w-full px-6 py-4 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-bold text-gray-900 appearance-none"
-                    value={newUserCompany}
-                    onChange={(e) => setNewUserCompany(e.target.value)}
-                  >
-                    <option value="">No Assignment</option>
-                    {companies.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
                 </div>
               </div>
 
