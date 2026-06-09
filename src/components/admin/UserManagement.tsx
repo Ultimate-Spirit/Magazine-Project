@@ -69,24 +69,23 @@ export const UserManagement: React.FC = () => {
         if (updateError) throw updateError;
         showNotification('success', `Updated existing user ${newUserEmail}`);
       } else {
-        // Insert into invites table
-        const { error: inviteError } = await supabase
-          .from('invites')
-          .insert({
-            email: newUserEmail,
-            status: 'pending'
-          });
-
-        if (inviteError) {
-          if (inviteError.code === '23505') {
-            throw new Error('An invitation has already been sent to this email.');
+        // Trigger Edge Function to send actual email via Supabase Admin API
+        const { data: edgeData, error: edgeError } = await supabase.functions.invoke('invite-user', {
+          body: { 
+            email: newUserEmail, 
+            role: newUserRole, 
+            company_id: newUserCompany || null 
           }
-          throw inviteError;
+        });
+
+        if (edgeError) {
+          throw new Error(edgeError.message || 'Failed to send invitation email.');
+        }
+        if (edgeData?.error) {
+          throw new Error(edgeData.error);
         }
         
-        // In a real application, you would also trigger a serverless function here
-        // to send an actual email using Resend, Sendgrid, etc.
-        showNotification('success', `Invitation generated for ${newUserEmail}`);
+        showNotification('success', edgeData?.message || `Invitation email sent to ${newUserEmail}`);
       }
 
       await logActivity('invited', 'user', newUserEmail, newUserCompany || companies[0]?.id || '', profile?.id || '');
