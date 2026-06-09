@@ -17,8 +17,7 @@ import {
   BarChart3,
   Clock,
   Zap,
-  Search,
-  User as UserIcon
+  Search
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { useAuth } from '../contexts/AuthContext';
