@@ -12,24 +12,29 @@ export async function logActivity(
   details?: string
 ) {
   if (!companyId || !userId) {
-    console.warn('Missing companyId or userId for activity log');
+    console.error('ACTIVITY LOG BLOCKED: Missing companyId or userId', { companyId, userId });
     return;
   }
 
+  const payload = {
+    company_id: companyId,
+    user_id: userId,
+    action_type: actionType,
+    entity_type: entityType,
+    entity_name: entityName,
+    details: details
+  };
+
   try {
-    const { error } = await supabase.from('activity_logs').insert([{
-      company_id: companyId,
-      user_id: userId,
-      action_type: actionType,
-      entity_type: entityType,
-      entity_name: entityName,
-      details: details
-    }]);
+    console.log('ATTEMPTING ACTIVITY LOG INSERT:', payload);
+    const { data, error } = await supabase.from('activity_logs').insert([payload]).select();
 
     if (error) {
-      console.error('Failed to log activity:', error);
+      console.error("SUPABASE INSERT ERROR:", error.message, error.details, error.hint);
+    } else {
+      console.log("ACTIVITY LOG INSERT SUCCESS:", data);
     }
-  } catch (err) {
-    console.error('Activity logging exception:', err);
+  } catch (err: any) {
+    console.error("ACTIVITY LOG EXCEPTION:", err.message);
   }
 }

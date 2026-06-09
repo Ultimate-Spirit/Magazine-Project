@@ -124,12 +124,19 @@ export function FoldersView({ onSelectCompany }: Props) {
       }
 
       // Fetch actual activity logs
-      const { data: logData } = await supabase
+      console.log('ATTEMPTING ACTIVITY LOG FETCH FOR COMPANY:', targetCid);
+      const { data: logData, error: logError } = await supabase
         .from('activity_logs')
         .select('id, action_type, entity_type, entity_name, created_at, profiles(full_name, email)')
         .eq('company_id', targetCid)
         .order('created_at', { ascending: false })
         .limit(8);
+
+      if (logError) {
+        console.error("SUPABASE SELECT ERROR:", logError.message, logError.details, logError.hint);
+      } else {
+        console.log("ACTIVITY LOG FETCH SUCCESS:", logData);
+      }
 
       if (logData) {
         const mappedActivities: ActivityEvent[] = logData.map(log => {
