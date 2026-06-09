@@ -49,46 +49,48 @@ export const UserManagement: React.FC = () => {
     setActionLoading(true);
 
     try {
-      const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(newUserEmail, {
-        data: { role: newUserRole }
-      });
+      // First check if user already exists in profiles
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', newUserEmail)
+        .single();
 
-      if (inviteError) {
-        console.warn('Admin Invite failed, falling back to profile management:', inviteError.message);
-        const { data: existingUser } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('email', newUserEmail)
-          .single();
-
-        if (existingUser) {
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({
-              role: newUserRole,
-              company_id: newUserCompany || undefined
-            })
-            .eq('id', existingUser.id);
-
-          if (updateError) throw updateError;
-        } else {
-          throw new Error('User does not exist. In production, this would trigger a secure invite flow.');
-        }
-      } else if (inviteData?.user) {
-        const { error: profileError } = await supabase
+      if (existingUser) {
+        // Update existing user
+        const { error: updateError } = await supabase
           .from('profiles')
           .update({
             role: newUserRole,
-            company_id: newUserCompany || undefined
+            company_id: newUserCompany || null
           })
-          .eq('id', inviteData.user.id);
+          .eq('id', existingUser.id);
+
+        if (updateError) throw updateError;
+        showNotification('success', `Updated existing user ${newUserEmail}`);
+      } else {
+        // Insert into invites table
+        const { error: inviteError } = await supabase
+          .from('invites')
+          .insert({
+            email: newUserEmail,
+            status: 'pending'
+          });
+
+        if (inviteError) {
+          if (inviteError.code === '23505') {
+            throw new Error('An invitation has already been sent to this email.');
+          }
+          throw inviteError;
+        }
         
-        if (profileError) throw profileError;
+        // In a real application, you would also trigger a serverless function here
+        // to send an actual email using Resend, Sendgrid, etc.
+        showNotification('success', `Invitation generated for ${newUserEmail}`);
       }
 
       await logActivity('invited', 'user', newUserEmail, newUserCompany || companies[0]?.id || '', profile?.id || '');
 
-      showNotification('success', `User ${newUserEmail} invited successfully`);
       fetchData();
       setIsUserModalOpen(false);
       setNewUserEmail('');
