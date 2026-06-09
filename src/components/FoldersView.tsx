@@ -115,49 +115,36 @@ export function FoldersView({ onSelectCompany }: Props) {
         // For demonstration of the UI refactor, we will randomly assign attribution to simulate the requested feature
         // In a true production environment, we would alter the SQL schema to include 'updated_by' UUID REFERENCES profiles(id)
         
-        const { count, data: pagesData } = await supabase
+        const { count } = await supabase
           .from('pages')
-          .select('id, title, updated_at', { count: 'exact' })
-          .in('folder_id', fetchedFolders.map(f => f.id))
-          .order('updated_at', { ascending: false })
-          .limit(10);
+          .select('id', { count: 'exact', head: true })
+          .in('folder_id', fetchedFolders.map(f => f.id));
         
         setStats(prev => ({ ...prev, publications: count || 0 }));
+      }
 
-        // Transform pages into activity events (simulated attribution)
-        const pageActivities: ActivityEvent[] = (pagesData || []).map((p, index) => {
-          const simulatedUser = userProfiles[index % userProfiles.length] || profile;
-          const uName = simulatedUser?.full_name || simulatedUser?.email || 'System User';
+      // Fetch actual activity logs
+      const { data: logData } = await supabase
+        .from('activity_logs')
+        .select('id, action_type, entity_type, entity_name, created_at, profiles(full_name, email)')
+        .eq('company_id', targetCid)
+        .order('created_at', { ascending: false })
+        .limit(8);
+
+      if (logData) {
+        const mappedActivities: ActivityEvent[] = logData.map(log => {
+          const uName = (log.profiles as any)?.full_name || (log.profiles as any)?.email || 'Unknown User';
           return {
-            id: p.id,
-            type: 'publication',
-            action: 'updated',
-            name: p.title,
-            timestamp: p.updated_at,
+            id: log.id,
+            type: log.entity_type,
+            action: log.action_type,
+            name: log.entity_name,
+            timestamp: log.created_at,
             userInitials: getInitials(uName),
             userName: uName.split('@')[0]
           };
         });
-        
-        const folderActivities: ActivityEvent[] = fetchedFolders.slice(0, 5).map((f, index) => {
-          const simulatedUser = userProfiles[(index + 1) % userProfiles.length] || profile;
-          const uName = simulatedUser?.full_name || simulatedUser?.email || 'System User';
-          return {
-            id: f.id,
-            type: 'folder',
-            action: 'updated',
-            name: f.name,
-            timestamp: f.updated_at,
-            userInitials: getInitials(uName),
-            userName: uName.split('@')[0]
-          };
-        });
-
-        const combined = [...pageActivities, ...folderActivities]
-          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-          .slice(0, 8);
-        
-        setActivities(combined);
+        setActivities(mappedActivities);
       }
 
     } catch (err: any) {
@@ -507,7 +494,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                     <div className="min-w-0 pt-0.5">
                       <p className="text-sm text-gray-900 leading-tight mb-1 truncate">
                         <span className="font-bold">{event.userName}</span>
-                        <span className="text-gray-500"> {event.action === 'created' ? 'created a new' : 'updated the'} {event.type} </span>
+                        <span className="text-gray-500"> {event.action} the {event.type} </span>
                       </p>
                       <div className="flex items-center gap-2">
                         <p className="text-xs font-bold text-gray-700 truncate">{event.name}</p>
