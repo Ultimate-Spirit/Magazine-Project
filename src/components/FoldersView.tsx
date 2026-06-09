@@ -133,7 +133,8 @@ export function FoldersView({ onSelectCompany }: Props) {
 
       if (logData) {
         const mappedActivities: ActivityEvent[] = logData.map(log => {
-          const uName = (log.profiles as any)?.full_name || (log.profiles as any)?.email || 'Unknown User';
+          const profileData = Array.isArray(log.profiles) ? log.profiles[0] : log.profiles;
+          const uName = profileData?.full_name || profileData?.email || 'Unknown User';
           return {
             id: log.id,
             type: log.entity_type,
