@@ -119,8 +119,8 @@ export const UserManagement: React.FC = () => {
     }
   };
 
-  const filteredProfiles = profiles.filter(p => 
-    p.email.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredProfiles = profiles.filter(p =>
+    p.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
