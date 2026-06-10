@@ -343,7 +343,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                 className="flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-bold rounded-2xl hover:opacity-90 transition-all"
               >
                 <Plus className="w-5 h-5" />
-                New Entry
+                New Directory
               </button>
             )}
             </div>

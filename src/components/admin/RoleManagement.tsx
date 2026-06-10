@@ -392,7 +392,7 @@ export const RoleManagement: React.FC = () => {
                 disabled={actionLoading}
                 className="w-full py-5 bg-primary text-primary-foreground font-bold rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-lg"
               >
-                {actionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : (editingRoleId ? 'Commit Updates' : 'Instantiate Role')}
+                {actionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : (editingRoleId ? 'Save Changes' : 'Create Role')}
               </button>
             </form>
           </div>
