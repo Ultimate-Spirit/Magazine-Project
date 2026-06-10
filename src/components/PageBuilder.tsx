@@ -98,7 +98,7 @@ export function PageBuilder({ initialPage, onSave, onCancel }: Props) {
         </div>
 
         {/* Canvas Area */}
-        <div className="flex-1 bg-background p-8 overflow-y-auto flex justify-center relative">
+        <div className="flex-1 bg-secondary/50 p-8 overflow-y-auto flex justify-center relative">
           
           {/* Data Drop Zone Overlay (when dragging over entire canvas) */}
           <div 
@@ -118,7 +118,7 @@ export function PageBuilder({ initialPage, onSave, onCancel }: Props) {
 
           {/* The Page Layout Canvas */}
           <div 
-            className="w-full max-w-4xl bg-card border border-border rounded-sm min-h-[800px] p-12 flex flex-col"
+            className="w-full max-w-4xl bg-card border border-border rounded-sm min-h-[800px] p-12 flex flex-col shadow-xl shadow-foreground/5"
             onDragOver={handleDragOver} // Also listen here so we can drop anywhere
           >
             {/* Header Data Zone */}

@@ -396,7 +396,7 @@ export const UserManagement: React.FC = () => {
                   }`}
                 >
                   <span
-                    className={`inline-block h-6 w-6 transform rounded-full bg-foreground transition-transform ${
+                    className={`inline-block h-6 w-6 transform rounded-full bg-card transition-transform ${
                       editIsActive ? 'translate-x-7' : 'translate-x-1'
                     }`}
                   />

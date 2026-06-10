@@ -319,7 +319,7 @@ export const MagazineEditor: React.FC = () => {
           </div>
 
           {/* Canvas Area (UI Version for live editing) */}
-          <main className="flex-1 overflow-y-auto p-12 flex justify-center">
+          <main className="flex-1 overflow-y-auto p-12 flex justify-center bg-secondary/50">
             {notification && (
               <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-destructive text-destructive-foreground'}`}>
                 {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
@@ -327,7 +327,7 @@ export const MagazineEditor: React.FC = () => {
               </div>
             )}
 
-            <div className="w-full max-w-[850px] bg-background rounded-sm p-20 flex flex-col min-h-[1100px] border border-border">
+            <div className="w-full max-w-[850px] bg-card rounded-sm p-20 flex flex-col min-h-[1100px] border border-border shadow-xl shadow-foreground/5">
               <div className="border-b-4 border-foreground pb-12 mb-12">
                 <input 
                   className="w-full text-5xl font-black text-foreground border-none p-0 focus:ring-0 placeholder:text-muted-foreground/20 leading-[1.2] bg-transparent"

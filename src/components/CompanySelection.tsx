@@ -43,15 +43,15 @@ export function CompanySelection({ onSelect }: Props) {
 
   if (companies.length > 0) {
     return (
-      <div className="min-h-screen bg-[#000000] flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl">
           {companies.map((company) => (
             <button
               key={company.id}
               onClick={() => onSelect(company)}
-              className="p-10 border border-white/10 rounded-2xl bg-transparent hover:bg-white/5 transition-colors text-left"
+              className="p-10 border border-border rounded-2xl bg-card hover:bg-secondary transition-colors text-left"
             >
-              <h3 className="text-xl font-bold text-white">{company.name}</h3>
+              <h3 className="text-xl font-bold text-foreground">{company.name}</h3>
             </button>
           ))}
         </div>
@@ -60,15 +60,15 @@ export function CompanySelection({ onSelect }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-[#000000]">
-      <div className="p-12 border border-white/10 rounded-3xl bg-transparent max-w-md w-full mx-4">
-        <h2 className="text-3xl font-bold text-white mb-4">Sit tight!</h2>
-        <p className="text-white/60 mb-8">
+    <div className="fixed inset-0 flex items-center justify-center bg-background">
+      <div className="p-12 border border-border rounded-3xl bg-card max-w-md w-full mx-4">
+        <h2 className="text-3xl font-bold text-foreground mb-4">Sit tight!</h2>
+        <p className="text-muted-foreground mb-8">
           Your account is active. We are currently getting your workspace ready.
         </p>
-        <div className="flex items-center gap-3 pt-6 border-t border-white/5">
-          <span className="text-sm font-medium text-white/80">{user?.email || profile?.full_name}</span>
-          <span className="px-2 py-0.5 rounded bg-white/5 text-[10px] font-bold text-white/40 uppercase tracking-wider border border-white/10">
+        <div className="flex items-center gap-3 pt-6 border-t border-border">
+          <span className="text-sm font-medium text-foreground/80">{user?.email || profile?.full_name}</span>
+          <span className="px-2 py-0.5 rounded bg-secondary text-[10px] font-bold text-muted-foreground uppercase tracking-wider border border-border">
             Pending Assignment
           </span>
         </div>
