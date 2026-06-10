@@ -112,11 +112,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error: any) {
       console.error('Fetch Profile Exception:', error.message);
-      setProfile(null);
-      // Fallback: If we have a user but fetch failed, we might still want to allow access
-      // to basic routes, but for now we stay strict.
-      setIsAuthorized(false);
-      setIsAdmin(false);
+      
+      // CRITICAL BYPASS: If the fetch fails (e.g. roles table doesn't exist yet)
+      // we must still allow the primary admin to enter so they can fix the DB.
+      if (user.email === 'avessaify@gmail.com') {
+        console.warn('Emergency bypass triggered for admin');
+        setIsAuthorized(true);
+        setIsAdmin(true);
+        setProfile({
+          id: user.id,
+          email: user.email,
+          role: 'admin',
+          full_name: 'System Administrator',
+          is_active: true
+        });
+      } else {
+        setProfile(null);
+        setIsAuthorized(false);
+        setIsAdmin(false);
+      }
     }
   };
 
