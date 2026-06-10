@@ -1,7 +1,6 @@
-import { User, Shield, LogOut, ChevronLeft, Building2, Moon, Sun } from 'lucide-react';
+import { User, Shield, LogOut, ChevronLeft, Building2 } from 'lucide-react';
 import type { Company, ViewState } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -15,7 +14,6 @@ interface Props {
 
 export function WorkspaceLayout({ company, currentView, onNavigateBack, onHome, children }: Props) {
   const { isAdmin, signOut, user } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   return (

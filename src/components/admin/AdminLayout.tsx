@@ -1,12 +1,10 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Shield, Users, Building2, LayoutDashboard, Settings, LogOut, Moon, Sun } from 'lucide-react';
+import { Shield, Users, Building2, LayoutDashboard, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useTheme } from '../../contexts/ThemeContext';
 
 export const AdminLayout: React.FC = () => {
   const { signOut } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
