@@ -44,15 +44,14 @@ export function CompanySelection({ onSelect }: Props) {
   if (companies.length > 0) {
     return (
       <div className="min-h-screen bg-[#000000] flex flex-col items-center justify-center p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-6xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl">
           {companies.map((company) => (
             <button
               key={company.id}
               onClick={() => onSelect(company)}
-              className="p-8 border border-white/10 rounded-2xl bg-transparent hover:bg-white/5 transition-colors text-left group"
+              className="p-10 border border-white/10 rounded-2xl bg-transparent hover:bg-white/5 transition-colors text-left"
             >
-              <h3 className="text-xl font-bold text-white mb-2">{company.name}</h3>
-              <span className="text-xs text-white/40 font-mono uppercase tracking-widest">Select Workspace</span>
+              <h3 className="text-xl font-bold text-white">{company.name}</h3>
             </button>
           ))}
         </div>
