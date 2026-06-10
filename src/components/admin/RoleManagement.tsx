@@ -12,9 +12,12 @@ import {
   UserPlus, 
   CheckSquare, 
   Square,
-  Edit2
+  Edit2,
+  Trash2,
+  Search
 } from 'lucide-react';
-import type { Role, UserProfile, Company, RolePermissions } from '../../types';
+import { ConfirmModal } from '../common/ConfirmModal';
+import type { Role, UserProfile, RolePermissions } from '../../types';
 
 const INITIAL_PERMISSIONS: RolePermissions = {
   can_create_folders: false,
@@ -32,8 +35,6 @@ const INITIAL_PERMISSIONS: RolePermissions = {
 export const RoleManagement: React.FC = () => {
   const [roles, setRoles] = useState<Role[]>([]);
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [userCompanies, setUserCompanies] = useState<{user_id: string, company_id: string}[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal States
@@ -48,10 +49,13 @@ export const RoleManagement: React.FC = () => {
   
   // Assign User State
   const [assignUserId, setAssignUserId] = useState('');
-  const [assignCompanyIds, setAssignCompanyIds] = useState<string[]>([]);
+  const [userSearchTerm, setUserSearchTerm] = useState('');
 
   const [actionLoading, setActionLoading] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  
+  // Delete Role State
+  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -59,11 +63,9 @@ export const RoleManagement: React.FC = () => {
 
   const fetchData = async () => {
     setLoading(true);
-    const [rolesRes, profilesRes, companiesRes, userCompRes] = await Promise.all([
+    const [rolesRes, profilesRes] = await Promise.all([
       supabase.from('roles').select('*').order('created_at'),
-      supabase.from('profiles').select('*').order('email'),
-      supabase.from('companies').select('*').order('name'),
-      supabase.from('user_companies').select('*')
+      supabase.from('profiles').select('*').order('email')
     ]);
 
     if (!rolesRes.error) {
@@ -74,8 +76,6 @@ export const RoleManagement: React.FC = () => {
     }
     
     if (!profilesRes.error) setProfiles(profilesRes.data as UserProfile[]);
-    if (!companiesRes.error) setCompanies(companiesRes.data as Company[]);
-    if (!userCompRes.error) setUserCompanies(userCompRes.data);
     setLoading(false);
   };
 
@@ -149,24 +149,28 @@ export const RoleManagement: React.FC = () => {
 
       if (profileError) throw profileError;
 
-      // 2. Wipe existing company mappings for this user and insert new ones
-      await supabase.from('user_companies').delete().eq('user_id', assignUserId);
-      
-      if (assignCompanyIds.length > 0) {
-        const { error: junctionError } = await supabase
-          .from('user_companies')
-          .insert(assignCompanyIds.map(cid => ({
-            user_id: assignUserId,
-            company_id: cid
-          })));
-        
-        if (junctionError) throw junctionError;
-      }
-
       showNotification('success', 'User assignment updated successfully');
       setIsAssignModalOpen(false);
       setAssignUserId('');
-      setAssignCompanyIds([]);
+      fetchData();
+    } catch (err: any) {
+      showNotification('error', err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleConfirmDeleteRole = async () => {
+    if (!roleToDelete) return;
+    setActionLoading(true);
+    try {
+      if (roleToDelete.is_system_admin) throw new Error('Cannot delete system administrator role.');
+      
+      const { error } = await supabase.from('roles').delete().eq('id', roleToDelete.id);
+      if (error) throw error;
+      
+      showNotification('success', `Role "${roleToDelete.name}" deleted successfully.`);
+      setRoleToDelete(null);
       fetchData();
     } catch (err: any) {
       showNotification('error', err.message);
@@ -180,12 +184,6 @@ export const RoleManagement: React.FC = () => {
       ...prev,
       [key]: !prev[key]
     }));
-  };
-
-  const toggleCompany = (id: string) => {
-    setAssignCompanyIds(prev => 
-      prev.includes(id) ? prev.filter(cid => cid !== id) : [...prev, id]
-    );
   };
 
   if (loading) {
@@ -228,13 +226,22 @@ export const RoleManagement: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     {!role.is_system_admin && (
-                      <button 
-                        onClick={() => openEditRoleModal(role)}
-                        className="p-2 hover:bg-secondary rounded-lg text-muted-foreground hover:text-primary transition-all"
-                        title="Edit Permissions"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
+                      <>
+                        <button 
+                          onClick={() => openEditRoleModal(role)}
+                          className="p-2 hover:bg-secondary rounded-lg text-muted-foreground hover:text-primary transition-all"
+                          title="Edit Permissions"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => setRoleToDelete(role)}
+                          className="p-2 hover:bg-destructive/10 rounded-lg text-muted-foreground hover:text-destructive transition-all"
+                          title="Delete Role"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
                     )}
                     {role.is_system_admin && (
                       <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/5 px-3 py-1 rounded-full border border-primary/10">Immutable</span>
@@ -412,7 +419,6 @@ export const RoleManagement: React.FC = () => {
                 onClick={() => {
                   setIsAssignModalOpen(false);
                   setAssignUserId('');
-                  setAssignCompanyIds([]);
                 }}
                 className="p-4 hover:bg-secondary rounded-2xl transition-all"
               >
@@ -423,44 +429,47 @@ export const RoleManagement: React.FC = () => {
             <form onSubmit={handleAssignUser} className="p-10 space-y-10">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Select User</label>
-                <select 
-                  className="w-full px-6 py-4 bg-secondary border-transparent rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-foreground appearance-none"
-                  value={assignUserId}
-                  onChange={(e) => {
-                    const uid = e.target.value;
-                    setAssignUserId(uid);
-                    // Pre-fill existing company assignments for this user
-                    setAssignCompanyIds(userCompanies.filter(uc => uc.user_id === uid).map(uc => uc.company_id));
-                  }}
-                  required
-                >
-                  <option value="">Choose a member...</option>
-                  {profiles.map(p => (
-                    <option key={p.id} value={p.id}>{p.email} ({p.full_name || 'No Name'})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-6">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Workspace Authorization</label>
-                <div className="max-h-60 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-border">
-                  {companies.map(c => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => toggleCompany(c.id)}
-                      className="flex items-center gap-3 w-full text-left p-4 bg-secondary/50 rounded-xl hover:bg-secondary transition-all group"
-                    >
-                      {assignCompanyIds.includes(c.id) ? (
-                        <CheckSquare className="w-5 h-5 text-primary" />
-                      ) : (
-                        <Square className="w-5 h-5 text-muted-foreground/30" />
-                      )}
-                      <span className={`text-sm font-bold ${assignCompanyIds.includes(c.id) ? 'text-foreground' : 'text-muted-foreground/60'}`}>
-                        {c.name}
-                      </span>
-                    </button>
-                  ))}
+                <div className="relative">
+                  <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+                    <input
+                      type="text"
+                      placeholder="Search by name or email..."
+                      className="w-full pl-12 pr-6 py-4 bg-secondary border border-transparent rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground"
+                      value={assignUserId ? (profiles.find(p => p.id === assignUserId)?.email || '') : userSearchTerm}
+                      onChange={(e) => {
+                        setAssignUserId('');
+                        setUserSearchTerm(e.target.value);
+                      }}
+                      onClick={() => {
+                        setAssignUserId('');
+                        setUserSearchTerm('');
+                      }}
+                    />
+                  </div>
+                  {/* Dropdown List */}
+                  {!assignUserId && (
+                    <div className="absolute top-full left-0 w-full mt-2 max-h-64 overflow-y-auto bg-card border border-border/50 rounded-2xl shadow-xl z-50 p-2 space-y-1 scrollbar-thin scrollbar-thumb-border">
+                      {profiles
+                        .filter(p => p.email.toLowerCase().includes(userSearchTerm.toLowerCase()) || (p.full_name?.toLowerCase() || '').includes(userSearchTerm.toLowerCase()))
+                        .map(p => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => {
+                               setAssignUserId(p.id);
+                               setUserSearchTerm('');
+                            }}
+                            className="w-full flex flex-col items-start px-4 py-3 rounded-xl hover:bg-secondary/50 transition-colors text-left group"
+                          >
+                          <span className="font-bold text-foreground text-sm group-hover:text-primary transition-colors">
+                            {p.full_name || 'No Name'}
+                          </span>
+                          <span className="text-xs text-muted-foreground">{p.email}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -475,6 +484,17 @@ export const RoleManagement: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!roleToDelete}
+        title="Delete Role"
+        message={`Are you sure you want to permanently delete the "${roleToDelete?.name}" role? Users assigned to this role will lose their custom permissions.`}
+        confirmLabel="Delete Role"
+        onConfirm={handleConfirmDeleteRole}
+        onCancel={() => setRoleToDelete(null)}
+        isLoading={actionLoading}
+        variant="danger"
+      />
     </div>
   );
 };

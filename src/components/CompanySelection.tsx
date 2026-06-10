@@ -52,35 +52,35 @@ export function CompanySelection({ onSelect }: Props) {
 
   if (companies.length > 0) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-8 md:p-16">
-        <div className="w-full max-w-6xl space-y-16">
-          <header className="space-y-4">
-            <h1 className="text-5xl md:text-7xl font-black text-foreground tracking-tighter leading-none">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 md:p-12">
+        <div className="w-full max-w-5xl flex flex-col items-center space-y-12">
+          <header className="text-center space-y-3">
+            <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tighter leading-none">
               Welcome back
             </h1>
-            <p className="text-muted-foreground font-medium text-lg md:text-xl max-w-2xl leading-relaxed">
+            <p className="text-muted-foreground font-medium text-base md:text-lg">
               Select an environment to continue.
             </p>
           </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
             {companies.map((company) => (
               <button
                 key={company.id}
                 onClick={() => onSelect(company)}
-                className="group relative p-12 border border-border/50 rounded-[3rem] bg-transparent hover:bg-secondary/20 hover:border-primary/20 transition-all duration-500 text-left overflow-hidden"
+                className="group relative p-8 border border-border/20 rounded-[2rem] bg-transparent hover:border-foreground/30 transition-all duration-300 text-left overflow-hidden flex flex-col justify-between min-h-[160px]"
               >
-                <div className="space-y-6">
-                  <h3 className="text-3xl font-black text-foreground tracking-tight group-hover:text-primary transition-colors">
+                <div>
+                  <h3 className="text-2xl font-bold text-foreground tracking-tight group-hover:scale-[1.02] origin-left transition-transform duration-300">
                     {company.name}
                   </h3>
-                  <div className="flex items-center justify-between">
-                    <span className="px-4 py-1.5 rounded-full bg-primary/5 text-[10px] font-bold text-primary uppercase tracking-widest border border-primary/10">
-                      {profile?.roles?.name || (isAdmin ? 'Admin' : 'Authorized Personnel')}
-                    </span>
-                    <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground opacity-0 group-hover:opacity-100 transition-all -translate-x-4 group-hover:translate-x-0">
-                      <ArrowRight size={20} />
-                    </div>
+                </div>
+                <div className="flex items-center justify-between mt-6">
+                  <span className="px-3 py-1 rounded-md bg-secondary/50 text-[10px] font-bold text-muted-foreground uppercase tracking-widest border border-border/30 group-hover:bg-secondary group-hover:text-foreground/80 transition-colors">
+                    {profile?.roles?.name || (isAdmin ? 'Admin' : 'Authorized Personnel')}
+                  </span>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground opacity-0 group-hover:opacity-100 transition-all duration-300 -translate-x-2 group-hover:translate-x-0">
+                    <ArrowRight size={16} />
                   </div>
                 </div>
               </button>
