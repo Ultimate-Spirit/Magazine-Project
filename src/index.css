@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
+    --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
 
     --card: 0 0% 100%;
@@ -36,39 +36,39 @@
   }
 
   .dark {
-    --background: 240 10% 3.9%;
+    --background: 0 0% 0%;
     --foreground: 0 0% 98%;
 
-    --card: 240 10% 3.9%;
+    --card: 0 0% 0%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 240 10% 3.9%;
+    --popover: 0 0% 0%;
     --popover-foreground: 0 0% 98%;
 
     --primary: 0 0% 98%;
     --primary-foreground: 240 5.9% 10%;
 
-    --secondary: 240 3.7% 15.9%;
+    --secondary: 240 3.7% 8%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 240 3.7% 15.9%;
+    --muted: 240 3.7% 8%;
     --muted-foreground: 240 5% 64.9%;
 
-    --accent: 240 3.7% 15.9%;
+    --accent: 240 3.7% 8%;
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border: 240 3.7% 12%;
+    --input: 240 3.7% 12%;
+    --ring: 0 0% 100%;
   }
 }
 
 @layer base {
   * {
-    @apply border-border selection:bg-primary/10 selection:text-primary;
+    @apply border-border selection:bg-primary selection:text-primary-foreground;
   }
   
   body {
@@ -101,7 +101,7 @@
   }
 
   .glass-panel {
-    @apply bg-card/40 backdrop-blur-md border border-white/10;
+    @apply bg-card/40 backdrop-blur-md border border-white/5;
   }
 
   .no-scrollbar::-webkit-scrollbar {
