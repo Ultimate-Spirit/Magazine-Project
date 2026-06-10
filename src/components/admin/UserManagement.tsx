@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Plus, Mail, Loader2, Search, X, CheckCircle2, Building2, User, Lock, Edit2, ShieldAlert } from 'lucide-react';
+import { Plus, Mail, Loader2, Search, X, CheckCircle2, User, Lock, Edit2, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { logActivity } from '../../lib/activityLogger';
 import type { Company, UserProfile } from '../../types';
@@ -20,8 +20,6 @@ export const UserManagement: React.FC = () => {
   
   // Edit Form states
   const [userToEdit, setUserToEdit] = useState<UserProfile | null>(null);
-  const [editRole, setEditRole] = useState<'admin' | 'editor' | 'viewer'>('viewer');
-  const [editCompany, setEditCompany] = useState('');
   const [editIsActive, setEditIsActive] = useState(true);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
@@ -94,8 +92,6 @@ export const UserManagement: React.FC = () => {
 
   const openEditModal = (p: UserProfile) => {
     setUserToEdit(p);
-    setEditRole(p.role);
-    setEditCompany(p.company_id || '');
     setEditIsActive(p.is_active !== false); // Default to true if undefined
     setEditName(p.full_name || '');
     setEditEmail(p.email || '');
