@@ -116,7 +116,7 @@ export function FoldersView({ onSelectCompany }: Props) {
         setStats(prev => ({ ...prev, publications: count || 0 }));
       }
 
-      const { data: logData, error: logError } = await supabase
+      const { data: logData } = await supabase
         .from('activity_logs')
         .select('id, action_type, entity_type, entity_name, created_at, profiles(full_name, email)')
         .eq('company_id', targetCid)
@@ -162,7 +162,7 @@ export function FoldersView({ onSelectCompany }: Props) {
             schema: 'public',
             table: 'pages'
           },
-          (payload) => {
+          (_payload) => {
             fetchData();
           }
         )
@@ -174,7 +174,7 @@ export function FoldersView({ onSelectCompany }: Props) {
             table: 'folders',
             filter: `company_id=eq.${targetCid}`
           },
-          (payload) => {
+          (_payload) => {
             fetchData();
           }
         )

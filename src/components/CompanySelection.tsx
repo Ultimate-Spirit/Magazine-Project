@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Building2, Loader2, Search, ArrowRight, Sparkles, RefreshCw, Mail } from 'lucide-react';
+import { Building2, Loader2, ArrowRight, Sparkles } from 'lucide-react';
 import type { Company } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,7 +11,6 @@ interface Props {
 export function CompanySelection({ onSelect }: Props) {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const { profile, isAdmin } = useAuth();
 
   useEffect(() => {
@@ -41,9 +40,7 @@ export function CompanySelection({ onSelect }: Props) {
     fetchCompanies();
   }, [profile, isAdmin, onSelect]);
 
-  const filteredCompanies = companies.filter(c => 
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredCompanies = companies;
 
   if (loading) {
     return (

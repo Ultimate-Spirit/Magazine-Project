@@ -1,4 +1,4 @@
-import { Home, User, Shield, LogOut, ChevronLeft, Building2, Moon, Sun } from 'lucide-react';
+import { User, Shield, LogOut, ChevronLeft, Building2, Moon, Sun } from 'lucide-react';
 import type { Company, ViewState } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
