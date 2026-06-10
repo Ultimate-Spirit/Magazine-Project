@@ -64,7 +64,13 @@ export const RoleManagement: React.FC = () => {
       supabase.from('user_companies').select('*')
     ]);
 
-    if (!rolesRes.error) setRoles(rolesRes.data as Role[]);
+    if (!rolesRes.error) {
+      setRoles(rolesRes.data as Role[]);
+    } else {
+      console.error('Roles fetch error:', rolesRes.error);
+      showNotification('error', 'Database tables missing. Please run rbac_setup.sql in your SQL Editor.');
+    }
+    
     if (!profilesRes.error) setProfiles(profilesRes.data as UserProfile[]);
     if (!companiesRes.error) setCompanies(companiesRes.data as Company[]);
     if (!userCompRes.error) setUserCompanies(userCompRes.data);
