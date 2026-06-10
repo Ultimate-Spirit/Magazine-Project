@@ -15,27 +15,37 @@ export function CompanySelection({ onSelect }: Props) {
   useEffect(() => {
     const fetchCompanies = async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('companies')
-        .select('*')
-        .order('name');
-
-      if (!error && data) {
-        let filtered = data as Company[];
-        if (!isAdmin && profile?.company_id) {
-          filtered = filtered.filter(c => c.id === profile.company_id);
+      
+      try {
+        if (isAdmin) {
+          const { data, error } = await supabase
+            .from('companies')
+            .select('*')
+            .order('name');
+          if (!error && data) setCompanies(data);
+        } else {
+          const { data, error } = await supabase
+            .from('user_companies')
+            .select('companies(*)')
+            .eq('user_id', user?.id);
+          
+          if (!error && data) {
+            const mapped = data.map((item: any) => item.companies).filter(Boolean);
+            setCompanies(mapped);
+            if (mapped.length === 1) {
+              onSelect(mapped[0]);
+            }
+          }
         }
-        setCompanies(filtered);
-
-        if (filtered.length === 1) {
-          onSelect(filtered[0]);
-        }
+      } catch (err) {
+        console.error('Fetch companies error:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchCompanies();
-  }, [profile, isAdmin, onSelect]);
+  }, [user, isAdmin, onSelect]);
 
   if (loading) {
     return null;

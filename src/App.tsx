@@ -12,6 +12,7 @@ import { AdminLayout } from './components/admin/AdminLayout';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { UserManagement } from './components/admin/UserManagement';
 import { CompanyManagement } from './components/admin/CompanyManagement';
+import { RoleManagement } from './components/admin/RoleManagement';
 import { UpdatePassword } from './components/UpdatePassword';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import type { Company } from './types';
@@ -59,6 +60,7 @@ function App() {
                   <Route index element={<AdminDashboard />} />
                   <Route path="users" element={<UserManagement />} />
                   <Route path="companies" element={<CompanyManagement />} />
+                  <Route path="roles" element={<RoleManagement />} />
                 </Route>
               </Routes>
             </ProtectedRoute>

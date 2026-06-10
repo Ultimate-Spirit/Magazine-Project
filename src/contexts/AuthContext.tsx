@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Fetching profile for:', user.id);
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('*, roles(*)')
         .eq('id', user.id)
         .single();
 
@@ -83,7 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data) {
-        console.log('Profile found:', data.email, 'Role:', data.role, 'Active:', data.is_active);
+        console.log('Profile found:', data.email, 'Role:', data.roles?.name, 'Active:', data.is_active);
         if (data.is_active === false) {
           console.warn('User is marked as inactive. Logging out.');
           await supabase.auth.signOut();
@@ -93,9 +93,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
 
-        setProfile(data as UserProfile);
+        const userProfile = data as UserProfile;
+        setProfile(userProfile);
         setIsAuthorized(true);
-        setIsAdmin(data.role === 'admin');
+        // Prioritize system_admin flag from roles table
+        setIsAdmin(data.roles?.is_system_admin === true || data.role === 'admin');
       } else {
         console.warn('No profile data returned for user');
         setProfile(null);
