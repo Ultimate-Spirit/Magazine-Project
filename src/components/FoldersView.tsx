@@ -321,7 +321,7 @@ export function FoldersView({ onSelectCompany }: Props) {
               <input
                 type="text"
                 placeholder="Find directory..."
-                className="pl-12 pr-6 py-4 bg-secondary border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary/10 outline-none transition-all w-64 placeholder:text-muted-foreground/40"
+                className="pl-12 pr-6 py-4 bg-secondary border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary/10 outline-none transition-all w-64 placeholder:text-muted-foreground/30"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -338,7 +338,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                 setFolderNameInput('');
                 setIsCreateModalOpen(true);
               }}
-              className="flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-bold rounded-2xl hover:opacity-90 transition-all shadow-xl shadow-primary/10"
+              className="flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-bold rounded-2xl hover:opacity-90 transition-all"
             >
               <Plus className="w-5 h-5" />
               New Entry
@@ -349,21 +349,21 @@ export function FoldersView({ onSelectCompany }: Props) {
         <div className="grid lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-8 xl:col-span-9">
             {folders.length === 0 ? (
-              <div className="bg-secondary/40 rounded-[2.5rem] py-32 text-center">
-                <div className="w-24 h-24 bg-card rounded-3xl flex items-center justify-center mx-auto mb-10 shadow-sm">
+              <div className="bg-secondary/20 rounded-[2.5rem] py-32 text-center border border-border/50">
+                <div className="w-24 h-24 bg-card rounded-3xl flex items-center justify-center mx-auto mb-10">
                   <FolderIcon className="w-10 h-10 text-muted-foreground/20" />
                 </div>
                 <h3 className="text-3xl font-display font-bold mb-3 tracking-tight">Empty Context</h3>
                 <p className="text-muted-foreground font-body mb-12 max-w-sm mx-auto">Start your journey by initializing a new publication directory.</p>
                 <button 
                   onClick={() => setIsCreateModalOpen(true)}
-                  className="px-10 py-5 bg-card rounded-2xl font-bold hover:bg-secondary transition-all shadow-sm"
+                  className="px-10 py-5 bg-card rounded-2xl font-bold hover:bg-secondary transition-all border border-border"
                 >
                   Initialize Hub
                 </button>
               </div>
             ) : filteredFolders.length === 0 ? (
-              <div className="py-32 text-center bg-secondary/20 rounded-[2.5rem]">
+              <div className="py-32 text-center bg-secondary/10 rounded-[2.5rem] border border-border/50">
                 <p className="text-xl font-body font-bold text-muted-foreground">No matches for "<span className="text-foreground">{searchQuery}</span>"</p>
                 <button 
                   onClick={() => setSearchQuery('')}
@@ -377,7 +377,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                 {filteredFolders.map((folder) => (
                   <div
                     key={folder.id}
-                    className="group relative bg-card rounded-[2rem] hover:bg-secondary transition-all duration-500 p-10 flex flex-col justify-between min-h-[260px] cursor-pointer overflow-hidden shadow-sm hover:shadow-xl hover:shadow-primary/5"
+                    className="group relative bg-card rounded-[2rem] hover:bg-secondary transition-all duration-500 p-10 flex flex-col justify-between min-h-[260px] cursor-pointer overflow-hidden border border-border/50 hover:border-primary/20"
                     onClick={() => navigate(`/folder/${folder.id}`)}
                   >
                     <div className="flex items-start justify-between">
@@ -392,7 +392,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                             setEditingFolder(folder);
                             setFolderNameInput(folder.name);
                           }}
-                          className="p-3 bg-background rounded-xl text-muted-foreground hover:text-primary transition-all shadow-sm"
+                          className="p-3 bg-background border border-border rounded-xl text-muted-foreground hover:text-primary transition-all"
                           title="Rename"
                         >
                           <Edit2 className="w-4 h-4" />
@@ -402,7 +402,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                             e.stopPropagation();
                             setFolderToDelete(folder);
                           }}
-                          className="p-3 bg-background rounded-xl text-muted-foreground hover:text-destructive transition-all shadow-sm"
+                          className="p-3 bg-background border border-border rounded-xl text-muted-foreground hover:text-destructive transition-all"
                           title="Purge"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -433,7 +433,7 @@ export function FoldersView({ onSelectCompany }: Props) {
           </div>
 
           <aside className="lg:col-span-4 xl:col-span-3 space-y-6 sticky top-32">
-            <div className="bg-secondary/40 rounded-[2.5rem] p-10 space-y-10">
+            <div className="bg-secondary/20 rounded-[2.5rem] p-10 space-y-10 border border-border/50">
               <div className="flex items-center justify-between">
                 <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">Workspace Metrics</h2>
                 <BarChart3 className="w-4 h-4 text-primary" />
@@ -455,7 +455,7 @@ export function FoldersView({ onSelectCompany }: Props) {
               </div>
             </div>
 
-            <div className="bg-card rounded-[2.5rem] p-10 shadow-sm border border-border/5">
+            <div className="bg-card rounded-[2.5rem] p-10 border border-border/50">
               <div className="flex items-center justify-between mb-10">
                 <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">Event Stream</h2>
                 <ActivityIcon className="w-4 h-4 text-primary" />
@@ -467,7 +467,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                 ) : activities.map((event) => (
                   <div key={`${event.type}-${event.id}`} className="flex gap-5">
                     <div className="shrink-0">
-                      <div className="w-10 h-10 rounded-2xl bg-secondary text-primary text-[10px] flex items-center justify-center font-black tracking-tighter shadow-inner">
+                      <div className="w-10 h-10 rounded-2xl bg-secondary text-primary text-[10px] flex items-center justify-center font-black tracking-tighter">
                         {event.userInitials}
                       </div>
                     </div>
@@ -492,12 +492,11 @@ export function FoldersView({ onSelectCompany }: Props) {
       </div>
 
       {(isCreateModalOpen || editingFolder) && (
-        <div className="fixed inset-0 bg-background/60 backdrop-blur-2xl z-[200] flex items-center justify-center p-6 animate-in fade-in duration-500">
-          <div className="bg-card rounded-[3rem] shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-2xl z-[200] flex items-center justify-center p-6 animate-in fade-in duration-500">
+          <div className="bg-card rounded-[3rem] border border-border/50 w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="p-16 pb-0 flex items-start justify-between">
               <div className="space-y-4">
-                <h2 className="text-5xl font-display font-black tracking-tight leading-none">
-                  {editingFolder ? 'Modify <br/> Identity' : 'Initialize <br/> Directory'}
+                <h2 className="text-5xl font-display font-black tracking-tight leading-none" dangerouslySetInnerHTML={{ __html: editingFolder ? 'Modify <br/> Identity' : 'Initialize <br/> Directory' }}>
                 </h2>
                 <p className="text-muted-foreground font-body text-lg leading-relaxed max-w-xs">
                   {editingFolder ? 'Update the metadata for this repository entry.' : 'Define a new context for your publication assets.'}
@@ -520,7 +519,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                 <div className="relative">
                   <input
                     type="text"
-                    className="w-full px-8 py-6 bg-secondary border-none rounded-[1.5rem] focus:ring-4 focus:ring-primary/5 outline-none transition-all font-display font-bold text-2xl placeholder:text-muted-foreground/20"
+                    className="w-full px-8 py-6 bg-secondary border-none rounded-[1.5rem] focus:ring-4 focus:ring-primary/5 outline-none transition-all font-display font-bold text-2xl placeholder:text-muted-foreground/10 text-foreground"
                     placeholder="e.g. Q4 Growth Narrative"
                     value={folderNameInput}
                     onChange={(e) => setFolderNameInput(e.target.value)}
@@ -533,7 +532,7 @@ export function FoldersView({ onSelectCompany }: Props) {
               <button
                 type="submit"
                 disabled={isActionLoading || !folderNameInput.trim()}
-                className="w-full py-8 bg-primary text-primary-foreground font-display font-black rounded-[1.5rem] hover:opacity-90 disabled:opacity-50 transition-all shadow-2xl shadow-primary/20 flex items-center justify-center gap-4 text-xl tracking-tight"
+                className="w-full py-8 bg-primary text-primary-foreground font-display font-black rounded-[1.5rem] hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-4 text-xl tracking-tight"
               >
                 {isActionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : editingFolder ? 'Update Registry' : 'Initialize Directory'}
               </button>

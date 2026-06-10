@@ -25,3 +25,6 @@ dist-ssr
 
 .vercel
 .gemini/settings.json
+
+.vercel
+.env*

@@ -33,7 +33,7 @@ export function ProjectExplorer({ folders, onCreateFolder, onOpenFolder }: Props
         </div>
 
         {folders.length === 0 ? (
-          <div className="border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center h-64 bg-white/50">
+          <div className="border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center h-64 bg-secondary/50">
             <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center text-muted-foreground mb-4">
               <FolderIcon size={20} />
             </div>
@@ -52,7 +52,7 @@ export function ProjectExplorer({ folders, onCreateFolder, onOpenFolder }: Props
               <button
                 key={folder.id}
                 onClick={() => onOpenFolder(folder)}
-                className="bg-white border rounded-lg p-6 flex flex-col items-start hover:border-primary/50 hover:shadow-sm transition-all group text-left"
+                className="bg-card border border-border rounded-lg p-6 flex flex-col items-start hover:border-primary/50 transition-all group text-left"
               >
                 <div className="w-10 h-10 bg-secondary/50 rounded-lg flex items-center justify-center text-muted-foreground mb-4 group-hover:bg-primary/5 group-hover:text-primary transition-colors">
                   <FolderIcon size={20} className="fill-current/20" />

@@ -58,14 +58,6 @@ export const AdminLayout: React.FC = () => {
             <Settings className="w-5 h-5" />
             Configuration
           </button>
-
-          <button 
-            onClick={toggleTheme}
-            className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl text-muted-foreground hover:text-foreground font-medium transition-all hover:bg-muted"
-          >
-            {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-            {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
-          </button>
         </nav>
 
         <div className="p-6 space-y-4">

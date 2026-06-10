@@ -56,14 +56,6 @@ export function WorkspaceLayout({ company, currentView, onNavigateBack, onHome, 
         </div>
         
         <div className="flex items-center gap-4">
-          <button
-            onClick={toggleTheme}
-            className="h-12 w-12 rounded-2xl bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-all"
-            title={theme === 'light' ? 'Dark Mode' : 'Light Mode'}
-          >
-            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-          </button>
-
           {isAdmin && (
             <Link 
               to="/admin"

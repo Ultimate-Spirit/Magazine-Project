@@ -38,41 +38,41 @@ export const UpdatePassword: React.FC = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center space-y-4 animate-in fade-in zoom-in duration-300">
           <div className="flex justify-center">
-            <CheckCircle2 className="w-16 h-16 text-blue-600" />
+            <CheckCircle2 className="w-16 h-16 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Password Set Successfully</h1>
-          <p className="text-gray-500">Redirecting you to the application...</p>
+          <h1 className="text-2xl font-bold text-foreground">Password Set Successfully</h1>
+          <p className="text-muted-foreground">Redirecting you to the application...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center space-y-2">
           <div className="flex justify-center mb-6">
-            <div className="p-3 bg-blue-50 rounded-2xl text-blue-600">
+            <div className="p-3 bg-secondary rounded-2xl text-primary">
               <Shield className="w-8 h-8" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Set Your Password</h1>
-          <p className="text-gray-500">Please choose a secure password for your new account.</p>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">Set Your Password</h1>
+          <p className="text-muted-foreground">Please choose a secure password for your new account.</p>
         </div>
 
         <form onSubmit={handleUpdatePassword} className="mt-8 space-y-6">
           <div className="space-y-4">
             <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-700 ml-1">New Password</label>
+              <label className="text-sm font-semibold text-foreground ml-1">New Password</label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
                   type="password"
                   placeholder="••••••••"
-                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 outline-none transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-secondary border border-transparent rounded-xl focus:bg-card focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-foreground"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -81,13 +81,13 @@ export const UpdatePassword: React.FC = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-700 ml-1">Confirm Password</label>
+              <label className="text-sm font-semibold text-foreground ml-1">Confirm Password</label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
                   type="password"
                   placeholder="••••••••"
-                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 outline-none transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-secondary border border-transparent rounded-xl focus:bg-card focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-foreground"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -97,7 +97,7 @@ export const UpdatePassword: React.FC = () => {
           </div>
 
           {error && (
-            <div className="p-4 bg-red-50 text-red-600 text-sm rounded-xl font-medium animate-in slide-in-from-top-2">
+            <div className="p-4 bg-destructive/10 text-destructive text-sm rounded-xl font-medium animate-in slide-in-from-top-2">
               {error}
             </div>
           )}
@@ -105,7 +105,7 @@ export const UpdatePassword: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
+            className="w-full py-4 bg-primary text-primary-foreground font-bold rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
           >
             {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Activate Account'}
           </button>

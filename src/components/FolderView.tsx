@@ -23,7 +23,7 @@ export function FolderView({ folder, pages, onCreatePage, onOpenPage }: Props) {
           </div>
           <button 
             onClick={onCreatePage}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 text-sm font-medium rounded flex items-center shadow-sm transition-colors"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 text-sm font-medium rounded flex items-center transition-colors"
           >
             <Plus size={16} className="mr-2" />
             Create New Page
@@ -31,7 +31,7 @@ export function FolderView({ folder, pages, onCreatePage, onOpenPage }: Props) {
         </div>
 
         {pages.length === 0 ? (
-          <div className="border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center h-64 bg-white/50">
+          <div className="border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center h-64 bg-secondary/50">
             <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center text-muted-foreground mb-4">
               <FileText size={20} />
             </div>
@@ -52,7 +52,7 @@ export function FolderView({ folder, pages, onCreatePage, onOpenPage }: Props) {
                 onClick={() => onOpenPage(page)}
                 className="group text-left"
               >
-                <div className="aspect-[3/4] bg-white border rounded-lg mb-3 flex flex-col items-center justify-center overflow-hidden group-hover:border-primary/50 group-hover:shadow-md transition-all">
+                <div className="aspect-[3/4] bg-card border border-border rounded-lg mb-3 flex flex-col items-center justify-center overflow-hidden group-hover:border-primary/50 transition-all">
                   {page.thumbnailUrl ? (
                     <img src={page.thumbnailUrl} alt={page.title} className="w-full h-full object-cover" />
                   ) : (

@@ -23,7 +23,7 @@ export const PrintTemplate = React.forwardRef<HTMLDivElement, PrintTemplateProps
   return (
     <div 
       ref={ref}
-      className="bg-white"
+      className="bg-background text-foreground"
       style={{ 
         width: '210mm', 
         minHeight: '297mm', 
@@ -35,11 +35,11 @@ export const PrintTemplate = React.forwardRef<HTMLDivElement, PrintTemplateProps
       }}
     >
       {/* Header Section */}
-      <div className="border-b-4 border-gray-900 pb-12 mb-12">
-        <h1 className="text-5xl font-black text-gray-900 leading-[1.2]">
+      <div className="border-b-4 border-foreground pb-12 mb-12">
+        <h1 className="text-5xl font-black text-foreground leading-[1.2]">
           {data.headline || 'Untitled Report'}
         </h1>
-        <p className="text-xl font-bold text-blue-600 mt-4 uppercase tracking-widest leading-[1.2]">
+        <p className="text-xl font-bold text-primary mt-4 uppercase tracking-widest leading-[1.2]">
           {data.subheadline || 'EXECUTIVE SUMMARY'}
         </p>
       </div>
@@ -47,23 +47,23 @@ export const PrintTemplate = React.forwardRef<HTMLDivElement, PrintTemplateProps
       {/* Primary Content Grid */}
       <div className="grid grid-cols-2 gap-20 mb-12">
         <div className="space-y-6">
-          <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Executive Summary</h3>
-          <div className="text-gray-600 leading-relaxed text-sm whitespace-pre-wrap">
+          <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest">Executive Summary</h3>
+          <div className="text-muted-foreground leading-relaxed text-sm whitespace-pre-wrap">
             {data.summaryText}
           </div>
         </div>
 
         <div className="space-y-8">
-          <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Key Performance</h3>
+          <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest">Key Performance</h3>
           <div className="space-y-6">
             {data.metrics.map((metric, idx) => (
-              <div key={idx} className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">
+              <div key={idx} className="bg-secondary p-6 rounded-2xl border border-border">
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2">
                   {metric.label}
                 </p>
                 <div className="flex items-baseline justify-between">
-                  <span className="text-3xl font-black text-gray-900">{metric.value}</span>
-                  <span className={`text-sm font-bold ${metric.percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <span className="text-3xl font-black text-foreground">{metric.value}</span>
+                  <span className={`text-sm font-bold ${metric.percentage >= 0 ? 'text-green-500' : 'text-destructive'}`}>
                     {metric.percentage >= 0 ? '+' : ''}{metric.percentage}%
                   </span>
                 </div>
@@ -76,21 +76,21 @@ export const PrintTemplate = React.forwardRef<HTMLDivElement, PrintTemplateProps
       {/* Strategic Content Grid */}
       <div className="grid grid-cols-2 gap-20 mb-auto">
         <div className="space-y-6">
-          <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Strategic Drivers</h3>
-          <div className="text-gray-600 leading-relaxed text-sm whitespace-pre-wrap">
+          <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest">Strategic Drivers</h3>
+          <div className="text-muted-foreground leading-relaxed text-sm whitespace-pre-wrap">
             {data.growthDriversText}
           </div>
         </div>
         <div className="space-y-6">
-          <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Future Outlook</h3>
-          <div className="text-gray-600 leading-relaxed text-sm whitespace-pre-wrap">
+          <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest">Future Outlook</h3>
+          <div className="text-muted-foreground leading-relaxed text-sm whitespace-pre-wrap">
             {data.outlookText}
           </div>
         </div>
       </div>
 
       {/* Footer Section */}
-      <footer className="mt-20 pt-8 border-t border-gray-100 flex justify-between items-center text-[10px] font-bold text-gray-300 uppercase tracking-widest">
+      <footer className="mt-20 pt-8 border-t border-border flex justify-between items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
         <span>{data.footerConfidentiality}</span>
         <span>{data.footerDate}</span>
       </footer>

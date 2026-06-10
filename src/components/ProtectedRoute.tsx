@@ -15,10 +15,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requir
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="animate-spin h-8 w-8 text-blue-600" />
-          <p className="text-sm text-gray-500 font-medium">Verifying access...</p>
+          <Loader2 className="animate-spin h-8 w-8 text-primary" />
+          <p className="text-sm text-muted-foreground font-medium">Verifying access...</p>
         </div>
       </div>
     );

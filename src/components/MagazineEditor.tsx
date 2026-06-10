@@ -227,7 +227,7 @@ export const MagazineEditor: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
       </div>
     );
   }
@@ -243,18 +243,18 @@ export const MagazineEditor: React.FC = () => {
       onNavigateBack={goBackToFolder}
       onHome={() => navigate('/', { replace: true })}
     >
-      <div className="flex flex-col h-[calc(100vh-5rem)] bg-gray-50/50 relative overflow-hidden">
+      <div className="flex flex-col h-[calc(100vh-5rem)] bg-background relative overflow-hidden">
         {/* Hidden Print Template (Off-screen) */}
         <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
           <PrintTemplate ref={printRef} data={editorData} />
         </div>
 
         {/* Editor Toolbar */}
-        <div className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-12 shrink-0">
+        <div className="h-20 bg-card border-b border-border flex items-center justify-between px-12 shrink-0">
           <div className="flex items-center gap-6">
             <button 
               onClick={goBackToFolder}
-              className="p-2 hover:bg-gray-50 rounded-xl text-gray-400 hover:text-gray-900 transition-all"
+              className="p-2 hover:bg-secondary rounded-xl text-muted-foreground hover:text-foreground transition-all"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
@@ -263,9 +263,9 @@ export const MagazineEditor: React.FC = () => {
                 type="text" 
                 value={editorData.title}
                 onChange={(e) => setEditorData({ ...editorData, title: e.target.value })}
-                className="text-xl font-black text-gray-900 bg-transparent border-none focus:ring-0 p-0 w-64"
+                className="text-xl font-black text-foreground bg-transparent border-none focus:ring-0 p-0 w-64"
               />
-              <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-0.5">Editor Mode</p>
+              <p className="text-[10px] font-bold text-primary uppercase tracking-widest mt-0.5">Editor Mode</p>
             </div>
           </div>
 
@@ -280,7 +280,7 @@ export const MagazineEditor: React.FC = () => {
             <button 
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all shadow-sm disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-3 bg-card border border-border text-foreground font-bold rounded-xl hover:bg-secondary transition-all disabled:opacity-50"
             >
               {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
               Import Excel
@@ -288,7 +288,7 @@ export const MagazineEditor: React.FC = () => {
             <button 
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all shadow-sm disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-3 bg-card border border-border text-foreground font-bold rounded-xl hover:bg-secondary transition-all disabled:opacity-50"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Save Progress
@@ -296,7 +296,7 @@ export const MagazineEditor: React.FC = () => {
             <button 
               onClick={handleDownloadPDF}
               disabled={exporting}
-              className="flex items-center gap-2 px-8 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-black transition-all shadow-lg shadow-gray-200 disabled:opacity-50"
+              className="flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50"
             >
               {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               Export PDF
@@ -306,14 +306,14 @@ export const MagazineEditor: React.FC = () => {
 
         <div className="flex-1 flex overflow-hidden">
           {/* Sidebar Tools */}
-          <div className="w-20 bg-white border-r border-gray-100 flex flex-col items-center py-8 gap-6">
-            <button className="p-4 bg-blue-50 text-blue-600 rounded-2xl" title="Templates">
+          <div className="w-20 bg-card border-r border-border flex flex-col items-center py-8 gap-6">
+            <button className="p-4 bg-secondary text-primary rounded-2xl" title="Templates">
               <Layout className="w-6 h-6" />
             </button>
-            <button className="p-4 text-gray-300 hover:text-gray-900 hover:bg-gray-50 rounded-2xl transition-all" title="Structure">
+            <button className="p-4 text-muted-foreground/40 hover:text-foreground hover:bg-secondary rounded-2xl transition-all" title="Structure">
               <FileText className="w-6 h-6" />
             </button>
-            <button className="p-4 text-gray-300 hover:text-gray-900 hover:bg-gray-50 rounded-2xl transition-all" title="Assets">
+            <button className="p-4 text-muted-foreground/40 hover:text-foreground hover:bg-secondary rounded-2xl transition-all" title="Assets">
               <ImageIcon className="w-6 h-6" />
             </button>
           </div>
@@ -321,22 +321,22 @@ export const MagazineEditor: React.FC = () => {
           {/* Canvas Area (UI Version for live editing) */}
           <main className="flex-1 overflow-y-auto p-12 flex justify-center">
             {notification && (
-              <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+              <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-destructive text-destructive-foreground'}`}>
                 {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
                 <p className="font-bold text-sm">{notification.message}</p>
               </div>
             )}
 
-            <div className="w-full max-w-[850px] bg-white shadow-2xl shadow-blue-900/5 rounded-sm p-20 flex flex-col min-h-[1100px] border border-gray-100">
-              <div className="border-b-4 border-gray-900 pb-12 mb-12">
+            <div className="w-full max-w-[850px] bg-background rounded-sm p-20 flex flex-col min-h-[1100px] border border-border">
+              <div className="border-b-4 border-foreground pb-12 mb-12">
                 <input 
-                  className="w-full text-5xl font-black text-gray-900 border-none p-0 focus:ring-0 placeholder:text-gray-200 leading-[1.2]"
+                  className="w-full text-5xl font-black text-foreground border-none p-0 focus:ring-0 placeholder:text-muted-foreground/20 leading-[1.2] bg-transparent"
                   value={editorData.headline}
                   onChange={(e) => setEditorData({ ...editorData, headline: e.target.value })}
                   placeholder="Enter Headline"
                 />
                 <input 
-                  className="w-full text-xl font-bold text-blue-600 mt-4 border-none p-0 focus:ring-0 placeholder:text-gray-200 uppercase tracking-widest leading-[1.2]"
+                  className="w-full text-xl font-bold text-primary mt-4 border-none p-0 focus:ring-0 placeholder:text-muted-foreground/20 uppercase tracking-widest leading-[1.2] bg-transparent"
                   value={editorData.subheadline}
                   onChange={(e) => setEditorData({ ...editorData, subheadline: e.target.value })}
                   placeholder="REPORT CATEGORY"
@@ -345,21 +345,21 @@ export const MagazineEditor: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-20 mb-12">
                 <div className="space-y-6">
-                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Executive Summary</h3>
+                  <h3 className="text-xs font-black text-muted-foreground/50 uppercase tracking-widest">Executive Summary</h3>
                   <textarea 
-                    className="w-full text-gray-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[150px] resize-none"
+                    className="w-full text-muted-foreground leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[150px] resize-none bg-transparent"
                     value={editorData.summaryText}
                     onChange={(e) => setEditorData({ ...editorData, summaryText: e.target.value })}
                     placeholder="Enter summary text here..."
                   />
                 </div>
                 <div className="space-y-8">
-                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Key Performance</h3>
+                  <h3 className="text-xs font-black text-muted-foreground/50 uppercase tracking-widest">Key Performance</h3>
                   <div className="space-y-8">
                     {editorData.metrics.map((metric, idx) => (
-                      <div key={idx} className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                      <div key={idx} className="bg-secondary p-6 rounded-2xl border border-border">
                         <input 
-                          className="w-full text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] bg-transparent border-none p-0 focus:ring-0"
+                          className="w-full text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] bg-transparent border-none p-0 focus:ring-0"
                           value={metric.label}
                           onChange={(e) => {
                             const newMetrics = [...editorData.metrics];
@@ -369,7 +369,7 @@ export const MagazineEditor: React.FC = () => {
                         />
                         <div className="flex items-baseline gap-2 mt-2">
                           <input 
-                            className="text-3xl font-black text-gray-900 bg-transparent border-none p-0 focus:ring-0 w-32"
+                            className="text-3xl font-black text-foreground bg-transparent border-none p-0 focus:ring-0 w-32"
                             value={metric.value}
                             onChange={(e) => {
                               const newMetrics = [...editorData.metrics];
@@ -377,7 +377,7 @@ export const MagazineEditor: React.FC = () => {
                               setEditorData({ ...editorData, metrics: newMetrics });
                             }}
                           />
-                          <span className={`text-sm font-bold ${metric.percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          <span className={`text-sm font-bold ${metric.percentage >= 0 ? 'text-green-500' : 'text-destructive'}`}>
                             {metric.percentage >= 0 ? '+' : ''}{metric.percentage}%
                           </span>
                         </div>
@@ -389,18 +389,18 @@ export const MagazineEditor: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-20 mb-auto">
                 <div className="space-y-6">
-                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Strategic Drivers</h3>
+                  <h3 className="text-xs font-black text-muted-foreground/50 uppercase tracking-widest">Strategic Drivers</h3>
                   <textarea 
-                    className="w-full text-gray-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none"
+                    className="w-full text-muted-foreground leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent"
                     value={editorData.growthDriversText}
                     onChange={(e) => setEditorData({ ...editorData, growthDriversText: e.target.value })}
                     placeholder="Enter growth drivers..."
                   />
                 </div>
                 <div className="space-y-6">
-                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Future Outlook</h3>
+                  <h3 className="text-xs font-black text-muted-foreground/50 uppercase tracking-widest">Future Outlook</h3>
                   <textarea 
-                    className="w-full text-gray-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none"
+                    className="w-full text-muted-foreground leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent"
                     value={editorData.outlookText}
                     onChange={(e) => setEditorData({ ...editorData, outlookText: e.target.value })}
                     placeholder="Enter outlook details..."
@@ -408,7 +408,7 @@ export const MagazineEditor: React.FC = () => {
                 </div>
               </div>
 
-              <footer className="mt-20 pt-8 border-t border-gray-100 flex justify-between items-center text-[10px] font-bold text-gray-300 uppercase tracking-widest">
+              <footer className="mt-20 pt-8 border-t border-border flex justify-between items-center text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest">
                 <input 
                   className="bg-transparent border-none p-0 focus:ring-0 w-64"
                   value={editorData.footerConfidentiality}
