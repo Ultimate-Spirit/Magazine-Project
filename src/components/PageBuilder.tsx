@@ -118,24 +118,24 @@ export function PageBuilder({ initialPage, onSave, onCancel }: Props) {
 
           {/* The Page Layout Canvas */}
           <div 
-            className="w-full max-w-4xl bg-card border border-border rounded-sm min-h-[800px] p-12 flex flex-col shadow-xl shadow-foreground/5"
+            className="w-full max-w-4xl bg-white border border-slate-200 rounded-sm min-h-[800px] p-12 flex flex-col shadow-xl"
             onDragOver={handleDragOver} // Also listen here so we can drop anywhere
           >
             {/* Header Data Zone */}
-            <div className="border-b-2 border-primary/20 pb-6 mb-8 group relative">
-              <div className="absolute -left-8 top-1 opacity-0 group-hover:opacity-100 text-xs text-muted-foreground/50 transition-opacity">H1</div>
+            <div className="border-b-2 border-blue-600/20 pb-6 mb-8 group relative">
+              <div className="absolute -left-8 top-1 opacity-0 group-hover:opacity-100 text-xs text-slate-300 transition-opacity">H1</div>
               <input
                 type="text"
                 value={data.headline}
                 onChange={(e) => setData({ ...data, headline: e.target.value })}
-                className="w-full text-4xl font-serif font-bold text-foreground border-none outline-none focus:bg-secondary/40 p-2 -ml-2 rounded transition-colors bg-transparent"
+                className="w-full text-4xl font-serif font-bold text-slate-900 border-none outline-none focus:bg-slate-50 p-2 -ml-2 rounded transition-colors bg-transparent"
                 placeholder="Headline"
               />
               <input
                 type="text"
                 value={data.subheadline}
                 onChange={(e) => setData({ ...data, subheadline: e.target.value })}
-                className="w-full text-xl text-muted-foreground mt-2 border-none outline-none focus:bg-secondary/40 p-2 -ml-2 rounded transition-colors bg-transparent"
+                className="w-full text-xl text-slate-400 mt-2 border-none outline-none focus:bg-slate-50 p-2 -ml-2 rounded transition-colors bg-transparent"
                 placeholder="Subheadline"
               />
             </div>
@@ -143,8 +143,8 @@ export function PageBuilder({ initialPage, onSave, onCancel }: Props) {
             {/* Content Grid */}
             <div className="grid grid-cols-3 gap-8 mb-8">
               {data.metrics.map((metric: any, idx: number) => (
-                <div key={idx} className="border border-border p-6 rounded relative group hover:border-primary/30 transition-colors bg-secondary/20">
-                  <div className="text-sm uppercase tracking-wider text-muted-foreground mb-2 font-medium">
+                <div key={idx} className="border border-slate-100 p-6 rounded relative group hover:border-blue-600/30 transition-colors bg-slate-50">
+                  <div className="text-sm uppercase tracking-wider text-slate-400 mb-2 font-medium">
                     <input 
                       value={metric.label}
                       onChange={(e) => {
@@ -152,10 +152,10 @@ export function PageBuilder({ initialPage, onSave, onCancel }: Props) {
                         newMetrics[idx].label = e.target.value;
                         setData({ ...data, metrics: newMetrics });
                       }}
-                      className="w-full border-none outline-none bg-transparent text-muted-foreground"
+                      className="w-full border-none outline-none bg-transparent text-slate-400"
                     />
                   </div>
-                  <div className="text-3xl font-serif font-bold text-foreground">
+                  <div className="text-3xl font-serif font-bold text-slate-900">
                     <input 
                       value={metric.value}
                       onChange={(e) => {
@@ -163,7 +163,7 @@ export function PageBuilder({ initialPage, onSave, onCancel }: Props) {
                         newMetrics[idx].value = e.target.value;
                         setData({ ...data, metrics: newMetrics });
                       }}
-                      className="w-full border-none outline-none bg-transparent text-foreground"
+                      className="w-full border-none outline-none bg-transparent text-slate-900"
                     />
                   </div>
                 </div>
@@ -171,24 +171,24 @@ export function PageBuilder({ initialPage, onSave, onCancel }: Props) {
             </div>
 
             {/* Visual Area */}
-            <div className="flex-1 border-2 border-dashed border-border rounded flex flex-col items-center justify-center bg-secondary/20 group hover:bg-secondary/40 transition-colors cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+            <div className="flex-1 border-2 border-dashed border-slate-100 rounded flex flex-col items-center justify-center bg-slate-50 group hover:bg-slate-100 transition-colors cursor-pointer" onClick={() => fileInputRef.current?.click()}>
               <input 
                 type="file" 
                 ref={fileInputRef} 
                 className="hidden" 
                 accept="image/*"
               />
-              <div className="w-12 h-12 bg-card border border-border rounded-full flex items-center justify-center text-muted-foreground mb-3 group-hover:text-primary transition-colors">
+              <div className="w-12 h-12 bg-white border border-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-3 group-hover:text-blue-600 transition-colors">
                 <ImageIcon size={20} />
               </div>
-              <span className="text-sm font-medium text-muted-foreground">Click to upload visual creative</span>
+              <span className="text-sm font-medium text-slate-400">Click to upload visual creative</span>
             </div>
 
-            <div className="mt-8 pt-4 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
+            <div className="mt-8 pt-4 border-t border-slate-100 flex justify-between items-center text-xs text-slate-300">
               <span>Internal / Strictly Confidential</span>
               <button 
                 onClick={simulateExcelLoad}
-                className="hover:text-primary hover:underline"
+                className="hover:text-blue-600 hover:underline"
               >
                 Simulate Data Upload
               </button>

@@ -327,16 +327,16 @@ export const MagazineEditor: React.FC = () => {
               </div>
             )}
 
-            <div className="w-full max-w-[850px] bg-card rounded-sm p-20 flex flex-col min-h-[1100px] border border-border shadow-xl shadow-foreground/5">
-              <div className="border-b-4 border-foreground pb-12 mb-12">
+            <div className="w-full max-w-[850px] bg-white rounded-sm p-20 flex flex-col min-h-[1100px] border border-slate-200 shadow-xl">
+              <div className="border-b-4 border-slate-900 pb-12 mb-12">
                 <input 
-                  className="w-full text-5xl font-black text-foreground border-none p-0 focus:ring-0 placeholder:text-muted-foreground/20 leading-[1.2] bg-transparent"
+                  className="w-full text-5xl font-black text-slate-900 border-none p-0 focus:ring-0 placeholder:text-slate-200 leading-[1.2] bg-transparent"
                   value={editorData.headline}
                   onChange={(e) => setEditorData({ ...editorData, headline: e.target.value })}
                   placeholder="Enter Headline"
                 />
                 <input 
-                  className="w-full text-xl font-bold text-primary mt-4 border-none p-0 focus:ring-0 placeholder:text-muted-foreground/20 uppercase tracking-widest leading-[1.2] bg-transparent"
+                  className="w-full text-xl font-bold text-blue-600 mt-4 border-none p-0 focus:ring-0 placeholder:text-slate-200 uppercase tracking-widest leading-[1.2] bg-transparent"
                   value={editorData.subheadline}
                   onChange={(e) => setEditorData({ ...editorData, subheadline: e.target.value })}
                   placeholder="REPORT CATEGORY"
@@ -345,21 +345,21 @@ export const MagazineEditor: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-20 mb-12">
                 <div className="space-y-6">
-                  <h3 className="text-xs font-black text-muted-foreground/50 uppercase tracking-widest">Executive Summary</h3>
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Executive Summary</h3>
                   <textarea 
-                    className="w-full text-muted-foreground leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[150px] resize-none bg-transparent"
+                    className="w-full text-slate-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[150px] resize-none bg-transparent"
                     value={editorData.summaryText}
                     onChange={(e) => setEditorData({ ...editorData, summaryText: e.target.value })}
                     placeholder="Enter summary text here..."
                   />
                 </div>
                 <div className="space-y-8">
-                  <h3 className="text-xs font-black text-muted-foreground/50 uppercase tracking-widest">Key Performance</h3>
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Key Performance</h3>
                   <div className="space-y-8">
                     {editorData.metrics.map((metric, idx) => (
-                      <div key={idx} className="bg-secondary p-6 rounded-2xl border border-border">
+                      <div key={idx} className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
                         <input 
-                          className="w-full text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] bg-transparent border-none p-0 focus:ring-0"
+                          className="w-full text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-transparent border-none p-0 focus:ring-0"
                           value={metric.label}
                           onChange={(e) => {
                             const newMetrics = [...editorData.metrics];
@@ -369,7 +369,7 @@ export const MagazineEditor: React.FC = () => {
                         />
                         <div className="flex items-baseline gap-2 mt-2">
                           <input 
-                            className="text-3xl font-black text-foreground bg-transparent border-none p-0 focus:ring-0 w-32"
+                            className="text-3xl font-black text-slate-900 bg-transparent border-none p-0 focus:ring-0 w-32"
                             value={metric.value}
                             onChange={(e) => {
                               const newMetrics = [...editorData.metrics];
@@ -377,7 +377,7 @@ export const MagazineEditor: React.FC = () => {
                               setEditorData({ ...editorData, metrics: newMetrics });
                             }}
                           />
-                          <span className={`text-sm font-bold ${metric.percentage >= 0 ? 'text-green-500' : 'text-destructive'}`}>
+                          <span className={`text-sm font-bold ${metric.percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                             {metric.percentage >= 0 ? '+' : ''}{metric.percentage}%
                           </span>
                         </div>
@@ -389,18 +389,18 @@ export const MagazineEditor: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-20 mb-auto">
                 <div className="space-y-6">
-                  <h3 className="text-xs font-black text-muted-foreground/50 uppercase tracking-widest">Strategic Drivers</h3>
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Strategic Drivers</h3>
                   <textarea 
-                    className="w-full text-muted-foreground leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent"
+                    className="w-full text-slate-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent"
                     value={editorData.growthDriversText}
                     onChange={(e) => setEditorData({ ...editorData, growthDriversText: e.target.value })}
                     placeholder="Enter growth drivers..."
                   />
                 </div>
                 <div className="space-y-6">
-                  <h3 className="text-xs font-black text-muted-foreground/50 uppercase tracking-widest">Future Outlook</h3>
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Future Outlook</h3>
                   <textarea 
-                    className="w-full text-muted-foreground leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent"
+                    className="w-full text-slate-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent"
                     value={editorData.outlookText}
                     onChange={(e) => setEditorData({ ...editorData, outlookText: e.target.value })}
                     placeholder="Enter outlook details..."
@@ -408,14 +408,14 @@ export const MagazineEditor: React.FC = () => {
                 </div>
               </div>
 
-              <footer className="mt-20 pt-8 border-t border-border flex justify-between items-center text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest">
+              <footer className="mt-20 pt-8 border-t border-slate-100 flex justify-between items-center text-[10px] font-bold text-slate-300 uppercase tracking-widest">
                 <input 
-                  className="bg-transparent border-none p-0 focus:ring-0 w-64"
+                  className="bg-transparent border-none p-0 focus:ring-0 w-64 text-slate-300"
                   value={editorData.footerConfidentiality}
                   onChange={(e) => setEditorData({ ...editorData, footerConfidentiality: e.target.value })}
                 />
                 <input 
-                  className="bg-transparent border-none p-0 focus:ring-0 text-right w-48"
+                  className="bg-transparent border-none p-0 focus:ring-0 text-right w-48 text-slate-300"
                   value={editorData.footerDate}
                   onChange={(e) => setEditorData({ ...editorData, footerDate: e.target.value })}
                 />
