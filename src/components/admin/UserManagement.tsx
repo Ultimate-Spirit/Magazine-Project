@@ -120,21 +120,19 @@ export const UserManagement: React.FC = () => {
         if (edgeData?.error) throw new Error(edgeData.error);
       }
 
-      // 2. Update profile table data (name, role, company, active status)
+      // 2. Update profile table data (name, active status)
       const { error } = await supabase
         .from('profiles')
         .update({
           full_name: editName,
           email: editEmail, // Keep it in sync
-          role: editRole,
-          company_id: editCompany || null,
           is_active: editIsActive
         })
         .eq('id', userToEdit.id);
 
       if (error) throw error;
 
-      await logActivity('updated', 'user', editEmail, editCompany || companies[0]?.id || '', profile?.id || '');
+      await logActivity('updated', 'user', editEmail, userToEdit.company_id || companies[0]?.id || '', profile?.id || '');
 
       showNotification('success', `Updated profile for ${editEmail}`);
       setUserToEdit(null);
@@ -196,8 +194,6 @@ export const UserManagement: React.FC = () => {
                 <tr className="bg-secondary/80 border-b border-border">
                   <th className="px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Identity</th>
                   <th className="px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Status</th>
-                  <th className="px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Access Level</th>
-                  <th className="px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Workspace Mapping</th>
                   <th className="px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-right">Actions</th>
                 </tr>
               </thead>
@@ -227,17 +223,6 @@ export const UserManagement: React.FC = () => {
                           Active
                         </span>
                       )}
-                    </td>
-                    <td className="px-8 py-6">
-                      <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${p.role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground'}`}>
-                        {p.role}
-                      </span>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-2 text-foreground/80 font-medium">
-                        <Building2 className="w-4 h-4 text-muted-foreground/30" />
-                        {companies.find(c => c.id === p.company_id)?.name || <span className="text-muted-foreground/30 italic">No Mapping</span>}
-                      </div>
                     </td>
                     <td className="px-8 py-6 text-right">
                       <button 
@@ -401,34 +386,6 @@ export const UserManagement: React.FC = () => {
                     }`}
                   />
                 </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Privilege Level</label>
-                  <select 
-                    className="w-full px-6 py-4 bg-secondary border-transparent rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-foreground appearance-none"
-                    value={editRole}
-                    onChange={(e) => setEditRole(e.target.value as any)}
-                  >
-                    <option value="admin">Administrator</option>
-                    <option value="editor">Editor</option>
-                    <option value="viewer">Viewer</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Workspace Assignment</label>
-                  <select 
-                    className="w-full px-6 py-4 bg-secondary border-transparent rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-foreground appearance-none"
-                    value={editCompany}
-                    onChange={(e) => setEditCompany(e.target.value)}
-                  >
-                    <option value="">No Assignment</option>
-                    {companies.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
               </div>
 
               <button
