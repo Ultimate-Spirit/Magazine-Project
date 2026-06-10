@@ -1,7 +1,20 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
-import type { UserProfile } from '../types';
+import type { UserProfile, RolePermissions } from '../types';
+
+const ALL_PERMISSIONS: RolePermissions = {
+  can_create_folders: true,
+  can_edit_own_folders: true,
+  can_edit_all_folders: true,
+  can_delete_own_folders: true,
+  can_delete_all_folders: true,
+  can_create_publications: true,
+  can_edit_own_publications: true,
+  can_edit_all_publications: true,
+  can_delete_own_publications: true,
+  can_delete_all_publications: true,
+};
 
 interface AuthContextType {
   user: User | null;
@@ -10,6 +23,7 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   isAuthorized: boolean;
+  permissions: RolePermissions | null;
   signOut: () => Promise<void>;
 }
 
@@ -22,6 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [permissions, setPermissions] = useState<RolePermissions | null>(null);
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -97,17 +112,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProfile(userProfile);
         setIsAuthorized(true);
         // Prioritize system_admin flag from roles table, with hardcoded override for primary admin
-        setIsAdmin(data.roles?.is_system_admin === true || data.role === 'admin' || user.email === 'avessaify@gmail.com');
+        const isSysAdmin = data.roles?.is_system_admin === true || data.role === 'admin' || user.email === 'avessaify@gmail.com';
+        setIsAdmin(isSysAdmin);
+        
+        if (isSysAdmin) {
+          setPermissions(ALL_PERMISSIONS);
+        } else {
+          setPermissions(data.roles?.permissions || null);
+        }
       } else {
         console.warn('No profile data returned for user');
         // If it's the primary admin, allow them in even without a profile
         if (user.email === 'avessaify@gmail.com') {
           setIsAuthorized(true);
           setIsAdmin(true);
+          setPermissions(ALL_PERMISSIONS);
         } else {
           setProfile(null);
           setIsAuthorized(false);
           setIsAdmin(false);
+          setPermissions(null);
         }
       }
     } catch (error: any) {
@@ -119,6 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.warn('Emergency bypass triggered for admin');
         setIsAuthorized(true);
         setIsAdmin(true);
+        setPermissions(ALL_PERMISSIONS);
         setProfile({
           id: user.id,
           email: user.email,
@@ -130,6 +155,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProfile(null);
         setIsAuthorized(false);
         setIsAdmin(false);
+        setPermissions(null);
       }
     }
   };
@@ -139,7 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, session, loading, isAdmin, isAuthorized, signOut }}>
+    <AuthContext.Provider value={{ user, profile, session, loading, isAdmin, isAuthorized, permissions, signOut }}>
       {children}
     </AuthContext.Provider>
   );

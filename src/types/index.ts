@@ -28,6 +28,7 @@ export interface UserProfile {
   email: string;
   role: UserRole;
   role_id?: string;
+  roles?: Role;
   company_id?: string;
   full_name?: string;
   is_active?: boolean;
@@ -43,6 +44,7 @@ export interface Folder {
   id: string;
   company_id: string;
   name: string;
+  created_by?: string;
   updated_at: string;
 }
 
@@ -52,5 +54,6 @@ export interface Page {
   title: string;
   thumbnailUrl?: string;
   data: any;
+  created_by?: string;
   updated_at: string;
 }

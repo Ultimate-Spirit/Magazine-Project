@@ -40,7 +40,7 @@ interface ActivityEvent {
 export function FoldersView({ onSelectCompany }: Props) {
   const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { profile, permissions } = useAuth();
   
   const targetCid = (companyId || '').toLowerCase();
 
@@ -196,7 +196,8 @@ export function FoldersView({ onSelectCompany }: Props) {
         .from('folders')
         .insert([{ 
           name: folderNameInput.trim(), 
-          company_id: targetCid 
+          company_id: targetCid,
+          created_by: profile?.id
         }]);
       
       if (error) throw error;
@@ -333,17 +334,20 @@ export function FoldersView({ onSelectCompany }: Props) {
             >
               <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
-            <button 
-              onClick={() => {
-                setFolderNameInput('');
-                setIsCreateModalOpen(true);
-              }}
-              className="flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-bold rounded-2xl hover:opacity-90 transition-all"
-            >
-              <Plus className="w-5 h-5" />
-              New Entry
-            </button>
-          </div>
+            {permissions?.can_create_folders && (
+              <button 
+                onClick={() => {
+                  setFolderNameInput('');
+                  setIsCreateModalOpen(true);
+                }}
+                className="flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-bold rounded-2xl hover:opacity-90 transition-all"
+              >
+                <Plus className="w-5 h-5" />
+                New Entry
+              </button>
+            )}
+            </div>
+
         </header>
 
         <div className="grid lg:grid-cols-12 gap-8 items-start">
@@ -386,27 +390,31 @@ export function FoldersView({ onSelectCompany }: Props) {
                       </div>
 
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingFolder(folder);
-                            setFolderNameInput(folder.name);
-                          }}
-                          className="p-3 bg-background border border-border rounded-xl text-muted-foreground hover:text-primary transition-all"
-                          title="Rename"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setFolderToDelete(folder);
-                          }}
-                          className="p-3 bg-background border border-border rounded-xl text-muted-foreground hover:text-destructive transition-all"
-                          title="Purge"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {(permissions?.can_edit_all_folders || (permissions?.can_edit_own_folders && folder.created_by === profile?.id)) && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingFolder(folder);
+                              setFolderNameInput(folder.name);
+                            }}
+                            className="p-3 bg-background border border-border rounded-xl text-muted-foreground hover:text-primary transition-all"
+                            title="Rename"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        {(permissions?.can_delete_all_folders || (permissions?.can_delete_own_folders && folder.created_by === profile?.id)) && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFolderToDelete(folder);
+                            }}
+                            className="p-3 bg-background border border-border rounded-xl text-muted-foreground hover:text-destructive transition-all"
+                            title="Purge"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
 

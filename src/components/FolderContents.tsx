@@ -24,7 +24,7 @@ import type { Page, Folder, Company } from '../types';
 export function FolderContents() {
   const { folderId } = useParams<{ folderId: string }>();
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { profile, permissions } = useAuth();
   
   const [pages, setPages] = useState<Page[]>([]);
   const [folder, setFolder] = useState<Folder | null>(null);
@@ -155,13 +155,15 @@ export function FolderContents() {
             >
               <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
-            <button 
-              onClick={() => navigate(`/folder/${folderId}/editor/new`)}
-              className="flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-bold rounded-2xl hover:opacity-90 transition-all shadow-xl shadow-primary/10"
-            >
-              <Plus className="w-5 h-5" />
-              Create New Page
-            </button>
+            {permissions?.can_create_publications && (
+              <button 
+                onClick={() => navigate(`/folder/${folderId}/editor/new`)}
+                className="flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-bold rounded-2xl hover:opacity-90 transition-all shadow-xl shadow-primary/10"
+              >
+                <Plus className="w-5 h-5" />
+                Create New Page
+              </button>
+            )}
           </div>
         </header>
 
@@ -190,26 +192,30 @@ export function FolderContents() {
                     onClick={() => navigate(`/folder/${folderId}/editor/${page.id}`)}
                   >
                     <div className="absolute top-6 right-6 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/folder/${folderId}/editor/${page.id}`);
-                        }}
-                        className="p-2.5 bg-card border border-border rounded-xl text-muted-foreground hover:text-primary hover:border-primary/20 transition-all"
-                        title="Edit"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPageToDelete(page);
-                        }}
-                        className="p-2.5 bg-card border border-border rounded-xl text-muted-foreground hover:text-destructive hover:border-destructive/20 transition-all"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {(permissions?.can_edit_all_publications || (permissions?.can_edit_own_publications && page.created_by === profile?.id)) && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/folder/${folderId}/editor/${page.id}`);
+                          }}
+                          className="p-2.5 bg-card border border-border rounded-xl text-muted-foreground hover:text-primary hover:border-primary/20 transition-all"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {(permissions?.can_delete_all_publications || (permissions?.can_delete_own_publications && page.created_by === profile?.id)) && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPageToDelete(page);
+                          }}
+                          className="p-2.5 bg-card border border-border rounded-xl text-muted-foreground hover:text-destructive hover:border-destructive/20 transition-all"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
 
                     <div className="flex items-start">

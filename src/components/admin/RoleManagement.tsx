@@ -40,7 +40,8 @@ export const RoleManagement: React.FC = () => {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   
-  // Create Role State
+  // Create/Edit Role State
+  const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
   const [newRoleName, setNewRoleName] = useState('');
   const [newRolePermissions, setNewRolePermissions] = useState<RolePermissions>(INITIAL_PERMISSIONS);
   
@@ -82,24 +83,40 @@ export const RoleManagement: React.FC = () => {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleCreateRole = async (e: React.FormEvent) => {
+  const handleCreateOrUpdateRole = async (e: React.FormEvent) => {
     e.preventDefault();
     setActionLoading(true);
 
     try {
-      const { error } = await supabase
-        .from('roles')
-        .insert([{ 
-          name: newRoleName, 
-          permissions: newRolePermissions,
-          is_system_admin: false 
-        }]);
+      if (editingRoleId) {
+        // Update existing role
+        const { error } = await supabase
+          .from('roles')
+          .update({ 
+            name: newRoleName, 
+            permissions: newRolePermissions 
+          })
+          .eq('id', editingRoleId);
 
-      if (error) throw error;
+        if (error) throw error;
+        showNotification('success', `Role "${newRoleName}" updated successfully`);
+      } else {
+        // Create new role
+        const { error } = await supabase
+          .from('roles')
+          .insert([{ 
+            name: newRoleName, 
+            permissions: newRolePermissions,
+            is_system_admin: false 
+          }]);
+
+        if (error) throw error;
+        showNotification('success', `Role "${newRoleName}" created successfully`);
+      }
       
-      showNotification('success', `Role "${newRoleName}" created successfully`);
       setNewRoleName('');
       setNewRolePermissions(INITIAL_PERMISSIONS);
+      setEditingRoleId(null);
       setIsRoleModalOpen(false);
       fetchData();
     } catch (err: any) {
@@ -107,6 +124,14 @@ export const RoleManagement: React.FC = () => {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const openEditRoleModal = (role: Role) => {
+    if (role.is_system_admin) return;
+    setEditingRoleId(role.id);
+    setNewRoleName(role.name);
+    setNewRolePermissions(role.permissions);
+    setIsRoleModalOpen(true);
   };
 
   const handleAssignUser = async (e: React.FormEvent) => {
@@ -200,9 +225,20 @@ export const RoleManagement: React.FC = () => {
                   <div className={`p-4 rounded-2xl ${role.is_system_admin ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground'}`}>
                     <Shield className="w-6 h-6" />
                   </div>
-                  {role.is_system_admin && (
-                    <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/5 px-3 py-1 rounded-full border border-primary/10">Immutable</span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {!role.is_system_admin && (
+                      <button 
+                        onClick={() => openEditRoleModal(role)}
+                        className="p-2 hover:bg-secondary rounded-lg text-muted-foreground hover:text-primary transition-all"
+                        title="Edit Permissions"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                    )}
+                    {role.is_system_admin && (
+                      <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/5 px-3 py-1 rounded-full border border-primary/10">Immutable</span>
+                    )}
+                  </div>
                 </div>
                 
                 <h3 className="text-2xl font-bold text-foreground mb-2">{role.name}</h3>
@@ -245,24 +281,33 @@ export const RoleManagement: React.FC = () => {
         </div>
       </main>
 
-      {/* Create Role Modal */}
+      {/* Create/Edit Role Modal */}
       {isRoleModalOpen && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center p-6">
           <div className="bg-card rounded-[2.5rem] border border-border w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-10 border-b border-border flex items-center justify-between">
               <div>
-                <h2 className="text-3xl font-bold text-foreground tracking-tight">Create Custom Role</h2>
-                <p className="text-muted-foreground font-medium mt-1">Define specific permissions for this identity</p>
+                <h2 className="text-3xl font-bold text-foreground tracking-tight">
+                  {editingRoleId ? 'Refine Role Identity' : 'Create Custom Role'}
+                </h2>
+                <p className="text-muted-foreground font-medium mt-1">
+                  {editingRoleId ? 'Adjust specific access parameters for this group' : 'Define specific permissions for this identity'}
+                </p>
               </div>
               <button 
-                onClick={() => setIsRoleModalOpen(false)}
+                onClick={() => {
+                  setIsRoleModalOpen(false);
+                  setEditingRoleId(null);
+                  setNewRoleName('');
+                  setNewRolePermissions(INITIAL_PERMISSIONS);
+                }}
                 className="p-4 hover:bg-secondary rounded-2xl transition-all"
               >
                 <X className="w-6 h-6 text-muted-foreground/30" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateRole} className="p-10 space-y-10">
+            <form onSubmit={handleCreateOrUpdateRole} className="p-10 space-y-10">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Role Designation</label>
                 <input
@@ -346,7 +391,7 @@ export const RoleManagement: React.FC = () => {
                 disabled={actionLoading}
                 className="w-full py-5 bg-primary text-primary-foreground font-bold rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-lg"
               >
-                {actionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Instantiate Role'}
+                {actionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : (editingRoleId ? 'Commit Updates' : 'Instantiate Role')}
               </button>
             </form>
           </div>

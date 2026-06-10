@@ -27,7 +27,7 @@ import { logActivity } from '../lib/activityLogger';
 export const MagazineEditor: React.FC = () => {
   const { folderId, pageId } = useParams<{ folderId: string, pageId: string }>();
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { profile, permissions, user } = useAuth();
   
   const [company, setCompany] = useState<Company | null>(null);
   const [page, setPage] = useState<Page | null>(null);
@@ -55,6 +55,8 @@ export const MagazineEditor: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const printRef = useRef<HTMLDivElement>(null);
+
+  const canEdit = permissions?.can_edit_all_publications || (permissions?.can_edit_own_publications && (page?.created_by === profile?.id || pageId === 'new'));
 
   useEffect(() => {
     if (folderId) {
@@ -106,6 +108,10 @@ export const MagazineEditor: React.FC = () => {
   };
 
   const handleSave = async () => {
+    if (!canEdit) {
+      showNotification('error', 'You do not have permission to save this publication.');
+      return;
+    }
     setSaving(true);
     try {
       const pagePayload = {
@@ -125,7 +131,10 @@ export const MagazineEditor: React.FC = () => {
       } else {
         const { data, error } = await supabase
           .from('pages')
-          .insert([pagePayload])
+          .insert([{ 
+            ...pagePayload,
+            created_by: profile?.id
+          }])
           .select()
           .single();
         if (error) throw error;
@@ -263,7 +272,8 @@ export const MagazineEditor: React.FC = () => {
                 type="text" 
                 value={editorData.title}
                 onChange={(e) => setEditorData({ ...editorData, title: e.target.value })}
-                className="text-xl font-black text-foreground bg-transparent border-none focus:ring-0 p-0 w-64"
+                disabled={!canEdit}
+                className="text-xl font-black text-foreground bg-transparent border-none focus:ring-0 p-0 w-64 disabled:opacity-50"
               />
               <p className="text-[10px] font-bold text-primary uppercase tracking-widest mt-0.5">Editor Mode</p>
             </div>
@@ -279,7 +289,7 @@ export const MagazineEditor: React.FC = () => {
             />
             <button 
               onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
+              disabled={uploading || !canEdit}
               className="flex items-center gap-2 px-6 py-3 bg-card border border-border text-foreground font-bold rounded-xl hover:bg-secondary transition-all disabled:opacity-50"
             >
               {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
@@ -287,7 +297,7 @@ export const MagazineEditor: React.FC = () => {
             </button>
             <button 
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || !canEdit}
               className="flex items-center gap-2 px-6 py-3 bg-card border border-border text-foreground font-bold rounded-xl hover:bg-secondary transition-all disabled:opacity-50"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -330,16 +340,18 @@ export const MagazineEditor: React.FC = () => {
             <div className="w-full max-w-[850px] bg-white rounded-sm p-20 flex flex-col min-h-[1100px] border border-slate-200 shadow-xl">
               <div className="border-b-4 border-slate-900 pb-12 mb-12">
                 <input 
-                  className="w-full text-5xl font-black text-slate-900 border-none p-0 focus:ring-0 placeholder:text-slate-200 leading-[1.2] bg-transparent"
+                  className="w-full text-5xl font-black text-slate-900 border-none p-0 focus:ring-0 placeholder:text-slate-200 leading-[1.2] bg-transparent disabled:opacity-80"
                   value={editorData.headline}
                   onChange={(e) => setEditorData({ ...editorData, headline: e.target.value })}
                   placeholder="Enter Headline"
+                  disabled={!canEdit}
                 />
                 <input 
-                  className="w-full text-xl font-bold text-blue-600 mt-4 border-none p-0 focus:ring-0 placeholder:text-slate-200 uppercase tracking-widest leading-[1.2] bg-transparent"
+                  className="w-full text-xl font-bold text-blue-600 mt-4 border-none p-0 focus:ring-0 placeholder:text-slate-200 uppercase tracking-widest leading-[1.2] bg-transparent disabled:opacity-80"
                   value={editorData.subheadline}
                   onChange={(e) => setEditorData({ ...editorData, subheadline: e.target.value })}
                   placeholder="REPORT CATEGORY"
+                  disabled={!canEdit}
                 />
               </div>
 
@@ -347,10 +359,11 @@ export const MagazineEditor: React.FC = () => {
                 <div className="space-y-6">
                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Executive Summary</h3>
                   <textarea 
-                    className="w-full text-slate-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[150px] resize-none bg-transparent"
+                    className="w-full text-slate-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[150px] resize-none bg-transparent disabled:opacity-80"
                     value={editorData.summaryText}
                     onChange={(e) => setEditorData({ ...editorData, summaryText: e.target.value })}
                     placeholder="Enter summary text here..."
+                    disabled={!canEdit}
                   />
                 </div>
                 <div className="space-y-8">
@@ -359,23 +372,25 @@ export const MagazineEditor: React.FC = () => {
                     {editorData.metrics.map((metric, idx) => (
                       <div key={idx} className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
                         <input 
-                          className="w-full text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-transparent border-none p-0 focus:ring-0"
+                          className="w-full text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-transparent border-none p-0 focus:ring-0 disabled:opacity-80"
                           value={metric.label}
                           onChange={(e) => {
                             const newMetrics = [...editorData.metrics];
                             newMetrics[idx].label = e.target.value;
                             setEditorData({ ...editorData, metrics: newMetrics });
                           }}
+                          disabled={!canEdit}
                         />
                         <div className="flex items-baseline gap-2 mt-2">
                           <input 
-                            className="text-3xl font-black text-slate-900 bg-transparent border-none p-0 focus:ring-0 w-32"
+                            className="text-3xl font-black text-slate-900 bg-transparent border-none p-0 focus:ring-0 w-32 disabled:opacity-80"
                             value={metric.value}
                             onChange={(e) => {
                               const newMetrics = [...editorData.metrics];
                               newMetrics[idx].value = e.target.value;
                               setEditorData({ ...editorData, metrics: newMetrics });
                             }}
+                            disabled={!canEdit}
                           />
                           <span className={`text-sm font-bold ${metric.percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                             {metric.percentage >= 0 ? '+' : ''}{metric.percentage}%
@@ -391,33 +406,37 @@ export const MagazineEditor: React.FC = () => {
                 <div className="space-y-6">
                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Strategic Drivers</h3>
                   <textarea 
-                    className="w-full text-slate-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent"
+                    className="w-full text-slate-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent disabled:opacity-80"
                     value={editorData.growthDriversText}
                     onChange={(e) => setEditorData({ ...editorData, growthDriversText: e.target.value })}
                     placeholder="Enter growth drivers..."
+                    disabled={!canEdit}
                   />
                 </div>
                 <div className="space-y-6">
                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Future Outlook</h3>
                   <textarea 
-                    className="w-full text-slate-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent"
+                    className="w-full text-slate-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent disabled:opacity-80"
                     value={editorData.outlookText}
                     onChange={(e) => setEditorData({ ...editorData, outlookText: e.target.value })}
                     placeholder="Enter outlook details..."
+                    disabled={!canEdit}
                   />
                 </div>
               </div>
 
               <footer className="mt-20 pt-8 border-t border-slate-100 flex justify-between items-center text-[10px] font-bold text-slate-300 uppercase tracking-widest">
                 <input 
-                  className="bg-transparent border-none p-0 focus:ring-0 w-64 text-slate-300"
+                  className="bg-transparent border-none p-0 focus:ring-0 w-64 text-slate-300 disabled:opacity-80"
                   value={editorData.footerConfidentiality}
                   onChange={(e) => setEditorData({ ...editorData, footerConfidentiality: e.target.value })}
+                  disabled={!canEdit}
                 />
                 <input 
-                  className="bg-transparent border-none p-0 focus:ring-0 text-right w-48 text-slate-300"
+                  className="bg-transparent border-none p-0 focus:ring-0 text-right w-48 text-slate-300 disabled:opacity-80"
                   value={editorData.footerDate}
                   onChange={(e) => setEditorData({ ...editorData, footerDate: e.target.value })}
+                  disabled={!canEdit}
                 />
               </footer>
             </div>

@@ -1,9 +1,11 @@
 -- Create pages table if it doesn't exist
 CREATE TABLE IF NOT EXISTS pages (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    folderId UUID NOT NULL REFERENCES folders(id) ON DELETE CASCADE,
+    folder_id UUID NOT NULL REFERENCES folders(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
+    thumbnail_url TEXT,
     data JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
