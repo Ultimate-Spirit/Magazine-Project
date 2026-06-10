@@ -84,6 +84,13 @@
   body {
     @apply bg-background text-foreground antialiased overflow-x-hidden;
     font-size: 1rem;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  /* Hide scrollbars for Chrome, Safari and Opera */
+  ::-webkit-scrollbar {
+    display: none;
   }
 
   /* Custom Dropdown Styling */
