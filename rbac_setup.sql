@@ -47,3 +47,28 @@ ALTER TABLE user_companies ENABLE ROW LEVEL SECURITY;
 -- Simple policies for admin access (assuming service role or admin profile check)
 CREATE POLICY "Admins can manage roles" ON roles FOR ALL USING (true);
 CREATE POLICY "Admins can manage user_companies" ON user_companies FOR ALL USING (true);
+
+-- Ensure primary admin user is assigned to the Admin role if they exist
+DO $$
+DECLARE
+    admin_role_id UUID;
+    target_user_id UUID;
+BEGIN
+    SELECT id INTO admin_role_id FROM roles WHERE name = 'Admin';
+    SELECT id INTO target_user_id FROM auth.users WHERE email = 'avessaify@gmail.com';
+
+    IF target_user_id IS NOT NULL THEN
+        -- Insert or update profile
+        INSERT INTO public.profiles (id, email, role, role_id, is_active)
+        VALUES (target_user_id, 'avessaify@gmail.com', 'admin', admin_role_id, TRUE)
+        ON CONFLICT (id) DO UPDATE
+        SET role = 'admin',
+            role_id = admin_role_id,
+            is_active = TRUE;
+            
+        -- Grant access to all existing companies
+        INSERT INTO public.user_companies (user_id, company_id)
+        SELECT target_user_id, id FROM public.companies
+        ON CONFLICT DO NOTHING;
+    END IF;
+END $$;

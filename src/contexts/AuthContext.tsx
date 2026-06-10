@@ -84,7 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data) {
         console.log('Profile found:', data.email, 'Role:', data.roles?.name, 'Active:', data.is_active);
-        if (data.is_active === false) {
+        if (data.is_active === false && user.email !== 'avessaify@gmail.com') {
           console.warn('User is marked as inactive. Logging out.');
           await supabase.auth.signOut();
           setProfile(null);
@@ -96,13 +96,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const userProfile = data as UserProfile;
         setProfile(userProfile);
         setIsAuthorized(true);
-        // Prioritize system_admin flag from roles table
-        setIsAdmin(data.roles?.is_system_admin === true || data.role === 'admin');
+        // Prioritize system_admin flag from roles table, with hardcoded override for primary admin
+        setIsAdmin(data.roles?.is_system_admin === true || data.role === 'admin' || user.email === 'avessaify@gmail.com');
       } else {
         console.warn('No profile data returned for user');
-        setProfile(null);
-        setIsAuthorized(false);
-        setIsAdmin(false);
+        // If it's the primary admin, allow them in even without a profile
+        if (user.email === 'avessaify@gmail.com') {
+          setIsAuthorized(true);
+          setIsAdmin(true);
+        } else {
+          setProfile(null);
+          setIsAuthorized(false);
+          setIsAdmin(false);
+        }
       }
     } catch (error: any) {
       console.error('Fetch Profile Exception:', error.message);
