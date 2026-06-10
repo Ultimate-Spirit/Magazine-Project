@@ -27,7 +27,7 @@ import { logActivity } from '../lib/activityLogger';
 export const MagazineEditor: React.FC = () => {
   const { folderId, pageId } = useParams<{ folderId: string, pageId: string }>();
   const navigate = useNavigate();
-  const { profile, permissions, user } = useAuth();
+  const { profile, permissions } = useAuth();
   
   const [company, setCompany] = useState<Company | null>(null);
   const [page, setPage] = useState<Page | null>(null);

@@ -11,7 +11,8 @@ import {
   Building2, 
   UserPlus, 
   CheckSquare, 
-  Square 
+  Square,
+  Edit2
 } from 'lucide-react';
 import type { Role, UserProfile, Company, RolePermissions } from '../../types';
 
