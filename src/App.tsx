@@ -33,16 +33,18 @@ function App() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="animate-spin h-8 w-8 text-primary" />
-          <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest animate-pulse">Verifying access...</p>
+        <div className="flex flex-col items-center gap-8">
+          <div className="w-16 h-16 bg-secondary rounded-[2rem] flex items-center justify-center">
+            <Loader2 className="animate-spin h-8 w-8 text-primary" />
+          </div>
+          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.5em] animate-pulse">Verifying Session</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen bg-background text-foreground font-body">
       <Routes>
         <Route path="/login" element={user && isAuthorized ? <Navigate to="/" replace /> : <Login />} />
         <Route path="/update-password" element={<UpdatePassword />} />
@@ -119,11 +121,11 @@ function App() {
       {isAdmin && (
         <Link 
           to="/admin" 
-          className="fixed bottom-8 right-8 p-4 bg-blue-600 text-white rounded-full shadow-2xl hover:bg-blue-700 transition-all hover:scale-110 group z-50"
+          className="fixed bottom-10 right-10 w-16 h-16 bg-primary text-primary-foreground rounded-[2rem] shadow-2xl shadow-primary/20 flex items-center justify-center transition-all hover:scale-110 hover:-rotate-6 group z-50"
           title="Admin Panel"
         >
           <Shield className="w-6 h-6" />
-          <span className="absolute right-full mr-4 bg-gray-900 text-white px-3 py-1 rounded-lg text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+          <span className="absolute right-full mr-6 bg-card border border-border text-foreground px-4 py-2 rounded-2xl text-[10px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap translate-x-4 group-hover:translate-x-0 shadow-xl">
             Admin Console
           </span>
         </Link>

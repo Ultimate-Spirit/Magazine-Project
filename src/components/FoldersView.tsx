@@ -7,7 +7,6 @@ import {
   Loader2, 
   ChevronRight, 
   X, 
-  FolderPlus, 
   AlertCircle, 
   CheckCircle2, 
   RefreshCw, 
@@ -16,7 +15,6 @@ import {
   Activity as ActivityIcon,
   BarChart3,
   Clock,
-  Zap,
   Search
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
@@ -110,11 +108,6 @@ export function FoldersView({ onSelectCompany }: Props) {
       });
 
       if (fetchedFolders.length > 0) {
-        // Fetch pages, including the user who created/updated them if possible.
-        // Since we don't have an updated_by column in the schema yet, we will attribute it to a known user in the workspace
-        // For demonstration of the UI refactor, we will randomly assign attribution to simulate the requested feature
-        // In a true production environment, we would alter the SQL schema to include 'updated_by' UUID REFERENCES profiles(id)
-        
         const { count } = await supabase
           .from('pages')
           .select('id', { count: 'exact', head: true })
@@ -123,20 +116,12 @@ export function FoldersView({ onSelectCompany }: Props) {
         setStats(prev => ({ ...prev, publications: count || 0 }));
       }
 
-      // Fetch actual activity logs
-      console.log('ATTEMPTING ACTIVITY LOG FETCH FOR COMPANY:', targetCid);
       const { data: logData, error: logError } = await supabase
         .from('activity_logs')
         .select('id, action_type, entity_type, entity_name, created_at, profiles(full_name, email)')
         .eq('company_id', targetCid)
         .order('created_at', { ascending: false })
         .limit(8);
-
-      if (logError) {
-        console.error("SUPABASE SELECT ERROR:", logError.message, logError.details, logError.hint);
-      } else {
-        console.log("ACTIVITY LOG FETCH SUCCESS:", logData);
-      }
 
       if (logData) {
         const mappedActivities: ActivityEvent[] = logData.map(log => {
@@ -168,7 +153,6 @@ export function FoldersView({ onSelectCompany }: Props) {
     if (targetCid && profile) {
       fetchData(true);
 
-      // Real-time Subscriptions
       const channel = supabase
         .channel('schema-db-changes')
         .on(
@@ -179,7 +163,6 @@ export function FoldersView({ onSelectCompany }: Props) {
             table: 'pages'
           },
           (payload) => {
-            console.log('Real-time page update:', payload);
             fetchData();
           }
         )
@@ -192,7 +175,6 @@ export function FoldersView({ onSelectCompany }: Props) {
             filter: `company_id=eq.${targetCid}`
           },
           (payload) => {
-            console.log('Real-time folder update:', payload);
             fetchData();
           }
         )
@@ -310,45 +292,44 @@ export function FoldersView({ onSelectCompany }: Props) {
       onNavigateBack={() => navigate('/', { replace: true })}
       onHome={() => navigate('/', { replace: true })}
     >
-      <div className="w-full px-8 md:px-12 xl:px-16 py-16 text-foreground">
+      <div className="w-full px-8 md:px-12 xl:px-16 py-12 md:py-20 text-foreground">
         {notification && (
-          <div className={`fixed top-8 right-8 z-[100] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right-8 duration-300 ${notification.type === 'success' ? 'bg-foreground text-background' : 'bg-destructive text-destructive-foreground'}`}>
-            {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <AlertCircle className="w-5 h-5" />}
-            <p className="font-bold text-sm">{notification.message}</p>
+          <div className={`fixed top-8 right-8 z-[150] px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-right-8 duration-300 ${notification.type === 'success' ? 'bg-primary text-primary-foreground' : 'bg-destructive text-destructive-foreground'}`}>
+            {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+            <p className="font-bold text-sm tracking-tight">{notification.message}</p>
           </div>
         )}
 
-        {/* Dashboard Header - Optimized Single Row */}
-        <header className="flex flex-wrap items-center justify-between gap-6 mb-16 border-b border-border pb-12">
-          <div>
-            <div className="flex items-center gap-2 text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-4">
-              <Zap className="w-3 h-3 fill-current" />
-              Dynamic Workspace
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-12 mb-20">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.4em]">
+              <div className="w-2 h-2 rounded-full bg-primary" />
+              Dynamic Repository
               {refreshing && <Loader2 className="w-3 h-3 animate-spin ml-2" />}
             </div>
-            <h1 className="text-5xl font-black tracking-tight leading-none mb-4">
-              Project Hub
+            <h1 className="text-6xl font-display font-black tracking-tighter leading-none">
+              Directory Hub
             </h1>
-            <p className="text-muted-foreground font-medium text-lg max-w-xl">
-              Centralized command for your organization's digital assets and publications.
+            <p className="text-muted-foreground font-body text-lg max-w-xl leading-relaxed">
+              Orchestrate your publication pipeline and manage digital assets within this workspace context.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="relative group">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
               <input
                 type="text"
-                placeholder="Search folders..."
-                className="pl-11 pr-4 py-4 bg-muted border border-border rounded-xl text-sm font-medium focus:ring-1 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all w-64 placeholder:text-muted-foreground/50"
+                placeholder="Find directory..."
+                className="pl-12 pr-6 py-4 bg-secondary border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary/10 outline-none transition-all w-64 placeholder:text-muted-foreground/40"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <button 
               onClick={() => fetchData()}
-              className="p-4 bg-muted border border-border rounded-xl text-muted-foreground hover:text-primary hover:bg-card hover:border-primary/20 transition-all shadow-sm"
-              title="Sync Database"
+              className="p-4 bg-secondary rounded-2xl text-muted-foreground hover:text-primary transition-all"
+              title="Sync Workspace"
             >
               <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
@@ -360,38 +341,35 @@ export function FoldersView({ onSelectCompany }: Props) {
               className="flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-bold rounded-2xl hover:opacity-90 transition-all shadow-xl shadow-primary/10"
             >
               <Plus className="w-5 h-5" />
-              New Directory
+              New Entry
             </button>
           </div>
         </header>
 
-        {/* 2-Column Responsive Layout */}
-        <div className="grid lg:grid-cols-12 gap-10 items-start">
-          
-          {/* Main Content Area - Folder Grid */}
+        <div className="grid lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-8 xl:col-span-9">
             {folders.length === 0 ? (
-              <div className="bg-muted/50 rounded-2xl border border-border py-32 text-center">
-                <div className="w-20 h-20 bg-card rounded-2xl border border-border flex items-center justify-center mx-auto mb-8">
+              <div className="bg-secondary/40 rounded-[2.5rem] py-32 text-center">
+                <div className="w-24 h-24 bg-card rounded-3xl flex items-center justify-center mx-auto mb-10 shadow-sm">
                   <FolderIcon className="w-10 h-10 text-muted-foreground/20" />
                 </div>
-                <h3 className="text-2xl font-bold mb-2">Workspace context is empty</h3>
-                <p className="text-muted-foreground font-medium mb-10">Initialize your first directory to start composing publications.</p>
+                <h3 className="text-3xl font-display font-bold mb-3 tracking-tight">Empty Context</h3>
+                <p className="text-muted-foreground font-body mb-12 max-w-sm mx-auto">Start your journey by initializing a new publication directory.</p>
                 <button 
                   onClick={() => setIsCreateModalOpen(true)}
-                  className="px-10 py-4 bg-card border border-border rounded-xl font-bold hover:bg-muted transition-all"
+                  className="px-10 py-5 bg-card rounded-2xl font-bold hover:bg-secondary transition-all shadow-sm"
                 >
-                  Initialize Registry
+                  Initialize Hub
                 </button>
               </div>
             ) : filteredFolders.length === 0 ? (
-              <div className="py-32 text-center">
-                <p className="text-lg font-medium text-muted-foreground">No folders match "<span className="text-foreground">{searchQuery}</span>"</p>
+              <div className="py-32 text-center bg-secondary/20 rounded-[2.5rem]">
+                <p className="text-xl font-body font-bold text-muted-foreground">No matches for "<span className="text-foreground">{searchQuery}</span>"</p>
                 <button 
                   onClick={() => setSearchQuery('')}
-                  className="mt-4 text-sm font-bold text-primary hover:underline"
+                  className="mt-6 text-sm font-bold text-primary hover:underline"
                 >
-                  Clear search
+                  Reset search filters
                 </button>
               </div>
             ) : (
@@ -399,49 +377,53 @@ export function FoldersView({ onSelectCompany }: Props) {
                 {filteredFolders.map((folder) => (
                   <div
                     key={folder.id}
-                    className="group relative bg-card rounded-2xl border border-border hover:border-primary/20 hover:bg-muted/30 transition-all duration-300 p-8 flex flex-col justify-between min-h-[220px] cursor-pointer"
+                    className="group relative bg-card rounded-[2rem] hover:bg-secondary transition-all duration-500 p-10 flex flex-col justify-between min-h-[260px] cursor-pointer overflow-hidden shadow-sm hover:shadow-xl hover:shadow-primary/5"
                     onClick={() => navigate(`/folder/${folder.id}`)}
                   >
-                    {/* Actions Group - Top Right */}
-                    <div className="absolute top-6 right-6 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingFolder(folder);
-                          setFolderNameInput(folder.name);
-                        }}
-                        className="p-2.5 bg-card border border-border rounded-xl text-muted-foreground hover:text-primary hover:border-primary/20 transition-all"
-                        title="Rename"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setFolderToDelete(folder);
-                        }}
-                        className="p-2.5 bg-card border border-border rounded-xl text-muted-foreground hover:text-destructive hover:border-destructive/20 transition-all"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    <div className="flex items-start justify-between">
+                      <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500">
+                        <FolderIcon className="w-8 h-8" />
+                      </div>
 
-                    <div className="flex items-start">
-                      <div className="w-14 h-14 bg-primary/5 rounded-xl border border-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500">
-                        <FolderIcon className="w-7 h-7" />
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingFolder(folder);
+                            setFolderNameInput(folder.name);
+                          }}
+                          className="p-3 bg-background rounded-xl text-muted-foreground hover:text-primary transition-all shadow-sm"
+                          title="Rename"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFolderToDelete(folder);
+                          }}
+                          className="p-3 bg-background rounded-xl text-muted-foreground hover:text-destructive transition-all shadow-sm"
+                          title="Purge"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
 
                     <div>
-                      <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors line-clamp-1 pr-10">
+                      <h3 className="text-2xl font-display font-bold mb-3 group-hover:text-primary transition-colors tracking-tight line-clamp-1 pr-4">
                         {folder.name}
                       </h3>
                       <div className="flex items-center justify-between">
-                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">
-                          {new Date(folder.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                        </span>
-                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary/50 transform group-hover:translate-x-0.5 transition-all" />
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                            {new Date(folder.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                        </div>
+                        <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground group-hover:translate-x-1 transition-transform">
+                          <ChevronRight className="w-4 h-4" />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -450,89 +432,75 @@ export function FoldersView({ onSelectCompany }: Props) {
             )}
           </div>
 
-          {/* Sidebar - Workspace Insights */}
-          <aside className="lg:col-span-4 xl:col-span-3 space-y-6 sticky top-28">
-            
-            {/* Quick Stats Widget */}
-            <div className="bg-muted/30 rounded-2xl border border-border p-8">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="p-2.5 bg-card rounded-xl border border-border text-primary shadow-sm">
-                  <BarChart3 className="w-4 h-4" />
-                </div>
-                <h2 className="text-sm font-black uppercase tracking-widest">Insights</h2>
+          <aside className="lg:col-span-4 xl:col-span-3 space-y-6 sticky top-32">
+            <div className="bg-secondary/40 rounded-[2.5rem] p-10 space-y-10">
+              <div className="flex items-center justify-between">
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">Workspace Metrics</h2>
+                <BarChart3 className="w-4 h-4 text-primary" />
               </div>
               
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-muted-foreground">Total Directories</span>
-                  <span className="text-xl font-black">{folders.length}</span>
+              <div className="grid grid-cols-1 gap-8">
+                <div>
+                  <p className="text-3xl font-display font-black leading-none">{folders.length}</p>
+                  <p className="text-xs font-bold text-muted-foreground mt-2 uppercase tracking-widest">Directories</p>
                 </div>
-                <div className="h-px bg-border w-full" />
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-muted-foreground">Active Publications</span>
-                  <span className="text-xl font-black">{stats.publications}</span>
+                <div>
+                  <p className="text-3xl font-display font-black leading-none">{stats.publications}</p>
+                  <p className="text-xs font-bold text-muted-foreground mt-2 uppercase tracking-widest">Active Pages</p>
                 </div>
-                <div className="h-px bg-border w-full" />
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-muted-foreground">Collaborators</span>
-                  <span className="text-xl font-black">{stats.collaborators}</span>
+                <div>
+                  <p className="text-3xl font-display font-black leading-none">{stats.collaborators}</p>
+                  <p className="text-xs font-bold text-muted-foreground mt-2 uppercase tracking-widest">Members</p>
                 </div>
               </div>
             </div>
 
-            {/* Recent Activity Widget - Refactored for Attribution */}
-            <div className="bg-card rounded-2xl border border-border p-8">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="p-2.5 bg-muted rounded-xl border border-border text-purple-500">
-                  <ActivityIcon className="w-4 h-4" />
-                </div>
-                <h2 className="text-sm font-black uppercase tracking-widest">Activity</h2>
+            <div className="bg-card rounded-[2.5rem] p-10 shadow-sm border border-border/5">
+              <div className="flex items-center justify-between mb-10">
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">Event Stream</h2>
+                <ActivityIcon className="w-4 h-4 text-primary" />
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {activities.length === 0 ? (
-                  <p className="text-[10px] text-muted-foreground font-bold uppercase text-center py-4">No recent activity</p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest text-center py-8">Quiescent State</p>
                 ) : activities.map((event) => (
-                  <div key={`${event.type}-${event.id}`} className="flex gap-4">
-                    <div className="mt-1 shrink-0">
-                      <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground text-[10px] flex items-center justify-center font-bold tracking-wider border border-border">
+                  <div key={`${event.type}-${event.id}`} className="flex gap-5">
+                    <div className="shrink-0">
+                      <div className="w-10 h-10 rounded-2xl bg-secondary text-primary text-[10px] flex items-center justify-center font-black tracking-tighter shadow-inner">
                         {event.userInitials}
                       </div>
                     </div>
-                    <div className="min-w-0 pt-0.5">
-                      <p className="text-sm leading-tight mb-1 truncate">
-                        <span className="font-bold">{event.userName}</span>
-                        <span className="text-muted-foreground"> {event.action} the {event.type} </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold leading-tight mb-1 truncate">
+                        {event.userName} <span className="text-muted-foreground font-normal lowercase">{event.action} the {event.type}</span>
                       </p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs font-bold text-muted-foreground truncate">{event.name}</p>
-                        <span className="text-muted-foreground/30">•</span>
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground/50 font-medium whitespace-nowrap">
-                          <Clock className="w-3 h-3" />
+                      <div className="flex items-center gap-3">
+                        <p className="text-[10px] font-bold text-primary uppercase tracking-widest truncate">{event.name}</p>
+                        <span className="text-muted-foreground/20 text-[10px]">•</span>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest whitespace-nowrap">
                           {getRelativeTime(event.timestamp)}
-                        </div>
+                        </span>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-
           </aside>
         </div>
       </div>
 
-      {/* Modal - Create/Rename */}
       {(isCreateModalOpen || editingFolder) && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-xl z-[150] flex items-center justify-center p-6 animate-in fade-in duration-300">
-          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-border animate-in zoom-in-95 duration-200">
-            <div className="p-12 border-b border-border flex items-center justify-between">
-              <div>
-                <h2 className="text-3xl font-black tracking-tight">
-                  {editingFolder ? 'Rename Registry' : 'New Directory'}
+        <div className="fixed inset-0 bg-background/60 backdrop-blur-2xl z-[200] flex items-center justify-center p-6 animate-in fade-in duration-500">
+          <div className="bg-card rounded-[3rem] shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-16 pb-0 flex items-start justify-between">
+              <div className="space-y-4">
+                <h2 className="text-5xl font-display font-black tracking-tight leading-none">
+                  {editingFolder ? 'Modify <br/> Identity' : 'Initialize <br/> Directory'}
                 </h2>
-                <p className="text-muted-foreground font-medium mt-1">
-                  {editingFolder ? 'Update identifier' : 'Initialize a new project context'}
+                <p className="text-muted-foreground font-body text-lg leading-relaxed max-w-xs">
+                  {editingFolder ? 'Update the metadata for this repository entry.' : 'Define a new context for your publication assets.'}
                 </p>
               </div>
               <button 
@@ -540,21 +508,20 @@ export function FoldersView({ onSelectCompany }: Props) {
                   setIsCreateModalOpen(false);
                   setEditingFolder(null);
                 }}
-                className="p-4 hover:bg-muted rounded-2xl transition-all"
+                className="w-14 h-14 bg-secondary flex items-center justify-center rounded-2xl hover:bg-destructive hover:text-destructive-foreground transition-all group"
               >
-                <X className="w-6 h-6 text-muted-foreground" />
+                <X className="w-6 h-6 transition-transform group-hover:rotate-90" />
               </button>
             </div>
 
-            <form onSubmit={editingFolder ? handleRenameFolder : handleCreateFolder} className="p-12 space-y-10">
+            <form onSubmit={editingFolder ? handleRenameFolder : handleCreateFolder} className="p-16 pt-12 space-y-12">
               <div className="space-y-4">
-                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em] ml-1">Identity Name</label>
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.4em] ml-2">Registry Name</label>
                 <div className="relative">
-                  <FolderPlus className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/50" />
                   <input
                     type="text"
-                    className="w-full pl-16 pr-8 py-5 bg-muted border-transparent rounded-xl focus:bg-card focus:ring-4 focus:ring-primary/5 focus:border-primary outline-none transition-all font-bold text-lg"
-                    placeholder="e.g. FY26 Executive Summits"
+                    className="w-full px-8 py-6 bg-secondary border-none rounded-[1.5rem] focus:ring-4 focus:ring-primary/5 outline-none transition-all font-display font-bold text-2xl placeholder:text-muted-foreground/20"
+                    placeholder="e.g. Q4 Growth Narrative"
                     value={folderNameInput}
                     onChange={(e) => setFolderNameInput(e.target.value)}
                     required
@@ -566,9 +533,9 @@ export function FoldersView({ onSelectCompany }: Props) {
               <button
                 type="submit"
                 disabled={isActionLoading || !folderNameInput.trim()}
-                className="w-full py-6 bg-primary text-primary-foreground font-black rounded-xl hover:opacity-90 disabled:opacity-50 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 text-lg uppercase tracking-widest"
+                className="w-full py-8 bg-primary text-primary-foreground font-display font-black rounded-[1.5rem] hover:opacity-90 disabled:opacity-50 transition-all shadow-2xl shadow-primary/20 flex items-center justify-center gap-4 text-xl tracking-tight"
               >
-                {isActionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : editingFolder ? 'Update Identifier' : 'Initialize Hub'}
+                {isActionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : editingFolder ? 'Update Registry' : 'Initialize Directory'}
               </button>
             </form>
           </div>
