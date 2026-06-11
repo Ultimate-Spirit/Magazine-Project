@@ -99,7 +99,7 @@ export const UserManagement: React.FC = () => {
         showNotification('success', edgeData?.message || `Account created for ${newUserEmail}`);
       }
 
-      await logActivity('invited', 'user', newUserEmail, companies[0]?.id || '', currentAdmin?.id || '');
+      await logActivity('invited', 'user', newUserEmail, null, currentAdmin?.id || '');
 
       fetchData();
       setIsUserModalOpen(false);

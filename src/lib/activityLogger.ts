@@ -7,17 +7,17 @@ export async function logActivity(
   actionType: ActionType,
   entityType: EntityType,
   entityName: string,
-  companyId: string,
+  companyId: string | null,
   userId: string,
   details?: string
 ) {
-  if (!companyId || !userId) {
-    console.error('ACTIVITY LOG BLOCKED: Missing companyId or userId', { companyId, userId });
+  if (!userId) {
+    console.error('ACTIVITY LOG BLOCKED: Missing userId');
     return;
   }
 
   const payload = {
-    company_id: companyId,
+    company_id: companyId || null,
     user_id: userId,
     action_type: actionType,
     entity_type: entityType,
