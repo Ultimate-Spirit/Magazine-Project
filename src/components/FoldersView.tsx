@@ -5,13 +5,11 @@ import {
   Folder as FolderIcon, 
   Plus, 
   Loader2, 
-  ChevronRight, 
   AlertCircle, 
   CheckCircle2, 
   RefreshCw, 
   Trash2, 
   Edit2,
-  Users,
   Search,
   Activity
 } from 'lucide-react';

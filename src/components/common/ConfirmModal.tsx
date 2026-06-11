@@ -10,6 +10,7 @@ interface Props {
   onCancel: () => void;
   isLoading?: boolean;
   variant?: 'danger' | 'info';
+  children?: React.ReactNode;
 }
 
 export const ConfirmModal: React.FC<Props> = ({
@@ -20,7 +21,8 @@ export const ConfirmModal: React.FC<Props> = ({
   onConfirm,
   onCancel,
   isLoading = false,
-  variant = 'info'
+  variant = 'info',
+  children
 }) => {
   if (!isOpen) return null;
 
@@ -47,20 +49,24 @@ export const ConfirmModal: React.FC<Props> = ({
             {message}
           </p>
 
+          {children}
+
           <div className="w-full space-y-3">
-            <button
-              onClick={onConfirm}
-              disabled={isLoading}
-              className={`w-full py-5 ${variantStyles[variant]} text-primary-foreground font-black rounded-2xl disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-[11px] uppercase tracking-[0.2em] shadow-lg`}
-            >
-              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : confirmLabel}
-            </button>
+            {!children && (
+              <button
+                onClick={onConfirm}
+                disabled={isLoading}
+                className={`w-full py-5 ${variantStyles[variant]} text-primary-foreground font-black rounded-2xl disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-[11px] uppercase tracking-[0.2em] shadow-lg`}
+              >
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : confirmLabel}
+              </button>
+            )}
             <button
               onClick={onCancel}
               disabled={isLoading}
               className="w-full py-5 micro-surface border border-border/10 text-muted-foreground/60 font-black rounded-2xl hover:bg-secondary transition-all flex items-center justify-center text-[10px] uppercase tracking-[0.2em]"
             >
-              Cancel
+              {children ? "Dismiss" : "Cancel"}
             </button>
           </div>
         </div>
