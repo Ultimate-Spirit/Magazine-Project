@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Company } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowRight, Search, Building2, ChevronRight } from 'lucide-react';
+import { Search, Building2, ChevronRight } from 'lucide-react';
 
 interface Props {
   onSelect: (company: Company) => void;
