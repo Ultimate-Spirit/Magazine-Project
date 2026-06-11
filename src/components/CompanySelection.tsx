@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Company } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowRight, Search } from 'lucide-react';
+import { ArrowRight, Search, Building2 } from 'lucide-react';
 
 interface Props {
   onSelect: (company: Company) => void;
@@ -54,10 +54,6 @@ export function CompanySelection({ onSelect }: Props) {
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-  };
-
   if (companies.length > 0) {
     return (
       <div className="min-h-[calc(100vh-5rem)] bg-background flex flex-col items-center justify-center p-6 md:p-12">
@@ -90,11 +86,17 @@ export function CompanySelection({ onSelect }: Props) {
                 onClick={() => onSelect(company)}
                 className="group relative p-6 border border-border/20 rounded-[1.5rem] bg-transparent hover:border-foreground/20 hover:scale-[1.02] transition-all duration-300 text-left overflow-hidden flex items-center gap-5"
               >
-                {/* Circular Avatar */}
-                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center shrink-0 border border-border/10 group-hover:bg-primary/5 group-hover:border-primary/20 transition-colors duration-300">
-                  <span className="text-xs font-black text-muted-foreground group-hover:text-primary transition-colors">
-                    {getInitials(company.name)}
-                  </span>
+                {/* Circular Avatar / Logo Visual Anchor */}
+                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center shrink-0 border border-border/10 group-hover:bg-primary/5 group-hover:border-primary/20 transition-colors duration-300 overflow-hidden">
+                  {company.logoUrl ? (
+                    <img 
+                      src={company.logoUrl} 
+                      alt={`${company.name} logo`}
+                      className="w-full h-full object-contain p-1"
+                    />
+                  ) : (
+                    <Building2 className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  )}
                 </div>
 
                 <div className="flex-1 min-w-0">
