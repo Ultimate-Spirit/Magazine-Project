@@ -248,9 +248,6 @@ export const MagazineEditor: React.FC = () => {
   return (
     <WorkspaceLayout 
       company={company || { id: 'none', name: 'Select Company' }}
-      currentView="page_builder"
-      onNavigateBack={goBackToFolder}
-      onHome={() => navigate('/', { replace: true })}
     >
       <div className="flex flex-col h-[calc(100vh-5rem)] bg-background relative overflow-hidden">
         {/* Hidden Print Template (Off-screen) */}

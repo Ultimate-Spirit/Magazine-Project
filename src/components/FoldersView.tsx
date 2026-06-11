@@ -288,11 +288,9 @@ export function FoldersView({ onSelectCompany }: Props) {
 
   return (
     <WorkspaceLayout 
-      company={company || { id: targetCid, name: 'Workspace' }}
-      currentView="project_explorer"
-      onNavigateBack={() => navigate('/', { replace: true })}
-      onHome={() => navigate('/', { replace: true })}
+      company={company || { id: 'none', name: 'Select Company' }}
     >
+
       <div className="w-full px-8 md:px-12 xl:px-16 py-12 md:py-20 text-foreground">
         {notification && (
           <div className={`fixed top-8 right-8 z-[150] px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-right-8 duration-300 ${notification.type === 'success' ? 'bg-primary text-primary-foreground' : 'bg-destructive text-destructive-foreground'}`}>

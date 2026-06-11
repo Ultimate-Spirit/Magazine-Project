@@ -103,12 +103,6 @@ function App() {
               ) : (
                 <WorkspaceLayout 
                   company={activeCompany || { id: 'none', name: 'Select Company' }}
-                  currentView="company_selection"
-                  onNavigateBack={() => navigate(-1)}
-                  onHome={() => {
-                    setActiveCompany(null);
-                    navigate('/');
-                  }}
                 >
                   <CompanySelection onSelect={handleCompanySelect} />
                 </WorkspaceLayout>

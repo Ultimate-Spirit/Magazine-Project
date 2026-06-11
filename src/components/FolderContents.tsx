@@ -118,9 +118,6 @@ export function FolderContents() {
   return (
     <WorkspaceLayout 
       company={company || { id: 'none', name: 'Workspace' }}
-      currentView="folder_view"
-      onNavigateBack={goBack}
-      onHome={() => navigate('/', { replace: true })}
     >
       <div className="w-full px-8 md:px-12 xl:px-16 py-16 text-foreground">
         {notification && (
