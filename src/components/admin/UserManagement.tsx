@@ -52,18 +52,36 @@ export const UserManagement: React.FC = () => {
 
   const fetchData = async () => {
     setLoading(true);
-    const [profilesRes, companiesRes, rolesRes, userCompRes] = await Promise.all([
-      supabase.from('profiles').select('*, roles(*)').order('email'),
-      supabase.from('companies').select('*').order('name'),
-      supabase.from('roles').select('*').order('created_at'),
-      supabase.from('user_companies').select('*')
-    ]);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const [unifiedRes, companiesRes, rolesRes, userCompRes] = await Promise.all([
+        fetch('/_/backend/list-users-unified', {
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`
+          }
+        }),
+        supabase.from('companies').select('*').order('name'),
+        supabase.from('roles').select('*').order('created_at'),
+        supabase.from('user_companies').select('*')
+      ]);
 
-    if (!profilesRes.error) setProfiles(profilesRes.data as UserProfile[]);
-    if (!companiesRes.error) setCompanies(companiesRes.data as Company[]);
-    if (!rolesRes.error) setRoles(rolesRes.data as Role[]);
-    if (!userCompRes.error) setUserCompanies(userCompRes.data);
-    setLoading(false);
+      if (unifiedRes.ok) {
+        const unifiedData = await unifiedRes.json();
+        setProfiles(unifiedData as UserProfile[]);
+      } else {
+        const profilesRes = await supabase.from('profiles').select('*, roles(*)').order('email');
+        if (!profilesRes.error) setProfiles(profilesRes.data as UserProfile[]);
+      }
+
+      if (!companiesRes.error) setCompanies(companiesRes.data as Company[]);
+      if (!rolesRes.error) setRoles(rolesRes.data as Role[]);
+      if (!userCompRes.error) setUserCompanies(userCompRes.data);
+    } catch (err) {
+      console.error('Fetch Error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const showNotification = (type: 'success' | 'error', message: string) => {
@@ -257,13 +275,12 @@ export const UserManagement: React.FC = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-secondary/80 border-b border-border">
-                  <th className="px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Identity</th>
-
-                  <th className="px-4 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Global Role</th>
-                  <th className="px-4 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Access</th>
-                  <th className="px-4 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Status</th>
-                  <th className="px-4 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Joined</th>
-                  <th className="px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-right">Actions</th>
+                  <th className="px-10 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Identity</th>
+                  <th className="px-6 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Global Role</th>
+                  <th className="px-6 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-right">Access</th>
+                  <th className="px-6 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Status</th>
+                  <th className="px-6 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Joined</th>
+                  <th className="px-10 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -271,7 +288,7 @@ export const UserManagement: React.FC = () => {
                   const assigned = getAssignedCompaniesForUser(p.id);
                   return (
                     <tr key={p.id} className="group hover:bg-secondary/50 transition-colors cursor-pointer" onClick={() => openEditPanel(p)}>
-                      <td className="px-8 py-6">
+                      <td className="px-10 py-6">
                         <div className="flex items-center gap-4">
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${p.is_active === false ? 'bg-secondary text-muted-foreground' : 'bg-secondary text-primary'}`}>
                             {p.email[0].toUpperCase()}
@@ -282,14 +299,14 @@ export const UserManagement: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-6">
+                      <td className="px-6 py-6">
                         <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest ${p.roles?.is_system_admin ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-secondary text-muted-foreground'}`}>
                           <Shield className="w-3 h-3" />
                           {p.roles?.name || 'Unassigned'}
                         </span>
                       </td>
-                      <td className="px-4 py-6">
-                        <div className="flex items-center gap-4">
+                      <td className="px-6 py-6">
+                        <div className="flex items-center justify-end gap-4">
                           <div className="flex -space-x-3 overflow-hidden">
                             {assigned.slice(0, 3).map((c, i) => (
                               <div key={c.id} className="inline-block h-8 w-8 rounded-full border-2 border-card bg-secondary overflow-hidden" style={{ zIndex: 10 - i }}>
@@ -308,14 +325,14 @@ export const UserManagement: React.FC = () => {
                               </div>
                             )}
                           </div>
-                          <div className="min-w-0">
+                          <div className="text-right shrink-0">
                             <span className="text-xs font-bold text-foreground block">
                               {assigned.length} {assigned.length === 1 ? 'Workspace' : 'Workspaces'}
                             </span>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-6">
+                      <td className="px-6 py-6">
                         {p.is_active === false ? (
                           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-destructive/10 text-destructive">
                             <ShieldAlert className="w-3 h-3" />
@@ -328,10 +345,10 @@ export const UserManagement: React.FC = () => {
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-6">
+                      <td className="px-6 py-6">
                         <span className="text-xs font-medium text-muted-foreground/60">{p.created_at ? formatDate(p.created_at) : '—'}</span>
                       </td>
-                      <td className="px-8 py-6 text-right">
+                      <td className="px-10 py-6 text-right">
                         <button 
                           onClick={(e) => { e.stopPropagation(); openEditPanel(p); }}
                           className="p-3 text-muted-foreground hover:text-primary hover:bg-secondary rounded-xl transition-all"

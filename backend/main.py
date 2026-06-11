@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from fpdf import FPDF
 from dotenv import load_dotenv
-from database import get_supabase
+from database import get_supabase, get_supabase_admin
 import schemas
 from typing import Optional
 
@@ -226,6 +226,38 @@ async def generate_pdf(data: dict):
     except Exception as e:
         print(f"PDF GENERATION CRASH: {str(e)}")
         raise HTTPException(status_code=500, detail=f"PDF Generation Error: {str(e)}")
+
+@app.get("/list-users-unified", dependencies=[Depends(get_current_user)])
+async def list_users_unified():
+    supabase = get_supabase()
+    supabase_admin = get_supabase_admin()
+    
+    if not supabase_admin:
+        # If admin key is missing, return profiles as fallback but print warning
+        print("WARNING: Supabase Admin client not initialized. Joined dates will be missing.")
+        profiles_res = supabase.table("profiles").select("*, roles(*)").execute()
+        return profiles_res.data or []
+        
+    try:
+        # Fetch profiles from public schema
+        profiles_res = supabase.table("profiles").select("*, roles(*)").execute()
+        profiles = profiles_res.data or []
+        
+        # Fetch users from auth schema via Admin client
+        users_res = supabase_admin.auth.admin.list_users()
+        auth_users = users_res
+        
+        # Create a map of user_id to created_at
+        auth_map = {u.id: u.created_at for u in auth_users}
+        
+        # Merge created_at into profiles
+        for p in profiles:
+            p["created_at"] = auth_map.get(p["id"])
+            
+        return profiles
+    except Exception as e:
+        print(f"FETCH UNIFIED USERS ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch unified user list: {str(e)}")
 
 # Articles Endpoints (Legacy)
 
