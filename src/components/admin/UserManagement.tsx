@@ -13,10 +13,7 @@ import {
   ShieldAlert, 
   Shield, 
   Building2, 
-  CheckSquare, 
-  Square,
-  Search as SearchIcon,
-  Tag
+  Search as SearchIcon
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { logActivity } from '../../lib/activityLogger';
@@ -133,14 +130,14 @@ export const UserManagement: React.FC = () => {
     setActionLoading(true);
 
     try {
-      // 1. Update basic profile info
+      // Update basic profile info
       const { error } = await supabase
         .from('profiles')
         .update({
           full_name: editName,
           is_active: editIsActive,
           role_id: editRoleId || null,
-          role: editRoleId ? undefined : null // Legacy support
+          role: editRoleId ? undefined : null
         })
         .eq('id', userToEdit.id);
 
@@ -167,7 +164,6 @@ export const UserManagement: React.FC = () => {
       
       if (error) throw error;
       
-      // Optimistic Update
       setEditCompanyIds(prev => [...prev, companyId]);
       setUserCompanies(prev => [...prev, { user_id: userToEdit.id, company_id: companyId }]);
       showNotification('success', 'Workspace access granted');
@@ -187,7 +183,6 @@ export const UserManagement: React.FC = () => {
       
       if (error) throw error;
       
-      // Optimistic Update
       setEditCompanyIds(prev => prev.filter(id => id !== companyId));
       setUserCompanies(prev => prev.filter(uc => !(uc.user_id === userToEdit.id && uc.company_id === companyId)));
       showNotification('success', 'Workspace access revoked');
@@ -313,6 +308,84 @@ export const UserManagement: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* User Creation Modal */}
+      {isUserModalOpen && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center p-6">
+          <div className="bg-card rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-200 border border-border">
+            <div className="p-10 border-b border-border flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-bold text-foreground tracking-tight">Create Professional Account</h2>
+                <p className="text-muted-foreground font-medium mt-1">Manually provision internal workspace access</p>
+              </div>
+              <button 
+                onClick={() => setIsUserModalOpen(false)}
+                className="p-4 hover:bg-secondary rounded-2xl transition-all group"
+              >
+                <X className="w-6 h-6 text-muted-foreground/30 group-hover:text-foreground" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateUser} className="p-10 space-y-8">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Full Name</label>
+                  <div className="relative">
+                    <User className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30" />
+                    <input
+                      type="text"
+                      placeholder="Jane Doe"
+                      className="w-full pl-14 pr-6 py-4 bg-secondary border-transparent rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground"
+                      value={newUserName}
+                      onChange={(e) => setNewUserName(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Identity (Email)</label>
+                  <div className="relative">
+                    <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30" />
+                    <input
+                      type="email"
+                      placeholder="colleague@organization.com"
+                      className="w-full pl-14 pr-6 py-4 bg-secondary border-transparent rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground"
+                      value={newUserEmail}
+                      onChange={(e) => setNewUserEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Initial Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30" />
+                    <input
+                      type="text"
+                      placeholder="Secure temporary password"
+                      className="w-full pl-14 pr-6 py-4 bg-secondary border-transparent rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground"
+                      value={newUserPassword}
+                      onChange={(e) => setNewUserPassword(e.target.value)}
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={actionLoading}
+                className="w-full py-5 bg-primary text-primary-foreground font-bold rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all shadow-xl shadow-primary/10 flex items-center justify-center gap-3 text-lg"
+              >
+                {actionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Create User Account'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Slide-out Profile Panel */}
       {userToEdit && (
