@@ -56,7 +56,7 @@ export function CompanySelection({ onSelect }: Props) {
 
   if (companies.length > 0) {
     return (
-      <div className="min-h-[calc(100vh-5rem)] bg-background flex flex-col items-center justify-center p-6 md:p-12">
+      <div className="min-h-[calc(100vh-5rem)] bg-background flex flex-col items-center p-6 md:p-12 pt-16 md:pt-24">
         <div className="w-full max-w-4xl flex flex-col space-y-8">
           <header className="space-y-2">
             <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tighter leading-none">
