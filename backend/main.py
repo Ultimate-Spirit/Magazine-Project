@@ -232,20 +232,27 @@ async def list_users_unified():
     supabase = get_supabase()
     supabase_admin = get_supabase_admin()
     
-    if not supabase_admin:
-        # If admin key is missing, return profiles as fallback but print warning
-        print("WARNING: Supabase Admin client not initialized. Joined dates will be missing.")
-        profiles_res = supabase.table("profiles").select("*, roles(*)").execute()
-        return profiles_res.data or []
-        
+    # ALWAYS try to get profiles first as baseline
     try:
-        # Fetch profiles from public schema
         profiles_res = supabase.table("profiles").select("*, roles(*)").execute()
         profiles = profiles_res.data or []
+    except Exception as e:
+        print(f"FETCH PROFILES ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch user profiles")
+
+    # If admin client is not available, return profiles immediately
+    if not supabase_admin:
+        print("WARNING: Supabase Admin client not initialized. Returning profiles without auth metadata.")
+        return profiles
         
+    try:
         # Fetch users from auth schema via Admin client
+        # In supabase-py, list_users() returns a list directly in some versions or an object in others.
+        # We'll handle the most common structure.
         users_res = supabase_admin.auth.admin.list_users()
-        auth_users = users_res
+        
+        # Check if users_res has a 'users' attribute (UserResponse object)
+        auth_users = getattr(users_res, 'users', users_res) if not isinstance(users_res, list) else users_res
         
         # Create a map of user_id to created_at
         auth_map = {u.id: u.created_at for u in auth_users}
@@ -256,8 +263,9 @@ async def list_users_unified():
             
         return profiles
     except Exception as e:
-        print(f"FETCH UNIFIED USERS ERROR: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to fetch unified user list: {str(e)}")
+        print(f"MERGE AUTH METADATA FAILED (Graceful Fallback): {str(e)}")
+        # Fallback: Return profiles alone if merging fails
+        return profiles
 
 # Articles Endpoints (Legacy)
 
