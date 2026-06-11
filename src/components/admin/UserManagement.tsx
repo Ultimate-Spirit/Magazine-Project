@@ -55,7 +55,7 @@ export const UserManagement: React.FC = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      // Parallel direct fetch for maximum speed
+      // Parallel primary fetch for immediate UI population
       const [profilesRes, companiesRes, rolesRes, userCompRes] = await Promise.all([
         supabase.from('profiles').select('*, roles(*)').order('email'),
         supabase.from('companies').select('*').order('name'),
@@ -63,12 +63,21 @@ export const UserManagement: React.FC = () => {
         supabase.from('user_companies').select('*')
       ]);
 
-      if (!profilesRes.error) setProfiles(profilesRes.data as UserProfile[]);
+      if (!profilesRes.error && profilesRes.data) {
+        setProfiles(profilesRes.data as UserProfile[]);
+      } else if (profilesRes.error) {
+        console.warn('Roles join failed, attempting raw profile fetch...');
+        const rawProfiles = await supabase.from('profiles').select('*').order('email');
+        if (!rawProfiles.error && rawProfiles.data) {
+          setProfiles(rawProfiles.data as UserProfile[]);
+        }
+      }
+
       if (!companiesRes.error) setCompanies(companiesRes.data as Company[]);
       if (!rolesRes.error) setRoles(rolesRes.data as Role[]);
       if (!userCompRes.error) setUserCompanies(userCompRes.data);
 
-      // Background metadata sync (non-blocking)
+      // Non-blocking background sync for secure metadata (Joined dates)
       if (session) {
         fetch('/_/backend/list-users-unified', {
           headers: { 'Authorization': `Bearer ${session.access_token}` }
@@ -79,7 +88,7 @@ export const UserManagement: React.FC = () => {
             setProfiles(data as UserProfile[]);
           }
         })
-        .catch(err => console.warn('Background sync failed:', err));
+        .catch(err => console.warn('Background sync deferred:', err));
       }
 
     } catch (err) {
@@ -277,8 +286,8 @@ export const UserManagement: React.FC = () => {
                 <tr className="bg-secondary/80 border-b border-border">
                   <th className="w-[30%] px-12 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Identity</th>
                   <th className="w-[20%] px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Global Role</th>
-                  <th className="w-[25%] px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-right">Access</th>
-                  <th className="w-[15%] px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Status</th>
+                  <th className="w-[25%] px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Workspace Access</th>
+                  <th className="w-[15%] px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Account Status</th>
                   <th className="w-[10%] px-12 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-right">Actions</th>
                 </tr>
               </thead>
@@ -305,7 +314,7 @@ export const UserManagement: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-8 py-6">
-                        <div className="flex items-center justify-end gap-4">
+                        <div className="flex items-center gap-4">
                           <div className="flex -space-x-3 overflow-hidden shrink-0">
                             {assigned.slice(0, 3).map((c, i) => (
                               <div key={c.id} className="inline-block h-8 w-8 rounded-full border-2 border-card bg-secondary overflow-hidden" style={{ zIndex: 10 - i }}>
@@ -324,9 +333,9 @@ export const UserManagement: React.FC = () => {
                               </div>
                             )}
                           </div>
-                          <div className="text-right shrink-0">
+                          <div className="text-left shrink-0">
                             <span className="text-xs font-bold text-foreground block">
-                              {assigned.length} {assigned.length === 1 ? 'WS' : 'WS'}
+                              {assigned.length} {assigned.length === 1 ? 'Workspace' : 'Workspaces'}
                             </span>
                           </div>
                         </div>
