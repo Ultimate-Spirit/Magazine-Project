@@ -232,40 +232,44 @@ async def list_users_unified():
     supabase = get_supabase()
     supabase_admin = get_supabase_admin()
     
-    # ALWAYS try to get profiles first as baseline
+    # 1. PRIMARY FETCH: Secure core user data first
     try:
         profiles_res = supabase.table("profiles").select("*, roles(*)").execute()
         profiles = profiles_res.data or []
     except Exception as e:
-        print(f"FETCH PROFILES ERROR: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to fetch user profiles")
+        print(f"CRITICAL FETCH ERROR (Profiles): {str(e)}")
+        # If the primary table fails, we cannot proceed
+        raise HTTPException(status_code=500, detail="Identity registry currently unavailable")
 
-    # If admin client is not available, return profiles immediately
-    if not supabase_admin:
-        print("WARNING: Supabase Admin client not initialized. Returning profiles without auth metadata.")
-        return profiles
-        
-    try:
-        # Fetch users from auth schema via Admin client
-        # In supabase-py, list_users() returns a list directly in some versions or an object in others.
-        # We'll handle the most common structure.
-        users_res = supabase_admin.auth.admin.list_users()
-        
-        # Check if users_res has a 'users' attribute (UserResponse object)
-        auth_users = getattr(users_res, 'users', users_res) if not isinstance(users_res, list) else users_res
-        
-        # Create a map of user_id to created_at
-        auth_map = {u.id: u.created_at for u in auth_users}
-        
-        # Merge created_at into profiles
-        for p in profiles:
-            p["created_at"] = auth_map.get(p["id"])
+    # 2. SECONDARY FETCH: Attempt to retrieve secure auth metadata (Joined dates)
+    # This is wrapped in a strict try-catch to prevent primary payload failure.
+    auth_map = {}
+    if supabase_admin:
+        try:
+            # Use the admin client to list users from secure auth schema
+            users_res = supabase_admin.auth.admin.list_users()
             
-        return profiles
-    except Exception as e:
-        print(f"MERGE AUTH METADATA FAILED (Graceful Fallback): {str(e)}")
-        # Fallback: Return profiles alone if merging fails
-        return profiles
+            # Extract user list regardless of library version return type
+            auth_users = getattr(users_res, 'users', users_res) if not isinstance(users_res, list) else users_res
+            
+            # Build map and ensure ISO string serialization for boundary crossing
+            for u in auth_users:
+                if hasattr(u, 'id') and hasattr(u, 'created_at'):
+                    # Explicitly stringify the timestamp to prevent Next.js boundary serialization bugs
+                    auth_map[str(u.id)] = u.created_at.isoformat() if hasattr(u.created_at, 'isoformat') else str(u.created_at)
+        except Exception as e:
+            print(f"NON-FATAL AUTH FETCH ERROR: {str(e)}")
+            # Fail silently - profiles will return with null 'created_at'
+    else:
+        print("SECURE CONTEXT WARNING: Supabase Admin client not initialized.")
+
+    # 3. UNIFICATION: Merge metadata with core profiles
+    for p in profiles:
+        user_id = str(p.get("id", ""))
+        # Set to ISO string if found, otherwise null for graceful degradation
+        p["created_at"] = auth_map.get(user_id)
+        
+    return profiles
 
 # Articles Endpoints (Legacy)
 
