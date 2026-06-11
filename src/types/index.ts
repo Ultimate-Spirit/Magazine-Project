@@ -32,6 +32,7 @@ export interface UserProfile {
   company_id?: string;
   full_name?: string;
   is_active?: boolean;
+  created_at?: string;
 }
 
 export interface Company {
