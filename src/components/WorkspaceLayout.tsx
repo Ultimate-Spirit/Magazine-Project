@@ -3,7 +3,7 @@ import type { Company } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 
 interface Props {
@@ -18,87 +18,63 @@ export function WorkspaceLayout({ company, children }: Props) {
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
   const [authorizedCompanies, setAuthorizedCompanies] = useState<Company[]>([]);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  useEffect(() => {
-    const fetchAuthorizedWorkspaces = async () => {
-      if (!user) return;
-      try {
-        if (isAdmin) {
-          const { data } = await supabase.from('companies').select('*').order('name');
-          if (data) setAuthorizedCompanies(data);
-        } else {
-          const { data } = await supabase
-            .from('user_companies')
-            .select('companies(*)')
-            .eq('user_id', user.id);
-          if (data) {
-            setAuthorizedCompanies(data.map((item: any) => item.companies).filter(Boolean));
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching workspaces:', err);
-      }
-    };
-    fetchAuthorizedWorkspaces();
-  }, [user, isAdmin]);
-
-  const switchWorkspace = (cid: string) => {
-    setShowWorkspaceMenu(false);
-    navigate(`/company/${cid}/folders`);
-    window.location.reload(); // Force reload to refresh context
-  };
-
+  const isSelectionPage = location.pathname === '/';
+...
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary selection:text-primary-foreground font-sans">
       <header className="h-16 md:h-20 px-4 md:px-8 flex items-center justify-between sticky top-0 z-[100] bg-background/80 backdrop-blur-xl border-b border-border/50">
         <div className="flex items-center gap-4 md:gap-8">
-          <div className="relative">
-            <button 
-              onClick={() => setShowWorkspaceMenu(!showWorkspaceMenu)}
-              className="group flex items-center gap-2 md:gap-3 p-1.5 md:p-2 rounded-2xl hover:bg-secondary transition-all border border-transparent hover:border-border"
-            >
-              <div className="w-8 h-8 md:w-10 md:h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center transition-all group-hover:scale-95">
-                {company.logoUrl ? (
-                  <img src={company.logoUrl} alt={company.name} className="w-full h-full object-contain p-1.5" />
-                ) : (
-                  <Building2 size={20} />
-                )}
-              </div>
-              <div className="hidden sm:flex flex-col items-start text-left">
-                <div className="flex items-center gap-1.5">
-                  <h1 className="text-sm md:text-base font-bold leading-none tracking-tight">
-                    {company.name}
-                  </h1>
-                  <ChevronDown size={14} className={`text-muted-foreground transition-transform duration-300 ${showWorkspaceMenu ? 'rotate-180' : ''}`} />
+          {!isSelectionPage && (
+            <div className="relative">
+              <button 
+                onClick={() => setShowWorkspaceMenu(!showWorkspaceMenu)}
+                className="group flex items-center gap-2 md:gap-3 p-1.5 md:p-2 rounded-2xl hover:bg-secondary transition-all border border-transparent hover:border-border"
+              >
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center transition-all group-hover:scale-95">
+                  {company.logoUrl ? (
+                    <img src={company.logoUrl} alt={company.name} className="w-full h-full object-contain p-1.5" />
+                  ) : (
+                    <Building2 size={20} />
+                  )}
                 </div>
-                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1 opacity-60">
-                  Switch Workspace
-                </p>
-              </div>
-            </button>
+                <div className="hidden sm:flex flex-col items-start text-left">
+                  <div className="flex items-center gap-1.5">
+                    <h1 className="text-sm md:text-base font-bold leading-none tracking-tight">
+                      {company.name}
+                    </h1>
+                    <ChevronDown size={14} className={`text-muted-foreground transition-transform duration-300 ${showWorkspaceMenu ? 'rotate-180' : ''}`} />
+                  </div>
+                  <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1 opacity-60">
+                    Switch Workspace
+                  </p>
+                </div>
+              </button>
 
-            {showWorkspaceMenu && (
-              <div className="absolute top-full left-0 mt-2 w-64 bg-card border border-border rounded-2xl shadow-2xl py-2 z-[110] animate-in fade-in slide-in-from-top-2 duration-200">
-                <div className="px-4 py-2 border-b border-border/50 mb-1">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Authorized Workspaces</p>
+              {showWorkspaceMenu && (
+                <div className="absolute top-full left-0 mt-2 w-64 bg-card border border-border rounded-2xl shadow-2xl py-2 z-[110] animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 py-2 border-b border-border/50 mb-1">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Authorized Workspaces</p>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {authorizedCompanies.map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={() => switchWorkspace(c.id)}
+                        className="w-full flex items-center justify-between px-4 py-3 hover:bg-secondary transition-colors text-left"
+                      >
+                        <span className={`text-sm font-medium ${c.id === company.id ? 'text-primary' : 'text-foreground'}`}>
+                          {c.name}
+                        </span>
+                        {c.id === company.id && <Check size={14} className="text-primary" />}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="max-h-64 overflow-y-auto">
-                  {authorizedCompanies.map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => switchWorkspace(c.id)}
-                      className="w-full flex items-center justify-between px-4 py-3 hover:bg-secondary transition-colors text-left"
-                    >
-                      <span className={`text-sm font-medium ${c.id === company.id ? 'text-primary' : 'text-foreground'}`}>
-                        {c.name}
-                      </span>
-                      {c.id === company.id && <Check size={14} className="text-primary" />}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
         
         <div className="flex items-center gap-2 md:gap-4">
