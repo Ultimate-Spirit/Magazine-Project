@@ -111,6 +111,18 @@
   .bento-card {
     @apply bg-card border border-border rounded-[2rem] p-6 transition-all duration-300;
   }
+  
+  .micro-surface {
+    @apply bg-black/[0.02] dark:bg-white/[0.03] backdrop-blur-sm;
+  }
+  
+  .micro-surface-hover {
+    @apply hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors duration-300;
+  }
+
+  .faint-divider {
+    @apply border-b border-black/5 dark:border-white/5;
+  }
 }
 
 @media print {

@@ -283,32 +283,32 @@ export const UserManagement: React.FC = () => {
           <div className="bg-card rounded-[2rem] border border-border overflow-hidden">
             <table className="w-full text-left border-collapse table-fixed">
               <thead>
-                <tr className="bg-secondary/80 border-b border-border">
-                  <th className="w-[30%] px-12 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Identity</th>
-                  <th className="w-[20%] px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Global Role</th>
-                  <th className="w-[25%] px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Workspace Access</th>
-                  <th className="w-[15%] px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Account Status</th>
-                  <th className="w-[10%] px-12 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-right">Actions</th>
+                <tr className="faint-divider">
+                  <th className="w-[30%] px-12 py-6 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Identity</th>
+                  <th className="w-[20%] px-8 py-6 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Global Role</th>
+                  <th className="w-[25%] px-8 py-6 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Workspace Access</th>
+                  <th className="w-[15%] px-8 py-6 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Account Status</th>
+                  <th className="w-[10%] px-12 py-6 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-black/5 dark:divide-white/5">
                 {filteredProfiles.map((p) => {
                   const assigned = getAssignedCompaniesForUser(p.id);
                   return (
-                    <tr key={p.id} className="group hover:bg-secondary/50 transition-colors cursor-pointer" onClick={() => openEditPanel(p)}>
+                    <tr key={p.id} className="group micro-surface-hover cursor-pointer transition-colors duration-300" onClick={() => openEditPanel(p)}>
                       <td className="px-12 py-6 overflow-hidden">
                         <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 ${p.is_active === false ? 'bg-secondary text-muted-foreground' : 'bg-secondary text-primary'}`}>
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 ${p.is_active === false ? 'bg-secondary text-muted-foreground' : 'bg-primary/10 text-primary'}`}>
                             {p.email[0].toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <p className={`font-bold truncate ${p.is_active === false ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{p.full_name || 'No Name'}</p>
-                            <p className="text-xs text-muted-foreground font-medium truncate">{p.email}</p>
+                            <p className={`font-black truncate ${p.is_active === false ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{p.full_name || 'No Name'}</p>
+                            <p className="text-xs text-muted-foreground/60 font-bold tracking-wide truncate">{p.email}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-8 py-6">
-                        <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest ${p.roles?.is_system_admin ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-secondary text-muted-foreground'}`}>
+                        <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border ${p.roles?.is_system_admin ? 'bg-primary/5 text-primary border-primary/20' : 'micro-surface border-border/10 text-muted-foreground'}`}>
                           <Shield className="w-3 h-3" />
                           {p.roles?.name || 'Unassigned'}
                         </span>
@@ -317,7 +317,7 @@ export const UserManagement: React.FC = () => {
                         <div className="flex items-center gap-4">
                           <div className="flex -space-x-3 overflow-hidden shrink-0">
                             {assigned.slice(0, 3).map((c, i) => (
-                              <div key={c.id} className="inline-block h-8 w-8 rounded-full border-2 border-card bg-secondary overflow-hidden" style={{ zIndex: 10 - i }}>
+                              <div key={c.id} className="inline-block h-8 w-8 rounded-full border-2 border-card micro-surface overflow-hidden" style={{ zIndex: 10 - i }}>
                                 {c.logoUrl ? (
                                   <img src={c.logoUrl} alt="" className="h-full w-full object-contain p-1" />
                                 ) : (
@@ -328,26 +328,26 @@ export const UserManagement: React.FC = () => {
                               </div>
                             ))}
                             {assigned.length > 3 && (
-                              <div className="flex items-center justify-center h-8 w-8 rounded-full border-2 border-card bg-secondary text-[8px] font-bold text-muted-foreground z-0">
+                              <div className="flex items-center justify-center h-8 w-8 rounded-full border-2 border-card micro-surface text-[8px] font-bold text-muted-foreground z-0">
                                 +{assigned.length - 3}
                               </div>
                             )}
                           </div>
                           <div className="text-left shrink-0">
-                            <span className="text-xs font-bold text-foreground block">
-                              {assigned.length} {assigned.length === 1 ? 'Workspace' : 'Workspaces'}
+                            <span className="text-xs font-black text-foreground block">
+                              {assigned.length} {assigned.length === 1 ? 'WS' : 'WS'}
                             </span>
                           </div>
                         </div>
                       </td>
                       <td className="px-8 py-6">
                         {p.is_active === false ? (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-destructive/10 text-destructive">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-destructive/5 text-destructive border border-destructive/10">
                             <ShieldAlert className="w-3 h-3" />
                             Blocked
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-500">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-500/5 text-emerald-500 border border-emerald-500/10">
                             <CheckCircle2 className="w-3 h-3" />
                             Active
                           </span>
@@ -356,7 +356,7 @@ export const UserManagement: React.FC = () => {
                       <td className="px-12 py-6 text-right">
                         <button 
                           onClick={(e) => { e.stopPropagation(); openEditPanel(p); }}
-                          className="p-3 text-muted-foreground hover:text-primary hover:bg-secondary rounded-xl transition-all"
+                          className="p-3 text-muted-foreground/40 hover:text-primary micro-surface-hover rounded-xl transition-all"
                         >
                           <Edit2 className="w-5 h-5" />
                         </button>
@@ -450,18 +450,18 @@ export const UserManagement: React.FC = () => {
 
       {/* Slide-out Profile Panel */}
       {userToEdit && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex justify-end">
-          <div className="w-full max-w-md bg-card border-l border-border h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
-            <div className="p-8 border-b border-border flex items-center justify-between shrink-0">
+        <div className="fixed inset-0 bg-background/60 backdrop-blur-md z-50 flex justify-end">
+          <div className="w-full max-w-md bg-card border-l border-border/10 h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-500">
+            <div className="p-8 faint-divider flex items-center justify-between shrink-0">
               <div>
-                <h2 className="text-2xl font-bold text-foreground tracking-tight">Identity Profile</h2>
-                <p className="text-muted-foreground font-medium mt-1 text-sm">{userToEdit.email}</p>
+                <h2 className="text-2xl font-black text-foreground tracking-tighter leading-none">Identity Profile</h2>
+                <p className="text-muted-foreground/60 font-bold mt-1 text-[10px] uppercase tracking-widest">{userToEdit.email}</p>
               </div>
               <button 
                 onClick={() => setUserToEdit(null)}
-                className="p-3 hover:bg-secondary rounded-xl transition-all group"
+                className="p-3 micro-surface rounded-xl hover:text-primary transition-all group"
               >
-                <X className="w-5 h-5 text-muted-foreground/50 group-hover:text-foreground" />
+                <X className="w-5 h-5 text-muted-foreground/30 group-hover:text-foreground" />
               </button>
             </div>
 
@@ -469,16 +469,16 @@ export const UserManagement: React.FC = () => {
               <form id="edit-user-form" onSubmit={handleUpdateUser} className="p-8 space-y-12">
                 {/* Basic Info */}
                 <div className="space-y-6">
-                  <h4 className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                  <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
                     <User className="w-3 h-3" />
                     Identity
                   </h4>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Full Name</label>
+                      <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Full Name</label>
                       <input
                         type="text"
-                        className="w-full px-4 py-3 bg-secondary border border-transparent rounded-xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground text-sm"
+                        className="w-full px-4 py-3 micro-surface border border-border/10 rounded-xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
                         required
@@ -489,13 +489,13 @@ export const UserManagement: React.FC = () => {
 
                 {/* Global Role Assignment */}
                 <div className="space-y-4">
-                  <h4 className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                  <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
                     <Shield className="w-3 h-3" />
                     Authority Level
                   </h4>
                   <div className="relative">
                     <select 
-                      className="w-full pl-4 pr-10 py-3 bg-secondary border border-transparent rounded-xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground text-sm appearance-none"
+                      className="w-full pl-4 pr-10 py-3 micro-surface border border-border/10 rounded-xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight appearance-none"
                       value={editRoleId}
                       onChange={(e) => setEditRoleId(e.target.value)}
                       disabled={userToEdit?.email === 'avessaify@gmail.com'}
@@ -510,7 +510,7 @@ export const UserManagement: React.FC = () => {
 
                 {/* Workspace Access - Hybrid UI */}
                 <div className="space-y-6">
-                  <h4 className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                  <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
                     <Building2 className="w-3 h-3" />
                     Workspace Access
                   </h4>
@@ -518,8 +518,8 @@ export const UserManagement: React.FC = () => {
                   {/* Active Chips */}
                   <div className="flex flex-wrap gap-2">
                     {assignedCompanies.map(c => (
-                      <div key={c.id} className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-full group/chip animate-in zoom-in-95 duration-200">
-                        <span className="text-[10px] font-bold uppercase tracking-tight">{c.name}</span>
+                      <div key={c.id} className="flex items-center gap-2 px-3 py-1.5 bg-primary/5 text-primary border border-primary/10 rounded-full group/chip animate-in zoom-in-95 duration-200">
+                        <span className="text-[10px] font-black uppercase tracking-tight">{c.name}</span>
                         <button 
                           type="button"
                           onClick={() => handleRemoveWorkspace(c.id)}
@@ -530,7 +530,7 @@ export const UserManagement: React.FC = () => {
                       </div>
                     ))}
                     {assignedCompanies.length === 0 && (
-                      <p className="text-[10px] text-muted-foreground italic">No workspaces authorized.</p>
+                      <p className="text-[10px] text-muted-foreground/40 font-bold uppercase tracking-widest italic">No workspaces authorized.</p>
                     )}
                   </div>
 
@@ -541,27 +541,27 @@ export const UserManagement: React.FC = () => {
                       <input 
                         type="text"
                         placeholder="Search unassigned..."
-                        className="w-full pl-10 pr-4 py-2 bg-secondary/50 border border-border/20 rounded-lg text-xs outline-none focus:bg-secondary focus:border-primary/30 transition-all placeholder:text-muted-foreground/20"
+                        className="w-full pl-10 pr-4 py-2 micro-surface border border-border/10 rounded-lg text-[10px] font-black uppercase tracking-widest outline-none focus:bg-card focus:border-primary/30 transition-all placeholder:text-muted-foreground/20"
                         value={workspaceSearchTerm}
                         onChange={(e) => setWorkspaceSearchTerm(e.target.value)}
                       />
                     </div>
 
-                    <div className="h-40 overflow-y-auto border border-border/20 rounded-xl bg-secondary/20 invisible-scrollbar">
+                    <div className="h-40 overflow-y-auto border border-border/5 rounded-xl bg-black/5 dark:bg-white/5 invisible-scrollbar">
                       <div className="p-2 space-y-1">
                         {unassignedCompanies.map(c => (
                           <button
                             key={c.id}
                             type="button"
                             onClick={() => handleAddWorkspace(c.id)}
-                            className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-secondary transition-colors group text-left"
+                            className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg micro-surface-hover transition-colors group text-left"
                           >
-                            <span className="text-xs font-bold text-foreground/70 group-hover:text-primary">{c.name}</span>
+                            <span className="text-[11px] font-black text-foreground/70 group-hover:text-primary tracking-tight">{c.name}</span>
                             <Plus size={12} className="text-muted-foreground/30 group-hover:text-primary" />
                           </button>
                         ))}
                         {unassignedCompanies.length === 0 && (
-                          <p className="text-[10px] text-muted-foreground/30 text-center py-12 italic">All available environments assigned.</p>
+                          <p className="text-[9px] font-black text-muted-foreground/20 text-center py-12 uppercase tracking-widest">All available environments assigned.</p>
                         )}
                       </div>
                     </div>
@@ -569,10 +569,10 @@ export const UserManagement: React.FC = () => {
                 </div>
 
                 {/* Account Status */}
-                <div className="p-5 bg-secondary/50 rounded-2xl border border-border/50 flex items-center justify-between">
+                <div className="p-6 micro-surface rounded-2xl border border-border/10 flex items-center justify-between">
                   <div>
-                    <h3 className="font-bold text-foreground text-sm">Account Status</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    <h3 className="font-black text-foreground text-xs uppercase tracking-widest">Account Status</h3>
+                    <p className="text-[10px] font-medium text-muted-foreground/60 mt-1">
                       {editIsActive ? 'Active and authorized.' : 'Blocked from accessing.'}
                     </p>
                   </div>
@@ -594,12 +594,12 @@ export const UserManagement: React.FC = () => {
               </form>
             </div>
 
-            <div className="p-8 border-t border-border bg-card shrink-0">
+            <div className="p-8 faint-divider bg-card shrink-0">
               <button
                 type="submit"
                 form="edit-user-form"
                 disabled={actionLoading}
-                className="w-full py-4 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-sm shadow-lg shadow-primary/10"
+                className="w-full py-4 bg-primary text-primary-foreground font-black rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-[11px] uppercase tracking-[0.2em] shadow-lg shadow-primary/10"
               >
                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Configurations'}
               </button>

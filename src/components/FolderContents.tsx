@@ -127,19 +127,19 @@ export function FolderContents() {
           </div>
         )}
 
-        <header className="flex flex-wrap items-end justify-between gap-6 mb-16">
+        <header className="flex flex-wrap items-end justify-between gap-6 mb-16 px-1">
           <div>
             <button 
               onClick={goBack}
-              className="flex items-center gap-2 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4 hover:text-primary transition-colors group"
+              className="flex items-center gap-2 text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.3em] mb-4 hover:text-primary transition-colors group"
             >
               <ArrowLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" />
               Back to Directories
             </button>
-            <h1 className="text-5xl font-black tracking-tight leading-none mb-4">
+            <h1 className="text-5xl font-black text-foreground tracking-tight leading-none mb-4">
               {folder?.name}
             </h1>
-            <p className="text-muted-foreground font-medium text-lg max-w-xl">
+            <p className="text-muted-foreground/60 font-medium text-lg max-w-xl">
               Internal documentation and publication registry for this directory.
             </p>
           </div>
@@ -147,7 +147,7 @@ export function FolderContents() {
           <div className="flex items-center gap-3">
             <button 
               onClick={() => fetchData()}
-              className="p-4 bg-muted border border-border rounded-xl text-muted-foreground hover:text-primary hover:bg-card hover:border-primary/20 transition-all"
+              className="p-4 micro-surface border border-border/10 rounded-xl text-muted-foreground/40 hover:text-primary transition-all"
               title="Sync Database"
             >
               <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
@@ -155,7 +155,7 @@ export function FolderContents() {
             {permissions?.can_create_publications && (
               <button 
                 onClick={() => navigate(`/folder/${folderId}/editor/new`)}
-                className="flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-bold rounded-2xl hover:opacity-90 transition-all shadow-xl shadow-primary/10"
+                className="flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-black rounded-2xl hover:opacity-90 transition-all uppercase tracking-widest text-[10px] shadow-lg shadow-primary/10"
               >
                 <Plus className="w-5 h-5" />
                 Create New Page
@@ -167,15 +167,15 @@ export function FolderContents() {
         <div className="grid lg:grid-cols-12 gap-10">
           <div className="lg:col-span-12">
             {pages.length === 0 ? (
-              <div className="bg-muted/50 rounded-2xl border border-border py-32 text-center">
-                <div className="w-20 h-20 bg-card rounded-2xl border border-border flex items-center justify-center mx-auto mb-8 text-muted-foreground/20">
+              <div className="micro-surface rounded-[2.5rem] border border-border/10 py-32 text-center">
+                <div className="w-20 h-20 bg-secondary rounded-2xl border border-border/5 flex items-center justify-center mx-auto mb-8 text-muted-foreground/20">
                   <Layout className="w-10 h-10" />
                 </div>
-                <h3 className="text-2xl font-bold mb-2">No pages found</h3>
-                <p className="text-muted-foreground font-medium mb-10">Start by creating a new publication or executive report.</p>
+                <h3 className="text-2xl font-black mb-2 tracking-tight">No pages found</h3>
+                <p className="text-muted-foreground/50 font-medium mb-10">Start by creating a new publication or executive report.</p>
                 <button 
                   onClick={() => navigate(`/folder/${folderId}/editor/new`)}
-                  className="px-10 py-4 bg-card border border-border rounded-xl font-bold hover:bg-muted transition-all"
+                  className="px-10 py-4 micro-surface border border-border/10 rounded-xl font-bold hover:bg-secondary transition-all uppercase tracking-widest text-[10px]"
                 >
                   Create First Page
                 </button>
@@ -185,7 +185,7 @@ export function FolderContents() {
                 {pages.map((page) => (
                   <div
                     key={page.id}
-                    className="group relative bg-card rounded-2xl border border-border hover:border-primary/20 hover:bg-muted/30 transition-all duration-300 p-8 flex flex-col justify-between min-h-[200px] cursor-pointer"
+                    className="group relative bento-card micro-surface micro-surface-hover border border-border/10 hover:border-primary/30 transition-all duration-500 p-8 flex flex-col justify-between min-h-[220px] cursor-pointer"
                     onClick={() => navigate(`/folder/${folderId}/editor/${page.id}`)}
                   >
                     <div className="absolute top-6 right-6 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0">
@@ -195,7 +195,7 @@ export function FolderContents() {
                             e.stopPropagation();
                             navigate(`/folder/${folderId}/editor/${page.id}`);
                           }}
-                          className="p-2.5 bg-card border border-border rounded-xl text-muted-foreground hover:text-primary hover:border-primary/20 transition-all"
+                          className="p-2.5 micro-surface border border-border/10 rounded-xl text-muted-foreground/40 hover:text-primary transition-all"
                           title="Edit"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
@@ -207,7 +207,7 @@ export function FolderContents() {
                             e.stopPropagation();
                             setPageToDelete(page);
                           }}
-                          className="p-2.5 bg-card border border-border rounded-xl text-muted-foreground hover:text-destructive hover:border-destructive/20 transition-all"
+                          className="p-2.5 micro-surface border border-border/10 rounded-xl text-muted-foreground/40 hover:text-destructive transition-all"
                           title="Delete"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -216,21 +216,21 @@ export function FolderContents() {
                     </div>
 
                     <div className="flex items-start">
-                      <div className="w-12 h-12 bg-primary/5 rounded-xl border border-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500">
+                      <div className="w-12 h-12 bg-primary/5 rounded-xl border border-primary/10 flex items-center justify-center text-primary/40 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500">
                         <FileText className="w-6 h-6" />
                       </div>
                     </div>
 
                     <div>
-                      <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors line-clamp-1 pr-10">
+                      <h3 className="text-xl font-black text-foreground mb-3 group-hover:text-primary transition-colors line-clamp-1 pr-10 tracking-tight">
                         {page.title}
                       </h3>
                       <div className="flex items-center justify-between">
-                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                        <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest flex items-center gap-2">
                           <Clock className="w-3 h-3" />
                           {new Date(page.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                         </span>
-                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary/50 transform group-hover:translate-x-0.5 transition-all" />
+                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                       </div>
                     </div>
                   </div>

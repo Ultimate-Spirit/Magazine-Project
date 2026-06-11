@@ -88,12 +88,12 @@ export function CompanySelection({ onSelect }: Props) {
             {filteredCompanies.map((company) => (
               <div
                 key={company.id}
-                className="group relative bg-card rounded-[2rem] hover:bg-secondary transition-all duration-500 p-10 flex flex-col justify-between min-h-[260px] cursor-pointer overflow-hidden border border-border/50 hover:border-primary/20"
+                className="group relative bento-card micro-surface micro-surface-hover flex flex-col justify-between min-h-[260px] cursor-pointer overflow-hidden border border-border/20 hover:border-primary/30"
                 onClick={() => onSelect(company)}
               >
                 <div className="flex items-start justify-between">
                   {/* Circular Avatar / Logo Visual Anchor */}
-                  <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center shrink-0 border border-border/10 group-hover:bg-primary group-hover:border-primary/20 transition-all duration-500 overflow-hidden">
+                  <div className="w-16 h-16 rounded-2xl bg-secondary/80 flex items-center justify-center shrink-0 border border-border/10 group-hover:bg-primary group-hover:border-primary/20 transition-all duration-500 overflow-hidden">
                     {company.logoUrl ? (
                       <img 
                         src={company.logoUrl} 
@@ -105,17 +105,17 @@ export function CompanySelection({ onSelect }: Props) {
                     )}
                   </div>
 
-                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground group-hover:translate-x-1 transition-transform">
+                  <div className="w-8 h-8 rounded-full micro-surface flex items-center justify-center text-muted-foreground/50 group-hover:text-primary group-hover:translate-x-1 transition-all">
                     <ChevronRight className="w-4 h-4" />
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-2xl font-display font-bold mb-3 group-hover:text-primary transition-colors tracking-tight line-clamp-1 pr-4">
+                  <h3 className="text-2xl font-display font-black mb-3 text-foreground group-hover:text-primary transition-colors tracking-tight line-clamp-1 pr-4">
                     {company.name}
                   </h3>
                   <div className="flex items-center justify-between">
-                    <span className="px-3 py-1 rounded-lg bg-secondary/50 text-[10px] font-bold text-muted-foreground uppercase tracking-widest border border-border/30 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                    <span className="px-3 py-1 rounded-lg micro-surface text-[10px] font-bold text-muted-foreground uppercase tracking-widest border border-border/10 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                       {profile?.roles?.name || (isAdmin ? 'Admin' : 'Authorized Personnel')}
                     </span>
                   </div>
@@ -125,7 +125,7 @@ export function CompanySelection({ onSelect }: Props) {
           </div>
 
           {filteredCompanies.length === 0 && (
-            <div className="py-32 text-center bg-secondary/10 rounded-[2.5rem] border border-border/50">
+            <div className="py-32 text-center micro-surface rounded-[2.5rem] border border-border/20">
               <p className="text-xl font-body font-bold text-muted-foreground">No matches for "<span className="text-foreground">{searchQuery}</span>"</p>
               <button 
                 onClick={() => setSearchQuery('')}

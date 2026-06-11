@@ -89,148 +89,143 @@ export const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 p-6 md:p-10 overflow-y-auto bg-background font-sans">
-      <header className="mb-10">
-        <div className="flex items-center gap-2 text-[10px] font-bold text-primary uppercase tracking-[0.3em] mb-3">
-          <Calendar className="w-3.5 h-3.5" />
-          {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+    <div className="flex-1 overflow-y-auto bg-background font-sans invisible-scrollbar">
+      <header className="h-24 px-10 flex items-center justify-between sticky top-0 z-[100] bg-background/80 backdrop-blur-xl faint-divider shrink-0">
+        <div>
+          <h1 className="text-3xl font-black text-foreground tracking-tight">Command Center</h1>
+          <div className="flex items-center gap-2 mt-1">
+            <Calendar className="w-3 h-3 text-muted-foreground/40" />
+            <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em]">
+              {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+            </p>
+          </div>
         </div>
-        <h1 className="text-3xl font-black text-foreground tracking-tight">Command Center</h1>
-        <p className="text-muted-foreground font-medium mt-1 text-sm">Global platform governance and system metrics.</p>
+        <div className="p-3 micro-surface rounded-2xl border border-border/10">
+          <p className="text-[9px] font-black text-primary uppercase tracking-[0.3em]">System Health: Optimal</p>
+        </div>
       </header>
 
-      {/* Primary Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div onClick={() => navigate('/admin/users')} className="bg-card p-6 rounded-3xl border border-border transition-all hover:bg-secondary/50 cursor-pointer group">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-primary/10 text-primary rounded-xl">
-              <Users size={20} />
+      <main className="p-10 space-y-10">
+        {/* Primary Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div onClick={() => navigate('/admin/users')} className="bento-card micro-surface micro-surface-hover border-border/20 group cursor-pointer overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-all">
+              <ArrowUpRight size={16} className="text-primary" />
             </div>
-            <ArrowUpRight size={16} className="text-muted-foreground/30 group-hover:text-primary transition-colors" />
-          </div>
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Total Identity</p>
-          <p className="text-3xl font-black text-foreground">{stats.userCount}</p>
-        </div>
-
-        <div onClick={() => navigate('/admin/companies')} className="bg-card p-6 rounded-3xl border border-border transition-all hover:bg-secondary/50 cursor-pointer group">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-primary/10 text-primary rounded-xl">
-              <Building2 size={20} />
-            </div>
-            <ArrowUpRight size={16} className="text-muted-foreground/30 group-hover:text-primary transition-colors" />
-          </div>
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Workspaces</p>
-          <p className="text-3xl font-black text-foreground">{stats.companyCount}</p>
-        </div>
-
-        <div className="bg-card p-6 rounded-3xl border border-border">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-primary/10 text-primary rounded-xl">
-              <FileText size={20} />
-            </div>
-          </div>
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Publications</p>
-          <p className="text-3xl font-black text-foreground">{stats.pageCount}</p>
-        </div>
-
-        <div className="bg-card p-6 rounded-3xl border border-border">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-primary/10 text-primary rounded-xl">
-              <ShieldCheck size={20} />
-            </div>
-          </div>
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Identity Status</p>
-          <div className="flex items-center gap-3">
-            <span className="text-xl font-black text-emerald-500">{stats.activeUserCount} <span className="text-[9px] uppercase tracking-tighter text-muted-foreground">Active</span></span>
-            <span className="text-xl font-black text-muted-foreground/40">{stats.inactiveUserCount} <span className="text-[9px] uppercase tracking-tighter text-muted-foreground/40">Block</span></span>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Global Activity Stream */}
-        <div className="lg:col-span-2 bg-card border border-border rounded-[2.5rem] overflow-hidden flex flex-col">
-          <div className="p-8 border-b border-border/50 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-secondary rounded-lg">
-                <Activity size={18} className="text-primary" />
+            <div className="mb-6">
+              <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center text-muted-foreground/40 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                <Users size={18} />
               </div>
-              <h2 className="text-lg font-bold text-foreground">Global Activity Stream</h2>
             </div>
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-secondary px-3 py-1 rounded-full">Live Monitor</span>
+            <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] mb-1">Total Identity</p>
+            <p className="text-4xl font-black text-foreground">{stats.userCount}</p>
           </div>
-          <div className="p-4 overflow-y-auto max-h-[400px]">
-            <div className="space-y-1">
-              {activities.length === 0 ? (
-                <div className="py-20 text-center text-muted-foreground/30 italic text-sm">No recent system activity recorded.</div>
-              ) : activities.map((log) => (
-                <div key={log.id} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-secondary/30 transition-colors group">
-                  <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center font-bold text-xs text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                    {(log.profiles?.full_name || log.profiles?.email || '?')[0].toUpperCase()}
+
+          <div onClick={() => navigate('/admin/companies')} className="bento-card micro-surface micro-surface-hover border-border/20 group cursor-pointer overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-all">
+              <ArrowUpRight size={16} className="text-primary" />
+            </div>
+            <div className="mb-6">
+              <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center text-muted-foreground/40 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                <Building2 size={18} />
+              </div>
+            </div>
+            <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] mb-1">Active Workspaces</p>
+            <p className="text-4xl font-black text-foreground">{stats.companyCount}</p>
+          </div>
+
+          <div className="bento-card micro-surface border-border/20">
+            <div className="mb-6">
+              <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center text-muted-foreground/40">
+                <FileText size={18} />
+              </div>
+            </div>
+            <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] mb-1">Global Publications</p>
+            <p className="text-4xl font-black text-foreground">{stats.pageCount}</p>
+          </div>
+
+          <div className="bento-card micro-surface border-border/20">
+            <div className="mb-6">
+              <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center text-muted-foreground/40">
+                <ShieldCheck size={18} />
+              </div>
+            </div>
+            <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] mb-1">Identity Compliance</p>
+            <div className="flex items-baseline gap-3">
+              <span className="text-2xl font-black text-emerald-500">{stats.activeUserCount}</span>
+              <span className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest">Active</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Global Activity Stream */}
+          <div className="lg:col-span-2 micro-surface rounded-[2.5rem] border border-border/20 overflow-hidden flex flex-col">
+            <div className="p-8 faint-divider flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-secondary rounded-lg">
+                  <Activity size={18} className="text-primary" />
+                </div>
+                <h2 className="text-lg font-black text-foreground tracking-tight">Global Activity Stream</h2>
+              </div>
+              <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] px-3 py-1 micro-surface rounded-full border border-border/10">Real-time Monitor</span>
+            </div>
+            <div className="p-4">
+              <div className="space-y-1">
+                {activities.length === 0 ? (
+                  <div className="py-20 text-center text-muted-foreground/20 italic text-sm font-medium uppercase tracking-widest">No recent system activity recorded.</div>
+                ) : activities.map((log) => (
+                  <div key={log.id} className="flex items-center gap-4 p-4 rounded-2xl micro-surface-hover group">
+                    <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center font-black text-xs text-muted-foreground/40 group-hover:bg-primary/10 group-hover:text-primary transition-all border border-border/5">
+                      {(log.profiles?.full_name || log.profiles?.email || '?')[0].toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-black text-foreground">
+                        {log.profiles?.full_name || log.profiles?.email.split('@')[0]} 
+                        <span className="text-muted-foreground/60 font-medium ml-2 lowercase italic">
+                          {log.action_type} the {log.entity_type}
+                        </span>
+                      </p>
+                      <p className="text-[10px] font-bold text-primary uppercase tracking-widest truncate mt-0.5 opacity-60">{log.entity_name}</p>
+                    </div>
+                    <div className="text-[10px] font-black text-muted-foreground/30 uppercase tracking-tighter whitespace-nowrap">
+                      {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-foreground">
-                      {log.profiles?.full_name || log.profiles?.email.split('@')[0]} 
-                      <span className="text-muted-foreground font-normal ml-1.5 lowercase italic">
-                        {log.action_type} the {log.entity_type}
-                      </span>
-                    </p>
-                    <p className="text-[10px] font-bold text-primary uppercase tracking-widest truncate mt-0.5">{log.entity_name}</p>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Platform Metrics */}
+          <div className="micro-surface rounded-[2.5rem] border border-border/20 p-8 flex flex-col">
+            <h2 className="text-lg font-black text-foreground mb-8 tracking-tight">Platform Metrics</h2>
+            <div className="space-y-4">
+              {[
+                { icon: Zap, label: 'Active Sessions', value: stats.activeSessions },
+                { icon: Lock, label: 'Permission Sync', value: stats.permissionChanges },
+                { icon: FileEdit, label: 'Draft Assets', value: stats.draftPublications },
+                { icon: CheckCircle, label: 'Verified Output', value: stats.finalizedPublications },
+              ].map((m) => (
+                <div key={m.label} className="flex items-center justify-between p-4 micro-surface rounded-2xl border border-border/10">
+                  <div className="flex items-center gap-3">
+                    <m.icon size={16} className="text-muted-foreground/40" />
+                    <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-[0.1em]">{m.label}</span>
                   </div>
-                  <div className="text-[10px] font-bold text-muted-foreground/40 uppercase whitespace-nowrap">
-                    {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </div>
+                  <span className="text-lg font-black text-foreground">{m.value}</span>
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-
-        {/* Platform Metrics */}
-        <div className="bg-card border border-border rounded-[2.5rem] p-8 flex flex-col">
-          <h2 className="text-lg font-bold text-foreground mb-8">Platform Metrics</h2>
-          <div className="space-y-6">
-            <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-2xl border border-border/20">
-              <div className="flex items-center gap-3">
-                <Zap size={16} className="text-primary" />
-                <span className="text-xs font-bold text-foreground/70 uppercase tracking-tight">Active Sessions</span>
+            
+            <div className="mt-auto pt-10">
+              <div className="p-6 bg-primary/5 rounded-[2rem] border border-primary/10 border-dashed text-center">
+                <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-[0.3em] mb-2">System Version</p>
+                <p className="text-[11px] font-black text-foreground uppercase tracking-widest">Spirit OS v1.0.0 Production</p>
               </div>
-              <span className="text-lg font-black text-foreground">{stats.activeSessions}</span>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-2xl border border-border/20">
-              <div className="flex items-center gap-3">
-                <Lock size={16} className="text-primary" />
-                <span className="text-xs font-bold text-foreground/70 uppercase tracking-tight">Permission Changes</span>
-              </div>
-              <span className="text-lg font-black text-foreground">{stats.permissionChanges}</span>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-2xl border border-border/20">
-              <div className="flex items-center gap-3">
-                <FileEdit size={16} className="text-primary" />
-                <span className="text-xs font-bold text-foreground/70 uppercase tracking-tight">Draft Publications</span>
-              </div>
-              <span className="text-lg font-black text-foreground">{stats.draftPublications}</span>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-2xl border border-border/20">
-              <div className="flex items-center gap-3">
-                <CheckCircle size={16} className="text-primary" />
-                <span className="text-xs font-bold text-foreground/70 uppercase tracking-tight">Finalized Publications</span>
-              </div>
-              <span className="text-lg font-black text-foreground">{stats.finalizedPublications}</span>
-            </div>
-          </div>
-          
-          <div className="mt-auto pt-8">
-            <div className="p-6 bg-primary/5 rounded-3xl border border-primary/10 border-dashed text-center">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-2">System Version</p>
-              <p className="text-xs font-black text-foreground uppercase tracking-wider">Spirit OS v1.0.0 Production</p>
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

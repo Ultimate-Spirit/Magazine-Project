@@ -53,12 +53,12 @@ export function WorkspaceLayout({ company, children }: Props) {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary selection:text-primary-foreground font-sans">
-      <header className={`h-16 md:h-20 px-4 md:px-12 xl:px-16 flex items-center justify-between sticky top-0 z-[100] bg-background/80 backdrop-blur-xl border-b border-border/50 ${isSelectionPage ? 'border-none' : ''}`}>
+      <header className={`h-16 md:h-20 px-4 md:px-12 xl:px-16 flex items-center justify-between sticky top-0 z-[100] bg-background/80 backdrop-blur-xl ${isSelectionPage ? '' : 'faint-divider'}`}>
         <div className="flex items-center gap-4 md:gap-8">
           {isSelectionPage ? (
             <div className="flex items-center gap-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
-              <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-[0.4em] whitespace-nowrap">
+              <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+              <span className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.4em] whitespace-nowrap">
                 Core // Workspace Selection
               </span>
             </div>
