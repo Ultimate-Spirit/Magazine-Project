@@ -21,7 +21,7 @@ import { WorkspaceLayout } from './WorkspaceLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { ConfirmModal } from './common/ConfirmModal';
 import { logActivity } from '../lib/activityLogger';
-import type { Folder, Company, UserProfile } from '../types';
+import type { Folder, Company } from '../types';
 
 interface Props {
   onSelectCompany: (company: Company) => void;
