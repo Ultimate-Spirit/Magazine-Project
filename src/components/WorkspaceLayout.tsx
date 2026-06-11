@@ -1,5 +1,5 @@
-import { User, Shield, LogOut, ChevronLeft, Building2, Moon, Sun, ChevronDown, Check } from 'lucide-react';
-import type { Company, ViewState } from '../types';
+import { User, Shield, LogOut, Building2, Moon, Sun, ChevronDown, Check } from 'lucide-react';
+import type { Company } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useState, useEffect } from 'react';
@@ -8,13 +8,10 @@ import { supabase } from '../lib/supabaseClient';
 
 interface Props {
   company: Company;
-  currentView: ViewState;
-  onNavigateBack: () => void;
-  onHome: () => void;
   children: React.ReactNode;
 }
 
-export function WorkspaceLayout({ company, currentView, onNavigateBack, children }: Props) {
+export function WorkspaceLayout({ company, children }: Props) {
   const { isAdmin, signOut, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);

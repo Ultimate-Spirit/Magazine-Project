@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
-import { Loader2, Shield } from 'lucide-react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { CompanySelection } from './components/CompanySelection';
 import { WorkspaceLayout } from './components/WorkspaceLayout';
 import { FoldersView } from './components/FoldersView';
