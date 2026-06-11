@@ -131,7 +131,8 @@ export const UserManagement: React.FC = () => {
           full_name: editName,
           email: editEmail,
           is_active: editIsActive,
-          role_id: editRoleId || null
+          role_id: editRoleId || null,
+          role: editRoleId ? undefined : null // Revoke legacy role if unassigned
         })
         .eq('id', userToEdit.id);
 
@@ -402,6 +403,7 @@ export const UserManagement: React.FC = () => {
                       className="w-full pl-4 pr-10 py-3 bg-secondary border border-transparent rounded-xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground text-sm appearance-none"
                       value={editRoleId}
                       onChange={(e) => setEditRoleId(e.target.value)}
+                      disabled={userToEdit?.email === 'avessaify@gmail.com'}
                     >
                       <option value="">No Global Role Assigned</option>
                       {roles.map(r => (

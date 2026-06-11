@@ -127,6 +127,29 @@ export const RoleManagement: React.FC = () => {
     }
   };
 
+  const handleRevokeRole = async (userId: string) => {
+    // Optimistic UI update: Remove user from local profiles state immediately
+    const previousProfiles = [...profiles];
+    setProfiles(prev => prev.map(p => p.id === userId ? { ...p, role_id: undefined } : p));
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          role_id: null,
+          role: null
+        })
+        .eq('id', userId);
+
+      if (error) throw error;
+      showNotification('success', 'User role revoked successfully');
+    } catch (err: any) {
+      // Rollback on error
+      setProfiles(previousProfiles);
+      showNotification('error', `Revocation failed: ${err.message}`);
+    }
+  };
+
   const openEditRoleModal = (role: Role) => {
     if (role.is_system_admin) return;
     setEditingRoleId(role.id);
@@ -264,8 +287,17 @@ export const RoleManagement: React.FC = () => {
                       <span className="text-xs text-muted-foreground/30 italic">No users assigned</span>
                     ) : (
                       profiles.filter(p => p.role_id === role.id).map(p => (
-                        <div key={p.id} className="px-3 py-1 bg-secondary rounded-lg text-xs font-medium text-foreground/70" title={p.email}>
-                          {p.full_name || p.email.split('@')[0]}
+                        <div key={p.id} className="group/badge px-3 py-1 bg-secondary rounded-lg text-xs font-medium text-foreground/70 flex items-center gap-2" title={p.email}>
+                          <span className="truncate max-w-[100px]">{p.full_name || p.email.split('@')[0]}</span>
+                          {p.email !== 'avessaify@gmail.com' && (
+                            <button
+                              onClick={() => handleRevokeRole(p.id)}
+                              className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-destructive/20 hover:text-destructive opacity-0 group-hover/badge:opacity-100 transition-all"
+                              title="Revoke Role"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          )}
                         </div>
                       ))
                     )}
