@@ -55,54 +55,32 @@ export const UserManagement: React.FC = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      // 1. Try Unified Backend Fetch (with Auth Metadata)
-      let profilesLoaded = false;
-      if (session) {
-        try {
-          const unifiedRes = await fetch('/_/backend/list-users-unified', {
-            headers: {
-              'Authorization': `Bearer ${session?.access_token}`
-            }
-          });
-          
-          if (unifiedRes.ok) {
-            const unifiedData = await unifiedRes.json();
-            if (Array.isArray(unifiedData) && unifiedData.length > 0) {
-              setProfiles(unifiedData as UserProfile[]);
-              profilesLoaded = true;
-            }
-          }
-        } catch (backendErr) {
-          console.error('Unified Backend Fetch Failed:', backendErr);
-        }
-      }
-
-      // 2. Fallback to direct fetch if unified failed
-      if (!profilesLoaded) {
-        console.log('Executing direct Supabase fallback...');
-        const profilesWithRoles = await supabase.from('profiles').select('*, roles(*)').order('email');
-        
-        if (!profilesWithRoles.error && profilesWithRoles.data) {
-          setProfiles(profilesWithRoles.data as UserProfile[]);
-        } else {
-          console.warn('Roles join failed, attempting raw profile fetch...');
-          const rawProfiles = await supabase.from('profiles').select('*').order('email');
-          if (!rawProfiles.error && rawProfiles.data) {
-            setProfiles(rawProfiles.data as UserProfile[]);
-          }
-        }
-      }
-
-      // Load supporting data in parallel
-      const [companiesRes, rolesRes, userCompRes] = await Promise.all([
+      // Parallel direct fetch for maximum speed
+      const [profilesRes, companiesRes, rolesRes, userCompRes] = await Promise.all([
+        supabase.from('profiles').select('*, roles(*)').order('email'),
         supabase.from('companies').select('*').order('name'),
         supabase.from('roles').select('*').order('created_at'),
         supabase.from('user_companies').select('*')
       ]);
 
+      if (!profilesRes.error) setProfiles(profilesRes.data as UserProfile[]);
       if (!companiesRes.error) setCompanies(companiesRes.data as Company[]);
       if (!rolesRes.error) setRoles(rolesRes.data as Role[]);
       if (!userCompRes.error) setUserCompanies(userCompRes.data);
+
+      // Background metadata sync (non-blocking)
+      if (session) {
+        fetch('/_/backend/list-users-unified', {
+          headers: { 'Authorization': `Bearer ${session.access_token}` }
+        })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setProfiles(data as UserProfile[]);
+          }
+        })
+        .catch(err => console.warn('Background sync failed:', err));
+      }
 
     } catch (err) {
       console.error('Fetch Hierarchy Error:', err);
@@ -294,14 +272,14 @@ export const UserManagement: React.FC = () => {
           </div>
         ) : (
           <div className="bg-card rounded-[2rem] border border-border overflow-hidden">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse table-fixed">
               <thead>
                 <tr className="bg-secondary/80 border-b border-border">
-                  <th className="px-12 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Identity</th>
-                  <th className="px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Global Role</th>
-                  <th className="px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-right">Access</th>
-                  <th className="px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Status</th>
-                  <th className="px-12 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-right">Actions</th>
+                  <th className="w-[30%] px-12 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Identity</th>
+                  <th className="w-[20%] px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Global Role</th>
+                  <th className="w-[25%] px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-right">Access</th>
+                  <th className="w-[15%] px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Status</th>
+                  <th className="w-[10%] px-12 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -309,9 +287,9 @@ export const UserManagement: React.FC = () => {
                   const assigned = getAssignedCompaniesForUser(p.id);
                   return (
                     <tr key={p.id} className="group hover:bg-secondary/50 transition-colors cursor-pointer" onClick={() => openEditPanel(p)}>
-                      <td className="px-12 py-6">
+                      <td className="px-12 py-6 overflow-hidden">
                         <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${p.is_active === false ? 'bg-secondary text-muted-foreground' : 'bg-secondary text-primary'}`}>
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 ${p.is_active === false ? 'bg-secondary text-muted-foreground' : 'bg-secondary text-primary'}`}>
                             {p.email[0].toUpperCase()}
                           </div>
                           <div className="min-w-0">
@@ -328,7 +306,7 @@ export const UserManagement: React.FC = () => {
                       </td>
                       <td className="px-8 py-6">
                         <div className="flex items-center justify-end gap-4">
-                          <div className="flex -space-x-3 overflow-hidden">
+                          <div className="flex -space-x-3 overflow-hidden shrink-0">
                             {assigned.slice(0, 3).map((c, i) => (
                               <div key={c.id} className="inline-block h-8 w-8 rounded-full border-2 border-card bg-secondary overflow-hidden" style={{ zIndex: 10 - i }}>
                                 {c.logoUrl ? (
@@ -348,7 +326,7 @@ export const UserManagement: React.FC = () => {
                           </div>
                           <div className="text-right shrink-0">
                             <span className="text-xs font-bold text-foreground block">
-                              {assigned.length} {assigned.length === 1 ? 'Workspace' : 'Workspaces'}
+                              {assigned.length} {assigned.length === 1 ? 'WS' : 'WS'}
                             </span>
                           </div>
                         </div>
