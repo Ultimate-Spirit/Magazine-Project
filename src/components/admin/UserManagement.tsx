@@ -257,10 +257,8 @@ export const UserManagement: React.FC = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-secondary/80 border-b border-border">
-                  <th className="w-12 px-8 py-6">
-                    <div className="w-4 h-4 border border-border rounded bg-background" />
-                  </th>
-                  <th className="px-4 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Identity</th>
+                  <th className="px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Identity</th>
+
                   <th className="px-4 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Global Role</th>
                   <th className="px-4 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Access</th>
                   <th className="px-4 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Status</th>
@@ -274,9 +272,6 @@ export const UserManagement: React.FC = () => {
                   return (
                     <tr key={p.id} className="group hover:bg-secondary/50 transition-colors cursor-pointer" onClick={() => openEditPanel(p)}>
                       <td className="px-8 py-6">
-                        <div className="w-4 h-4 border border-border/50 rounded bg-background group-hover:border-primary/30 transition-colors" />
-                      </td>
-                      <td className="px-4 py-6">
                         <div className="flex items-center gap-4">
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${p.is_active === false ? 'bg-secondary text-muted-foreground' : 'bg-secondary text-primary'}`}>
                             {p.email[0].toUpperCase()}
