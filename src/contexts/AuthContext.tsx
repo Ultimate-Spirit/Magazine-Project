@@ -97,17 +97,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data) {
         console.log('Profile found:', data.email, 'Role:', data.roles?.name, 'Active:', data.is_active);
+        
         if (data.is_active === false && user.email !== 'avessaify@gmail.com') {
           console.warn('User is marked as inactive. Logging out.');
           await supabase.auth.signOut();
           setProfile(null);
           setIsAuthorized(false);
           setIsAdmin(false);
+          setPermissions(null);
           return;
         }
 
-        const userProfile = data as UserProfile;
-        setProfile(userProfile);
+        // Only update if data has changed to prevent unnecessary re-renders/remounts
+        const updatedProfile = data as UserProfile;
+        if (JSON.stringify(updatedProfile) !== JSON.stringify(profile)) {
+          setProfile(updatedProfile);
+        }
+
         setIsAuthorized(true);
         // Prioritize system_admin flag from roles table, with hardcoded override for primary admin
         const isSysAdmin = data.roles?.is_system_admin === true || data.role === 'admin' || user.email === 'avessaify@gmail.com';

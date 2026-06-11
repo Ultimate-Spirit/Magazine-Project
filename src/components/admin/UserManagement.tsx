@@ -130,14 +130,14 @@ export const UserManagement: React.FC = () => {
     setActionLoading(true);
 
     try {
-      // Update basic profile info
+      // Execute UPDATE query against profiles table
       const { error } = await supabase
         .from('profiles')
         .update({
           full_name: editName,
           is_active: editIsActive,
           role_id: editRoleId || null,
-          role: editRoleId ? undefined : null
+          role: editRoleId ? undefined : null // Legacy support
         })
         .eq('id', userToEdit.id);
 
@@ -164,6 +164,7 @@ export const UserManagement: React.FC = () => {
       
       if (error) throw error;
       
+      // Optimistic Update
       setEditCompanyIds(prev => [...prev, companyId]);
       setUserCompanies(prev => [...prev, { user_id: userToEdit.id, company_id: companyId }]);
       showNotification('success', 'Workspace access granted');
@@ -183,6 +184,7 @@ export const UserManagement: React.FC = () => {
       
       if (error) throw error;
       
+      // Optimistic Update
       setEditCompanyIds(prev => prev.filter(id => id !== companyId));
       setUserCompanies(prev => prev.filter(uc => !(uc.user_id === userToEdit.id && uc.company_id === companyId)));
       showNotification('success', 'Workspace access revoked');
@@ -204,7 +206,7 @@ export const UserManagement: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background font-sans">
-      <header className="h-24 bg-card flex items-center justify-between px-12 border-b border-border">
+      <header className="h-24 bg-card flex items-center justify-between px-12 border-b border-border shrink-0">
         <h1 className="text-3xl font-bold text-foreground tracking-tight">User Management</h1>
         
         <div className="flex items-center gap-6">

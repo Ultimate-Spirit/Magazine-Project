@@ -78,14 +78,15 @@ export function FoldersView({ onSelectCompany }: Props) {
   };
 
   const fetchData = useCallback(async (isInitial = false) => {
-    if (isInitial) setLoading(true);
+    // Only trigger hard loading if we have no data to prevent scroll reset
+    if (isInitial && folders.length === 0) setLoading(true);
     else setRefreshing(true);
     
     try {
       const [compData, folderData, membersData] = await Promise.all([
         supabase.from('companies').select('*').eq('id', targetCid).single(),
         supabase.from('folders').select('*').eq('company_id', targetCid).order('updated_at', { ascending: false }),
-        supabase.from('profiles').select('id, full_name, email').eq('company_id', targetCid)
+        supabase.from('user_companies').select('user_id').eq('company_id', targetCid)
       ]);
 
       if (compData.data) {
@@ -97,13 +98,11 @@ export function FoldersView({ onSelectCompany }: Props) {
       const fetchedFolders = folderData.data || [];
       setFolders(fetchedFolders);
 
-      // Create a map of user profiles for attribution
-      const userProfiles = membersData.data || [];
-      const userMap = new Map<string, UserProfile>();
-      userProfiles.forEach(p => userMap.set(p.id, p as UserProfile));
+      // Members scoping: Filter by user_companies junction for this specific workspace
+      const authorizedMemberIds = (membersData.data || []).map(m => m.user_id);
 
       setStats({
-        collaborators: userProfiles.length || 0,
+        collaborators: authorizedMemberIds.length || 0,
         publications: 0
       });
 
@@ -119,7 +118,7 @@ export function FoldersView({ onSelectCompany }: Props) {
       const { data: logData } = await supabase
         .from('activity_logs')
         .select('id, action_type, entity_type, entity_name, created_at, profiles(full_name, email)')
-        .eq('company_id', targetCid)
+        .eq('company_id', targetCid) // Strict scoping
         .order('created_at', { ascending: false })
         .limit(8);
 
