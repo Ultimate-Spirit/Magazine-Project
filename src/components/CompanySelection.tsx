@@ -56,13 +56,13 @@ export function CompanySelection({ onSelect }: Props) {
 
   if (companies.length > 0) {
     return (
-      <div className="min-h-[calc(100vh-5rem)] bg-background flex flex-col items-center p-6 md:p-12 pt-16 md:pt-24">
-        <div className="w-full max-w-4xl flex flex-col space-y-8">
-          <header className="space-y-2">
-            <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tighter leading-none">
+      <div className="min-h-[calc(100vh-5rem)] bg-background flex flex-col p-6 md:p-12 xl:px-16 pt-16 md:pt-20">
+        <div className="w-full max-w-7xl mx-auto flex flex-col space-y-10">
+          <header className="space-y-3">
+            <h1 className="text-4xl md:text-6xl font-black text-foreground tracking-tighter leading-none">
               Welcome back
             </h1>
-            <p className="text-muted-foreground font-medium text-base md:text-lg">
+            <p className="text-muted-foreground font-medium text-base md:text-lg max-w-xl">
               Select an environment to continue.
             </p>
           </header>
@@ -73,13 +73,13 @@ export function CompanySelection({ onSelect }: Props) {
             <input
               type="text"
               placeholder="Filter environments..."
-              className="w-full pl-11 pr-6 py-3.5 bg-secondary/30 border border-border/20 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-primary/10 outline-none transition-all placeholder:text-muted-foreground/30"
+              className="w-full pl-11 pr-6 py-4 bg-secondary/30 border border-border/20 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-primary/10 outline-none transition-all placeholder:text-muted-foreground/30"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
             {filteredCompanies.map((company) => (
               <button
                 key={company.id}
