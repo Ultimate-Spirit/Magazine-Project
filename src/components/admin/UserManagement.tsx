@@ -55,30 +55,57 @@ export const UserManagement: React.FC = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      const [unifiedRes, companiesRes, rolesRes, userCompRes] = await Promise.all([
-        fetch('/_/backend/list-users-unified', {
-          headers: {
-            'Authorization': `Bearer ${session?.access_token}`
+      // 1. Try Unified Backend Fetch (with Auth Metadata)
+      let profilesLoaded = false;
+      if (session) {
+        try {
+          const unifiedRes = await fetch('/_/backend/list-users-unified', {
+            headers: {
+              'Authorization': `Bearer ${session?.access_token}`
+            }
+          });
+          
+          if (unifiedRes.ok) {
+            const unifiedData = await unifiedRes.json();
+            if (Array.isArray(unifiedData) && unifiedData.length > 0) {
+              setProfiles(unifiedData as UserProfile[]);
+              profilesLoaded = true;
+            }
           }
-        }),
+        } catch (backendErr) {
+          console.error('Unified Backend Fetch Failed:', backendErr);
+        }
+      }
+
+      // 2. Fallback to direct fetch if unified failed
+      if (!profilesLoaded) {
+        console.log('Executing direct Supabase fallback...');
+        const profilesWithRoles = await supabase.from('profiles').select('*, roles(*)').order('email');
+        
+        if (!profilesWithRoles.error && profilesWithRoles.data) {
+          setProfiles(profilesWithRoles.data as UserProfile[]);
+        } else {
+          console.warn('Roles join failed, attempting raw profile fetch...');
+          const rawProfiles = await supabase.from('profiles').select('*').order('email');
+          if (!rawProfiles.error && rawProfiles.data) {
+            setProfiles(rawProfiles.data as UserProfile[]);
+          }
+        }
+      }
+
+      // Load supporting data in parallel
+      const [companiesRes, rolesRes, userCompRes] = await Promise.all([
         supabase.from('companies').select('*').order('name'),
         supabase.from('roles').select('*').order('created_at'),
         supabase.from('user_companies').select('*')
       ]);
 
-      if (unifiedRes.ok) {
-        const unifiedData = await unifiedRes.json();
-        setProfiles(unifiedData as UserProfile[]);
-      } else {
-        const profilesRes = await supabase.from('profiles').select('*, roles(*)').order('email');
-        if (!profilesRes.error) setProfiles(profilesRes.data as UserProfile[]);
-      }
-
       if (!companiesRes.error) setCompanies(companiesRes.data as Company[]);
       if (!rolesRes.error) setRoles(rolesRes.data as Role[]);
       if (!userCompRes.error) setUserCompanies(userCompRes.data);
+
     } catch (err) {
-      console.error('Fetch Error:', err);
+      console.error('Fetch Hierarchy Error:', err);
     } finally {
       setLoading(false);
     }
@@ -352,7 +379,7 @@ export const UserManagement: React.FC = () => {
                         )}
                       </td>
                       <td className="px-6 py-6">
-                        <span className="text-xs font-medium text-muted-foreground/60">{p.created_at ? formatDate(p.created_at) : '—'}</span>
+                        <span className="text-xs font-medium text-muted-foreground/60">{formatDate(p.created_at)}</span>
                       </td>
                       <td className="px-10 py-6 text-right">
                         <button 

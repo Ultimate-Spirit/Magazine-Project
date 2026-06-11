@@ -233,40 +233,36 @@ async def list_users_unified():
     supabase_admin = get_supabase_admin()
     
     # 1. PRIMARY FETCH: Secure core user data first
+    profiles = []
     try:
+        # Try with roles join first
         profiles_res = supabase.table("profiles").select("*, roles(*)").execute()
         profiles = profiles_res.data or []
     except Exception as e:
-        print(f"CRITICAL FETCH ERROR (Profiles): {str(e)}")
-        # If the primary table fails, we cannot proceed
-        raise HTTPException(status_code=500, detail="Identity registry currently unavailable")
+        print(f"ROLES JOIN FAILED (Falling back to simple profiles): {str(e)}")
+        try:
+            # Fallback to simple profiles if roles table is missing or join fails
+            profiles_res = supabase.table("profiles").select("*").execute()
+            profiles = profiles_res.data or []
+        except Exception as e2:
+            print(f"CRITICAL FETCH ERROR (Profiles): {str(e2)}")
+            raise HTTPException(status_code=500, detail="Identity registry currently unavailable")
 
-    # 2. SECONDARY FETCH: Attempt to retrieve secure auth metadata (Joined dates)
-    # This is wrapped in a strict try-catch to prevent primary payload failure.
+    # 2. SECONDARY FETCH: Retrieve auth metadata (Joined dates)
     auth_map = {}
     if supabase_admin:
         try:
-            # Use the admin client to list users from secure auth schema
             users_res = supabase_admin.auth.admin.list_users()
-            
-            # Extract user list regardless of library version return type
             auth_users = getattr(users_res, 'users', users_res) if not isinstance(users_res, list) else users_res
-            
-            # Build map and ensure ISO string serialization for boundary crossing
             for u in auth_users:
                 if hasattr(u, 'id') and hasattr(u, 'created_at'):
-                    # Explicitly stringify the timestamp to prevent Next.js boundary serialization bugs
                     auth_map[str(u.id)] = u.created_at.isoformat() if hasattr(u.created_at, 'isoformat') else str(u.created_at)
         except Exception as e:
             print(f"NON-FATAL AUTH FETCH ERROR: {str(e)}")
-            # Fail silently - profiles will return with null 'created_at'
-    else:
-        print("SECURE CONTEXT WARNING: Supabase Admin client not initialized.")
-
-    # 3. UNIFICATION: Merge metadata with core profiles
+    
+    # 3. UNIFICATION
     for p in profiles:
         user_id = str(p.get("id", ""))
-        # Set to ISO string if found, otherwise null for graceful degradation
         p["created_at"] = auth_map.get(user_id)
         
     return profiles
