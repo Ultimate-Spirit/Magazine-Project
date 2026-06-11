@@ -21,7 +21,36 @@ export function WorkspaceLayout({ company, children }: Props) {
   const location = useLocation();
 
   const isSelectionPage = location.pathname === '/';
-...
+
+  useEffect(() => {
+    const fetchAuthorizedWorkspaces = async () => {
+      if (!user) return;
+      try {
+        if (isAdmin) {
+          const { data } = await supabase.from('companies').select('*').order('name');
+          if (data) setAuthorizedCompanies(data);
+        } else {
+          const { data } = await supabase
+            .from('user_companies')
+            .select('companies(*)')
+            .eq('user_id', user.id);
+          if (data) {
+            setAuthorizedCompanies(data.map((item: any) => item.companies).filter(Boolean));
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching workspaces:', err);
+      }
+    };
+    fetchAuthorizedWorkspaces();
+  }, [user, isAdmin]);
+
+  const switchWorkspace = (cid: string) => {
+    setShowWorkspaceMenu(false);
+    navigate(`/company/${cid}/folders`);
+    window.location.reload(); // Force reload to refresh context
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary selection:text-primary-foreground font-sans">
       <header className="h-16 md:h-20 px-4 md:px-8 flex items-center justify-between sticky top-0 z-[100] bg-background/80 backdrop-blur-xl border-b border-border/50">
