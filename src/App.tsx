@@ -119,19 +119,6 @@ function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-
-      {isAdmin && (
-        <Link 
-          to="/admin" 
-          className="fixed bottom-10 right-10 w-16 h-16 bg-primary text-primary-foreground rounded-[2rem] shadow-2xl shadow-primary/20 flex items-center justify-center transition-all hover:scale-110 hover:-rotate-6 group z-50"
-          title="Admin Panel"
-        >
-          <Shield className="w-6 h-6" />
-          <span className="absolute right-full mr-6 bg-card border border-border text-foreground px-4 py-2 rounded-2xl text-[10px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap translate-x-4 group-hover:translate-x-0 shadow-xl">
-            Admin Console
-          </span>
-        </Link>
-      )}
     </div>
   );
 }

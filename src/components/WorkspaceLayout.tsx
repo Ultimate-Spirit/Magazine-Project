@@ -102,16 +102,6 @@ export function WorkspaceLayout({ company, currentView, onNavigateBack, children
               </div>
             )}
           </div>
-          
-          {currentView !== 'project_explorer' && currentView !== 'company_selection' && (
-            <button 
-              onClick={onNavigateBack}
-              className="flex items-center gap-2 text-[10px] md:text-xs font-bold text-muted-foreground hover:text-primary transition-colors px-3 py-1.5 md:px-4 md:py-2 bg-secondary rounded-full border border-border/50"
-            >
-              <ChevronLeft size={12} />
-              <span>Back</span>
-            </button>
-          )}
         </div>
         
         <div className="flex items-center gap-2 md:gap-4">
