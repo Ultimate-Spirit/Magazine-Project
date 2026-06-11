@@ -1,18 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Plus, Mail, Loader2, Search, X, CheckCircle2, User, Lock, Edit2, ShieldAlert, Shield, Building2, CheckSquare, Square } from 'lucide-react';
+import { 
+  Plus, 
+  Mail, 
+  Loader2, 
+  Search, 
+  X, 
+  CheckCircle2, 
+  User, 
+  Lock, 
+  Edit2, 
+  ShieldAlert, 
+  Shield, 
+  Building2, 
+  CheckSquare, 
+  Square,
+  Search as SearchIcon,
+  Tag
+} from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { logActivity } from '../../lib/activityLogger';
 import type { Company, UserProfile, Role } from '../../types';
 
 export const UserManagement: React.FC = () => {
-  const { profile } = useAuth();
+  const { profile: currentAdmin } = useAuth();
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [userCompanies, setUserCompanies] = useState<{user_id: string, company_id: string}[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [workspaceSearchTerm, setWorkspaceSearchTerm] = useState('');
 
   // Creation Form states
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -38,7 +56,7 @@ export const UserManagement: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     const [profilesRes, companiesRes, rolesRes, userCompRes] = await Promise.all([
-      supabase.from('profiles').select('*').order('email'),
+      supabase.from('profiles').select('*, roles(*)').order('email'),
       supabase.from('companies').select('*').order('name'),
       supabase.from('roles').select('*').order('created_at'),
       supabase.from('user_companies').select('*')
@@ -84,7 +102,7 @@ export const UserManagement: React.FC = () => {
         showNotification('success', edgeData?.message || `Account created for ${newUserEmail}`);
       }
 
-      await logActivity('invited', 'user', newUserEmail, companies[0]?.id || '', profile?.id || '');
+      await logActivity('invited', 'user', newUserEmail, companies[0]?.id || '', currentAdmin?.id || '');
 
       fetchData();
       setIsUserModalOpen(false);
@@ -100,11 +118,13 @@ export const UserManagement: React.FC = () => {
 
   const openEditPanel = (p: UserProfile) => {
     setUserToEdit(p);
-    setEditIsActive(p.is_active !== false); // Default to true if undefined
+    setEditIsActive(p.is_active !== false);
     setEditName(p.full_name || '');
     setEditEmail(p.email || '');
     setEditRoleId(p.role_id || '');
-    setEditCompanyIds(userCompanies.filter(uc => uc.user_id === p.id).map(uc => uc.company_id));
+    const assigned = userCompanies.filter(uc => uc.user_id === p.id).map(uc => uc.company_id);
+    setEditCompanyIds(assigned);
+    setWorkspaceSearchTerm('');
   };
 
   const handleUpdateUser = async (e: React.FormEvent) => {
@@ -113,44 +133,20 @@ export const UserManagement: React.FC = () => {
     setActionLoading(true);
 
     try {
-      if (editEmail !== userToEdit.email) {
-        const { data: edgeData, error: edgeError } = await supabase.functions.invoke('update-user', {
-          body: {
-            target_user_id: userToEdit.id,
-            email: editEmail
-          }
-        });
-
-        if (edgeError) throw new Error(edgeError.message || 'Failed to update email.');
-        if (edgeData?.error) throw new Error(edgeData.error);
-      }
-
+      // 1. Update basic profile info
       const { error } = await supabase
         .from('profiles')
         .update({
           full_name: editName,
-          email: editEmail,
           is_active: editIsActive,
           role_id: editRoleId || null,
-          role: editRoleId ? undefined : null // Revoke legacy role if unassigned
+          role: editRoleId ? undefined : null // Legacy support
         })
         .eq('id', userToEdit.id);
 
       if (error) throw error;
 
-      await supabase.from('user_companies').delete().eq('user_id', userToEdit.id);
-      
-      if (editCompanyIds.length > 0) {
-        const { error: junctionError } = await supabase
-          .from('user_companies')
-          .insert(editCompanyIds.map(cid => ({
-            user_id: userToEdit.id,
-            company_id: cid
-          })));
-        if (junctionError) throw junctionError;
-      }
-
-      await logActivity('updated', 'user', editEmail, companies[0]?.id || '', profile?.id || '');
+      await logActivity('updated', 'user', editEmail, companies[0]?.id || '', currentAdmin?.id || '');
 
       showNotification('success', `Updated profile for ${editEmail}`);
       setUserToEdit(null);
@@ -162,10 +158,42 @@ export const UserManagement: React.FC = () => {
     }
   };
 
-  const toggleCompany = (id: string) => {
-    setEditCompanyIds(prev => 
-      prev.includes(id) ? prev.filter(cid => cid !== id) : [...prev, id]
-    );
+  const handleAddWorkspace = async (companyId: string) => {
+    if (!userToEdit) return;
+    try {
+      const { error } = await supabase
+        .from('user_companies')
+        .insert({ user_id: userToEdit.id, company_id: companyId });
+      
+      if (error) throw error;
+      
+      // Optimistic Update
+      setEditCompanyIds(prev => [...prev, companyId]);
+      setUserCompanies(prev => [...prev, { user_id: userToEdit.id, company_id: companyId }]);
+      showNotification('success', 'Workspace access granted');
+    } catch (err: any) {
+      showNotification('error', err.message);
+    }
+  };
+
+  const handleRemoveWorkspace = async (companyId: string) => {
+    if (!userToEdit) return;
+    try {
+      const { error } = await supabase
+        .from('user_companies')
+        .delete()
+        .eq('user_id', userToEdit.id)
+        .eq('company_id', companyId);
+      
+      if (error) throw error;
+      
+      // Optimistic Update
+      setEditCompanyIds(prev => prev.filter(id => id !== companyId));
+      setUserCompanies(prev => prev.filter(uc => !(uc.user_id === userToEdit.id && uc.company_id === companyId)));
+      showNotification('success', 'Workspace access revoked');
+    } catch (err: any) {
+      showNotification('error', err.message);
+    }
   };
 
   const filteredProfiles = profiles.filter(p =>
@@ -173,8 +201,14 @@ export const UserManagement: React.FC = () => {
     p.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const assignedCompanies = companies.filter(c => editCompanyIds.includes(c.id));
+  const unassignedCompanies = companies.filter(c => 
+    !editCompanyIds.includes(c.id) && 
+    c.name.toLowerCase().includes(workspaceSearchTerm.toLowerCase())
+  );
+
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-background">
+    <div className="flex-1 flex flex-col overflow-hidden bg-background font-sans">
       <header className="h-24 bg-card flex items-center justify-between px-12 border-b border-border">
         <h1 className="text-3xl font-bold text-foreground tracking-tight">User Management</h1>
         
@@ -217,6 +251,8 @@ export const UserManagement: React.FC = () => {
               <thead>
                 <tr className="bg-secondary/80 border-b border-border">
                   <th className="px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Identity</th>
+                  <th className="px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Global Role</th>
+                  <th className="px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-right">Access</th>
                   <th className="px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Status</th>
                   <th className="px-8 py-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-right">Actions</th>
                 </tr>
@@ -233,6 +269,20 @@ export const UserManagement: React.FC = () => {
                           <p className={`font-bold ${p.is_active === false ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{p.full_name || 'No Name'}</p>
                           <p className="text-sm text-muted-foreground font-medium">{p.email}</p>
                         </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest ${p.roles?.is_system_admin ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-secondary text-muted-foreground'}`}>
+                        <Shield className="w-3 h-3" />
+                        {p.roles?.name || 'Unassigned'}
+                      </span>
+                    </td>
+                    <td className="px-8 py-6 text-right">
+                      <div className="flex flex-col items-end">
+                        <span className="text-sm font-bold text-foreground">
+                          {userCompanies.filter(uc => uc.user_id === p.id).length} Workspaces
+                        </span>
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Authorized Environments</p>
                       </div>
                     </td>
                     <td className="px-8 py-6">
@@ -264,84 +314,6 @@ export const UserManagement: React.FC = () => {
         )}
       </main>
 
-      {/* User Creation Modal */}
-      {isUserModalOpen && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center p-6">
-          <div className="bg-card rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-200 border border-border">
-            <div className="p-10 border-b border-border flex items-center justify-between">
-              <div>
-                <h2 className="text-3xl font-bold text-foreground tracking-tight">Create Professional Account</h2>
-                <p className="text-muted-foreground font-medium mt-1">Manually provision internal workspace access</p>
-              </div>
-              <button 
-                onClick={() => setIsUserModalOpen(false)}
-                className="p-4 hover:bg-secondary rounded-2xl transition-all group"
-              >
-                <X className="w-6 h-6 text-muted-foreground/30 group-hover:text-foreground" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateUser} className="p-10 space-y-8">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Full Name</label>
-                  <div className="relative">
-                    <User className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30" />
-                    <input
-                      type="text"
-                      placeholder="Jane Doe"
-                      className="w-full pl-14 pr-6 py-4 bg-secondary border-transparent rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground"
-                      value={newUserName}
-                      onChange={(e) => setNewUserName(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Identity (Email)</label>
-                  <div className="relative">
-                    <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30" />
-                    <input
-                      type="email"
-                      placeholder="colleague@organization.com"
-                      className="w-full pl-14 pr-6 py-4 bg-secondary border-transparent rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground"
-                      value={newUserEmail}
-                      onChange={(e) => setNewUserEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Initial Password</label>
-                  <div className="relative">
-                    <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30" />
-                    <input
-                      type="text"
-                      placeholder="Secure temporary password"
-                      className="w-full pl-14 pr-6 py-4 bg-secondary border-transparent rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground"
-                      value={newUserPassword}
-                      onChange={(e) => setNewUserPassword(e.target.value)}
-                      required
-                      minLength={6}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={actionLoading}
-                className="w-full py-5 bg-primary text-primary-foreground font-bold rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all shadow-xl shadow-primary/10 flex items-center justify-center gap-3 text-lg"
-              >
-                {actionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Create User Account'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* Slide-out Profile Panel */}
       {userToEdit && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex justify-end">
@@ -359,33 +331,22 @@ export const UserManagement: React.FC = () => {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
-              <form id="edit-user-form" onSubmit={handleUpdateUser} className="p-8 space-y-10">
+            <div className="flex-1 overflow-y-auto invisible-scrollbar">
+              <form id="edit-user-form" onSubmit={handleUpdateUser} className="p-8 space-y-12">
                 {/* Basic Info */}
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Full Name</label>
-                    <div className="relative">
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+                <div className="space-y-6">
+                  <h4 className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <User className="w-3 h-3" />
+                    Identity
+                  </h4>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Full Name</label>
                       <input
                         type="text"
-                        className="w-full pl-11 pr-4 py-3 bg-secondary border border-transparent rounded-xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground text-sm"
+                        className="w-full px-4 py-3 bg-secondary border border-transparent rounded-xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground text-sm"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Email</label>
-                    <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
-                      <input
-                        type="email"
-                        className="w-full pl-11 pr-4 py-3 bg-secondary border border-transparent rounded-xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground text-sm"
-                        value={editEmail}
-                        onChange={(e) => setEditEmail(e.target.value)}
                         required
                       />
                     </div>
@@ -396,7 +357,7 @@ export const UserManagement: React.FC = () => {
                 <div className="space-y-4">
                   <h4 className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                     <Shield className="w-3 h-3" />
-                    Global Role
+                    Authority Level
                   </h4>
                   <div className="relative">
                     <select 
@@ -413,33 +374,63 @@ export const UserManagement: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Workspace Access */}
-                <div className="space-y-4">
+                {/* Workspace Access - Hybrid UI */}
+                <div className="space-y-6">
                   <h4 className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                     <Building2 className="w-3 h-3" />
                     Workspace Access
                   </h4>
-                  <div className="space-y-2">
-                    {companies.map(c => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => toggleCompany(c.id)}
-                        className="flex items-center gap-3 w-full text-left p-3 bg-secondary/50 rounded-xl hover:bg-secondary transition-all group border border-transparent hover:border-border/50"
-                      >
-                        {editCompanyIds.includes(c.id) ? (
-                          <CheckSquare className="w-4 h-4 text-primary" />
-                        ) : (
-                          <Square className="w-4 h-4 text-muted-foreground/30 group-hover:text-muted-foreground/50" />
-                        )}
-                        <span className={`text-sm font-bold ${editCompanyIds.includes(c.id) ? 'text-foreground' : 'text-muted-foreground/60'}`}>
-                          {c.name}
-                        </span>
-                      </button>
+                  
+                  {/* Active Chips */}
+                  <div className="flex flex-wrap gap-2">
+                    {assignedCompanies.map(c => (
+                      <div key={c.id} className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-full group/chip animate-in zoom-in-95 duration-200">
+                        <span className="text-[10px] font-bold uppercase tracking-tight">{c.name}</span>
+                        <button 
+                          type="button"
+                          onClick={() => handleRemoveWorkspace(c.id)}
+                          className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+                        >
+                          <X size={10} />
+                        </button>
+                      </div>
                     ))}
-                    {companies.length === 0 && (
-                      <p className="text-sm text-muted-foreground/50 italic py-4">No active workspaces available.</p>
+                    {assignedCompanies.length === 0 && (
+                      <p className="text-[10px] text-muted-foreground italic">No workspaces authorized.</p>
                     )}
+                  </div>
+
+                  {/* Selector */}
+                  <div className="space-y-4 pt-2">
+                    <div className="relative">
+                      <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/30" />
+                      <input 
+                        type="text"
+                        placeholder="Search unassigned..."
+                        className="w-full pl-10 pr-4 py-2 bg-secondary/50 border border-border/20 rounded-lg text-xs outline-none focus:bg-secondary focus:border-primary/30 transition-all placeholder:text-muted-foreground/20"
+                        value={workspaceSearchTerm}
+                        onChange={(e) => setWorkspaceSearchTerm(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="h-40 overflow-y-auto border border-border/20 rounded-xl bg-secondary/20 invisible-scrollbar">
+                      <div className="p-2 space-y-1">
+                        {unassignedCompanies.map(c => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => handleAddWorkspace(c.id)}
+                            className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-secondary transition-colors group text-left"
+                          >
+                            <span className="text-xs font-bold text-foreground/70 group-hover:text-primary">{c.name}</span>
+                            <Plus size={12} className="text-muted-foreground/30 group-hover:text-primary" />
+                          </button>
+                        ))}
+                        {unassignedCompanies.length === 0 && (
+                          <p className="text-[10px] text-muted-foreground/30 text-center py-12 italic">All available environments assigned.</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -454,9 +445,10 @@ export const UserManagement: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setEditIsActive(!editIsActive)}
+                    disabled={userToEdit?.email === 'avessaify@gmail.com'}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                      editIsActive ? 'bg-primary' : 'bg-secondary-foreground/20'
-                    }`}
+                      editIsActive ? 'bg-emerald-500' : 'bg-secondary-foreground/20'
+                    } ${userToEdit?.email === 'avessaify@gmail.com' ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-card transition-transform ${
@@ -473,7 +465,7 @@ export const UserManagement: React.FC = () => {
                 type="submit"
                 form="edit-user-form"
                 disabled={actionLoading}
-                className="w-full py-4 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-sm"
+                className="w-full py-4 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-sm shadow-lg shadow-primary/10"
               >
                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Configurations'}
               </button>
