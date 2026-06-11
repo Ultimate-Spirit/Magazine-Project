@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Company } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowRight, Search, Building2 } from 'lucide-react';
+import { ArrowRight, Search, Building2, ChevronRight } from 'lucide-react';
 
 interface Props {
   onSelect: (company: Company) => void;
@@ -56,74 +56,82 @@ export function CompanySelection({ onSelect }: Props) {
 
   if (companies.length > 0) {
     return (
-      <div className="min-h-[calc(100vh-5rem)] bg-background flex flex-col p-6 md:p-12 xl:px-16 pt-16 md:pt-20">
-        <div className="w-full max-w-7xl mx-auto flex flex-col space-y-10">
-          <header className="space-y-3">
-            <h1 className="text-4xl md:text-6xl font-black text-foreground tracking-tighter leading-none">
-              Welcome back
-            </h1>
-            <p className="text-muted-foreground font-medium text-base md:text-lg max-w-xl">
-              Select an environment to continue.
-            </p>
+      <div className="min-h-[calc(100vh-5rem)] bg-background flex flex-col p-8 md:p-12 xl:px-16 py-12 md:py-20 text-foreground">
+        <div className="w-full max-w-7xl mx-auto flex flex-col">
+          <header className="flex flex-col md:flex-row md:items-end justify-between gap-12 mb-20">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.4em]">
+                <div className="w-2 h-2 rounded-full bg-primary" />
+                System Access
+              </div>
+              <h1 className="text-6xl font-display font-black tracking-tighter leading-none">
+                Workspace Portal
+              </h1>
+              <p className="text-muted-foreground font-body text-lg max-w-xl leading-relaxed">
+                Select an assigned environment to continue.
+              </p>
+            </div>
+
+            <div className="relative group w-full md:w-64">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
+              <input
+                type="text"
+                placeholder="Find environment..."
+                className="w-full pl-12 pr-6 py-4 bg-secondary border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary/10 outline-none transition-all placeholder:text-muted-foreground/30"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </header>
 
-          {/* Search Bar */}
-          <div className="relative group max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
-            <input
-              type="text"
-              placeholder="Filter environments..."
-              className="w-full pl-11 pr-6 py-4 bg-secondary/30 border border-border/20 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-primary/10 outline-none transition-all placeholder:text-muted-foreground/30"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
             {filteredCompanies.map((company) => (
-              <button
+              <div
                 key={company.id}
+                className="group relative bg-card rounded-[2rem] hover:bg-secondary transition-all duration-500 p-10 flex flex-col justify-between min-h-[260px] cursor-pointer overflow-hidden border border-border/50 hover:border-primary/20"
                 onClick={() => onSelect(company)}
-                className="group relative p-6 border border-border/20 rounded-[1.5rem] bg-transparent hover:border-foreground/20 hover:scale-[1.02] transition-all duration-300 text-left overflow-hidden flex items-center gap-5"
               >
-                {/* Circular Avatar / Logo Visual Anchor */}
-                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center shrink-0 border border-border/10 group-hover:bg-primary/5 group-hover:border-primary/20 transition-colors duration-300 overflow-hidden">
-                  {company.logoUrl ? (
-                    <img 
-                      src={company.logoUrl} 
-                      alt={`${company.name} logo`}
-                      className="w-full h-full object-contain p-1"
-                    />
-                  ) : (
-                    <Building2 className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                  )}
+                <div className="flex items-start justify-between">
+                  {/* Circular Avatar / Logo Visual Anchor */}
+                  <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center shrink-0 border border-border/10 group-hover:bg-primary group-hover:border-primary/20 transition-all duration-500 overflow-hidden">
+                    {company.logoUrl ? (
+                      <img 
+                        src={company.logoUrl} 
+                        alt={`${company.name} logo`}
+                        className="w-full h-full object-contain p-1 group-hover:scale-110 transition-transform duration-500"
+                      />
+                    ) : (
+                      <Building2 className="w-8 h-8 text-muted-foreground group-hover:text-primary-foreground transition-colors duration-500" />
+                    )}
+                  </div>
+
+                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground group-hover:translate-x-1 transition-transform">
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
                 </div>
 
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold text-foreground tracking-tight truncate transition-colors">
+                <div>
+                  <h3 className="text-2xl font-display font-bold mb-3 group-hover:text-primary transition-colors tracking-tight line-clamp-1 pr-4">
                     {company.name}
                   </h3>
-                  <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mt-1">
-                    {profile?.roles?.name || (isAdmin ? 'Admin' : 'Authorized Personnel')}
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="px-3 py-1 rounded-lg bg-secondary/50 text-[10px] font-bold text-muted-foreground uppercase tracking-widest border border-border/30 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                      {profile?.roles?.name || (isAdmin ? 'Admin' : 'Authorized Personnel')}
+                    </span>
+                  </div>
                 </div>
-
-                {/* Micro-interaction Arrow */}
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground opacity-0 group-hover:opacity-100 transition-all duration-300 -translate-x-2 group-hover:translate-x-0">
-                  <ArrowRight size={16} />
-                </div>
-              </button>
+              </div>
             ))}
           </div>
 
           {filteredCompanies.length === 0 && (
-            <div className="py-12 text-center bg-secondary/10 rounded-[2rem] border border-dashed border-border/20">
-              <p className="text-sm font-medium text-muted-foreground">No matching environments found.</p>
+            <div className="py-32 text-center bg-secondary/10 rounded-[2.5rem] border border-border/50">
+              <p className="text-xl font-body font-bold text-muted-foreground">No matches for "<span className="text-foreground">{searchQuery}</span>"</p>
               <button 
                 onClick={() => setSearchQuery('')}
-                className="mt-4 text-xs font-bold text-primary hover:underline uppercase tracking-widest"
+                className="mt-6 text-sm font-bold text-primary hover:underline"
               >
-                Reset Filter
+                Reset search filters
               </button>
             </div>
           )}
