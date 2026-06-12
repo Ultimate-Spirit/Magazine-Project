@@ -269,6 +269,10 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi.responses import JSONResponse
 
+@app.get("/version")
+async def get_version():
+    return {"version": "1.1.0-hardened", "status": "active"}
+
 @app.get("/admin-stats", dependencies=[Depends(get_current_user)])
 async def get_admin_stats():
     supabase_admin = get_supabase_admin()
