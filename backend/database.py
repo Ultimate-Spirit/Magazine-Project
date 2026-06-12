@@ -6,7 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 url: str = os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL")
-key: str = os.environ.get("SUPABASE_KEY") or os.environ.get("VITE_SUPABASE_ANON_KEY")
+# Prioritize service role key for backend operations if available
+key: str = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_KEY") or os.environ.get("VITE_SUPABASE_ANON_KEY")
 
 if url:
     # Clean the URL if it contains the rest/v1 suffix

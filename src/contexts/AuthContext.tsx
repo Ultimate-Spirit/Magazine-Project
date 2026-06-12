@@ -71,19 +71,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchProfile = async (user: User) => {
     try {
       console.log('Fetching profile for:', user.id);
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
 
-      if (error) {
+      if (error && error.code !== 'PGRST116') {
         console.error('Error fetching profile detail:', error.message, error.details);
         throw error;
       }
 
+      if (!data) {
+        console.warn('No profile found, creating failsafe profile for:', user.email);
+        const { data: newData, error: insertError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: user.id,
+              email: user.email,
+              full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'New User',
+              role: 'viewer',
+              is_active: true
+            }
+          ])
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Failed to create failsafe profile:', insertError.message);
+          // Even if insert fails, we allow session to persist if user is authenticated
+          setIsAuthorized(true);
+          setIsAdmin(false);
+          return;
+        }
+        data = newData;
+      }
+
       if (data) {
-        console.log('Profile found:', data.email, 'Role:', data.role, 'Active:', data.is_active);
+        console.log('Profile found/created:', data.email, 'Role:', data.role, 'Active:', data.is_active);
         if (data.is_active === false) {
           console.warn('User is marked as inactive. Logging out.');
           await supabase.auth.signOut();
@@ -96,18 +122,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProfile(data as UserProfile);
         setIsAuthorized(true);
         setIsAdmin(data.role === 'admin');
-      } else {
-        console.warn('No profile data returned for user');
-        setProfile(null);
-        setIsAuthorized(false);
-        setIsAdmin(false);
       }
     } catch (error: any) {
       console.error('Fetch Profile Exception:', error.message);
-      setProfile(null);
-      // Fallback: If we have a user but fetch failed, we might still want to allow access
-      // to basic routes, but for now we stay strict.
-      setIsAuthorized(false);
+      // Failsafe: allow authenticated users to stay logged in even if profile fetch fails
+      setIsAuthorized(true);
       setIsAdmin(false);
     }
   };

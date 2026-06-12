@@ -58,6 +58,84 @@ async def db_check():
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@app.post("/create-user", dependencies=[Depends(get_current_user)])
+async def create_user(data: dict):
+    supabase = get_supabase()
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase client not initialized")
+    
+    email = data.get("email")
+    password = data.get("password")
+    full_name = data.get("full_name")
+    role = data.get("role", "viewer")
+    company_id = data.get("company_id")
+
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email and password are required")
+
+    try:
+        # 1. Create user in Supabase Auth
+        user_response = supabase.auth.admin.create_user({
+            "email": email,
+            "password": password,
+            "email_confirm": True,
+            "user_metadata": {"full_name": full_name}
+        })
+
+        if not user_response.user:
+            raise HTTPException(status_code=400, detail="Failed to create user in Auth")
+
+        user_id = user_response.user.id
+
+        # 2. Create profile in public.profiles
+        profile_data = {
+            "id": user_id,
+            "email": email,
+            "full_name": full_name,
+            "role": role,
+            "is_active": True,
+            "company_id": company_id if company_id else None
+        }
+
+        profile_response = supabase.table("profiles").insert(profile_data).execute()
+        
+        if not profile_response.data:
+            # Cleanup: if profile creation fails, we might want to delete the auth user, 
+            # but for now we'll just report the error.
+            raise HTTPException(status_code=400, detail="User created but profile creation failed")
+
+        return {"message": f"User {email} created successfully", "user": user_response.user, "profile": profile_response.data[0]}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error creating user: {str(e)}")
+
+@app.post("/update-user", dependencies=[Depends(get_current_user)])
+async def update_user(data: dict):
+    supabase = get_supabase()
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase client not initialized")
+    
+    target_user_id = data.get("target_user_id")
+    email = data.get("email")
+
+    if not target_user_id or not email:
+        raise HTTPException(status_code=400, detail="Target user ID and email are required")
+
+    try:
+        # Update user in Supabase Auth
+        user_response = supabase.auth.admin.update_user_by_id(
+            target_user_id,
+            {"email": email}
+        )
+
+        if not user_response.user:
+            raise HTTPException(status_code=400, detail="Failed to update user in Auth")
+
+        return {"message": f"User {email} updated successfully", "user": user_response.user}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating user: {str(e)}")
+
 def safe_extract(df, row, col, default=""):
     try:
         val = df.iloc[row, col]

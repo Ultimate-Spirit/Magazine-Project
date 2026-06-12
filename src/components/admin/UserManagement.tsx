@@ -64,18 +64,26 @@ export const UserManagement: React.FC = () => {
       if (existingUser) {
         showNotification('error', `A user with email ${newUserEmail} already exists.`);
       } else {
-        const { data: edgeData, error: edgeError } = await supabase.functions.invoke('create-user', {
-          body: { 
+        const { data: { session } } = await supabase.auth.getSession();
+        const response = await fetch('/_/backend/create-user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`
+          },
+          body: JSON.stringify({ 
             email: newUserEmail, 
             password: newUserPassword,
-            full_name: newUserName
-          }
+            full_name: newUserName,
+            role: 'viewer' // Default unassigned global role
+          })
         });
 
-        if (edgeError) throw new Error(edgeError.message || 'Failed to create user account.');
-        if (edgeData?.error) throw new Error(edgeData.error);
+        const edgeData = await response.json();
+
+        if (!response.ok) throw new Error(edgeData.detail || 'Failed to create user account.');
         
-        showNotification('success', edgeData?.message || `Account created for ${newUserEmail}`);
+        showNotification('success', edgeData.message || `Account created for ${newUserEmail}`);
       }
 
       await logActivity('invited', 'user', newUserEmail, companies[0]?.id || '', profile?.id || '');
@@ -107,17 +115,24 @@ export const UserManagement: React.FC = () => {
     setActionLoading(true);
 
     try {
-      // 1. If email changed, call the edge function to update auth.users
+      // 1. If email changed, call the backend to update auth.users
       if (editEmail !== userToEdit.email) {
-        const { data: edgeData, error: edgeError } = await supabase.functions.invoke('update-user', {
-          body: {
+        const { data: { session } } = await supabase.auth.getSession();
+        const response = await fetch('/_/backend/update-user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`
+          },
+          body: JSON.stringify({
             target_user_id: userToEdit.id,
             email: editEmail
-          }
+          })
         });
 
-        if (edgeError) throw new Error(edgeError.message || 'Failed to update email.');
-        if (edgeData?.error) throw new Error(edgeData.error);
+        const edgeData = await response.json();
+
+        if (!response.ok) throw new Error(edgeData.detail || 'Failed to update email.');
       }
 
       // 2. Update profile table data (name, role, company, active status)
