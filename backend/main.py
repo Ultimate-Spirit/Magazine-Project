@@ -9,9 +9,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from fpdf import FPDF
 from dotenv import load_dotenv
-from database import get_supabase
+from database import get_supabase, get_admin_supabase
 import schemas
 from typing import Optional
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -60,9 +65,11 @@ async def db_check():
 
 @app.post("/create-user", dependencies=[Depends(get_current_user)])
 async def create_user(data: dict):
-    supabase = get_supabase()
-    if not supabase:
-        raise HTTPException(status_code=500, detail="Supabase client not initialized")
+    # Strictly use Admin Supabase client for Add User action
+    admin_supabase = get_admin_supabase()
+    if not admin_supabase:
+        logger.error("Admin Supabase client failed to initialize. Check SUPABASE_SERVICE_ROLE_KEY.")
+        raise HTTPException(status_code=500, detail="Internal Server Error: Admin configuration missing")
     
     email = data.get("email")
     password = data.get("password")
@@ -74,8 +81,10 @@ async def create_user(data: dict):
         raise HTTPException(status_code=400, detail="Email and password are required")
 
     try:
-        # 1. Create user in Supabase Auth
-        user_response = supabase.auth.admin.create_user({
+        logger.info(f"Attempting to create user: {email}")
+        
+        # 1. Create user in Supabase Auth via Admin Client
+        user_response = admin_supabase.auth.admin.create_user({
             "email": email,
             "password": password,
             "email_confirm": True,
@@ -83,11 +92,13 @@ async def create_user(data: dict):
         })
 
         if not user_response.user:
+            logger.error(f"Auth creation failed for {email}: {user_response}")
             raise HTTPException(status_code=400, detail="Failed to create user in Auth")
 
         user_id = user_response.user.id
+        logger.info(f"Auth user created with ID: {user_id}")
 
-        # 2. Create profile in public.profiles
+        # 2. Create profile in public.profiles using Admin Client to bypass RLS
         profile_data = {
             "id": user_id,
             "email": email,
@@ -97,23 +108,28 @@ async def create_user(data: dict):
             "company_id": company_id if company_id else None
         }
 
-        profile_response = supabase.table("profiles").insert(profile_data).execute()
+        try:
+            profile_response = admin_supabase.table("profiles").insert(profile_data).execute()
+            if not profile_response.data:
+                logger.error(f"Profile insertion failed for {user_id}. Data: {profile_response}")
+                raise Exception("Profile creation returned no data")
+            
+            logger.info(f"Profile created successfully for {user_id}")
+            return {"message": f"User {email} created successfully", "user": user_response.user, "profile": profile_response.data[0]}
         
-        if not profile_response.data:
-            # Cleanup: if profile creation fails, we might want to delete the auth user, 
-            # but for now we'll just report the error.
-            raise HTTPException(status_code=400, detail="User created but profile creation failed")
-
-        return {"message": f"User {email} created successfully", "user": user_response.user, "profile": profile_response.data[0]}
+        except Exception as profile_err:
+            logger.error(f"DATABASE REJECTION (profiles): {str(profile_err)}")
+            raise HTTPException(status_code=500, detail=f"User created in Auth, but Profile insertion failed: {str(profile_err)}")
     
     except Exception as e:
+        logger.error(f"UNEXPECTED ERROR in create_user: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error creating user: {str(e)}")
 
 @app.post("/update-user", dependencies=[Depends(get_current_user)])
 async def update_user(data: dict):
-    supabase = get_supabase()
-    if not supabase:
-        raise HTTPException(status_code=500, detail="Supabase client not initialized")
+    admin_supabase = get_admin_supabase()
+    if not admin_supabase:
+        raise HTTPException(status_code=500, detail="Admin configuration missing")
     
     target_user_id = data.get("target_user_id")
     email = data.get("email")
@@ -122,8 +138,8 @@ async def update_user(data: dict):
         raise HTTPException(status_code=400, detail="Target user ID and email are required")
 
     try:
-        # Update user in Supabase Auth
-        user_response = supabase.auth.admin.update_user_by_id(
+        # Update user in Supabase Auth via Admin
+        user_response = admin_supabase.auth.admin.update_user_by_id(
             target_user_id,
             {"email": email}
         )
@@ -134,7 +150,69 @@ async def update_user(data: dict):
         return {"message": f"User {email} updated successfully", "user": user_response.user}
     
     except Exception as e:
+        logger.error(f"Error updating user: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error updating user: {str(e)}")
+
+@app.post("/jit-provision")
+async def jit_provision(authorization: Optional[str] = Header(None)):
+    """
+    Just-In-Time (JIT) Profile Provisioner.
+    Called by the frontend during the auth callback/initialization.
+    """
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Missing authorization header")
+    
+    # We use both standard and admin clients
+    standard_supabase = get_supabase()
+    admin_supabase = get_admin_supabase()
+    
+    if not standard_supabase or not admin_supabase:
+        raise HTTPException(status_code=500, detail="Supabase clients not initialized")
+    
+    try:
+        # 1. Verify token and get session user
+        token = authorization.replace("Bearer ", "")
+        user_response = standard_supabase.auth.get_user(token)
+        if not user_response or not user_response.user:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        user = user_response.user
+        logger.info(f"JIT Provision check for: {user.email} ({user.id})")
+        
+        # 2. Query public.profiles using Admin Client
+        profile_res = admin_supabase.table("profiles").select("*").eq("id", user.id).single().execute()
+        
+        if profile_res.data:
+            logger.info(f"Profile exists for {user.id}")
+            return {"status": "exists", "profile": profile_res.data}
+        
+        # 3. Provision missing profile
+        logger.warn(f"MISSING PROFILE for {user.id}. Provisioning now...")
+        
+        profile_data = {
+            "id": user.id,
+            "email": user.email,
+            "full_name": user.user_metadata.get("full_name") or user.email.split('@')[0],
+            "role": "viewer",
+            "is_active": True
+        }
+        
+        try:
+            insert_res = admin_supabase.table("profiles").insert(profile_data).execute()
+            if not insert_res.data:
+                logger.error(f"JIT Profile insertion failed for {user.id}")
+                raise Exception("JIT Insert returned no data")
+            
+            logger.info(f"JIT Profile PROVISIONED SUCCESS for {user.id}")
+            return {"status": "provisioned", "profile": insert_res.data[0]}
+        
+        except Exception as insert_err:
+            logger.error(f"DATABASE REJECTION (JIT Provision): {str(insert_err)}")
+            raise HTTPException(status_code=500, detail=f"JIT Provisioning failed: {str(insert_err)}")
+            
+    except Exception as e:
+        logger.error(f"JIT Provision Exception: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 def safe_extract(df, row, col, default=""):
     try:

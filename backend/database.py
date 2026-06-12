@@ -25,3 +25,19 @@ if url and key:
 
 def get_supabase():
     return supabase
+
+def get_admin_supabase():
+    admin_url = os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL")
+    admin_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    
+    if not admin_url or not admin_key:
+        print("Critical Error: SUPABASE_SERVICE_ROLE_KEY or URL missing for admin operations.")
+        return None
+        
+    try:
+        # Clean the URL if it contains the rest/v1 suffix
+        admin_url = admin_url.split("/rest/v1")[0]
+        return create_client(admin_url, admin_key)
+    except Exception as e:
+        print(f"Error: Failed to create Admin Supabase client: {e}")
+        return None

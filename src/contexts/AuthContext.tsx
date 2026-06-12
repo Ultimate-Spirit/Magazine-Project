@@ -32,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
+          await runJitProvision(session.access_token);
           await fetchProfile(session.user);
         }
       } catch (error) {
@@ -54,6 +55,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
 
       if (session?.user) {
+        // Run JIT Provisioning on every login/token refresh
+        await runJitProvision(session.access_token);
         await fetchProfile(session.user);
       } else {
         setProfile(null);
@@ -67,6 +70,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.unsubscribe();
     };
   }, []);
+
+  const runJitProvision = async (token: string) => {
+    try {
+      console.log('Running JIT Provisioning...');
+      const response = await fetch('/_/backend/jit-provision', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const result = await response.json();
+      if (!response.ok) {
+        console.error('JIT Provisioning Error:', result.detail);
+      } else {
+        console.log('JIT Provisioning Status:', result.status);
+      }
+    } catch (err) {
+      console.error('JIT Provisioning Fetch Exception:', err);
+    }
+  };
 
   const fetchProfile = async (user: User) => {
     try {
