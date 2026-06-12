@@ -117,28 +117,18 @@ export const UserManagement: React.FC = () => {
       if (existingUser) {
         showNotification('error', `A user with email ${newUserEmail} already exists.`);
       } else {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        const res = await fetch('/_/backend/create-user', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token}`
-          },
-          body: JSON.stringify({
-            email: newUserEmail,
+        const { data: edgeData, error: edgeError } = await supabase.functions.invoke('create-user', {
+          body: { 
+            email: newUserEmail, 
             password: newUserPassword,
             full_name: newUserName
-          })
+          }
         });
 
-        const resData = await res.json();
+        if (edgeError) throw new Error(edgeError.message || 'Failed to create user account.');
+        if (edgeData?.error) throw new Error(edgeData.error);
         
-        if (!res.ok) {
-          throw new Error(resData.detail || 'Failed to provision account.');
-        }
-
-        showNotification('success', resData.message || `Account created for ${newUserEmail}`);
+        showNotification('success', edgeData?.message || `Account created for ${newUserEmail}`);
       }
 
       await logActivity('invited', 'user', newUserEmail, null, currentAdmin?.id || '');

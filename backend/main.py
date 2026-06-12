@@ -250,9 +250,15 @@ async def create_user_admin(request: UserCreateRequest):
         # Verify the user object exists
         user = getattr(user_response, 'user', user_response)
         
-        # Attempt to inject full_name into profile directly in case trigger misses it
+        # Inject full_name and ensure active status into profile directly using admin client (bypasses RLS)
         if user and hasattr(user, 'id'):
-            get_supabase().table("profiles").update({"full_name": request.full_name}).eq("id", user.id).execute()
+            # Allow trigger time to execute, then update
+            import time
+            time.sleep(1)
+            supabase_admin.table("profiles").update({
+                "full_name": request.full_name,
+                "is_active": True
+            }).eq("id", user.id).execute()
 
         return {"message": "Account provisioned successfully", "user_id": str(user.id) if hasattr(user, 'id') else None}
     except Exception as e:
