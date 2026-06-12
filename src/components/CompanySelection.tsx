@@ -162,12 +162,12 @@ export function CompanySelection({ onSelect }: Props) {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-background">
-      <div className="p-12 border border-border rounded-[3.5rem] bg-card max-w-md w-full mx-4">
-        <h2 className="text-3xl font-black text-foreground mb-4 tracking-tight">Sit tight!</h2>
-        <p className="text-muted-foreground font-medium leading-relaxed mb-10">
-          Your account is active. We are currently getting your workspace ready.
+      <div className="p-12 border border-border/10 rounded-[3.5rem] bg-card/50 backdrop-blur-xl max-w-md w-full mx-4 shadow-2xl micro-surface">
+        <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4">Verifying Session</h2>
+        <p className="text-foreground font-black text-2xl leading-tight mb-10 tracking-tighter">
+          Identity Confirmed. Provisioning your secure workspace environment.
         </p>
-        <div className="flex items-center gap-4 pt-8 border-t border-border">
+        <div className="flex items-center gap-4 pt-8 border-t border-black/5 dark:border-white/5">
           <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-primary font-bold">
             {user?.email?.[0].toUpperCase()}
           </div>

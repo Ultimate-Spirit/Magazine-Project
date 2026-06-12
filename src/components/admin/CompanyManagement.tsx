@@ -8,7 +8,6 @@ import type { Company, UserProfile } from '../../types';
 export const CompanyManagement: React.FC = () => {
   const navigate = useNavigate();
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -41,13 +40,12 @@ export const CompanyManagement: React.FC = () => {
 
   const fetchData = async () => {
     setLoading(true);
-    const [companiesRes, profilesRes] = await Promise.all([
-      supabase.from('companies').select('*').order('name'),
-      supabase.from('profiles').select('*')
-    ]);
+    const { data, error } = await supabase
+      .from('companies')
+      .select('*, user_companies(count)')
+      .order('name');
 
-    if (!companiesRes.error) setCompanies(companiesRes.data as Company[]);
-    if (!profilesRes.error) setProfiles(profilesRes.data as UserProfile[]);
+    if (!error && data) setCompanies(data as Company[]);
     setLoading(false);
   };
 
@@ -145,9 +143,9 @@ export const CompanyManagement: React.FC = () => {
   );
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-background">
-      <header className="h-24 bg-card flex items-center justify-between px-12 border-b border-border">
-        <h1 className="text-3xl font-bold text-foreground tracking-tight">Workspace Directory</h1>
+    <div className="flex-1 flex flex-col overflow-hidden bg-background font-sans invisible-scrollbar">
+      <header className="h-24 bg-card/30 backdrop-blur-md flex items-center justify-between px-12 faint-divider shrink-0">
+        <h1 className="text-3xl font-black text-foreground tracking-tight">Workspace Directory</h1>
         
         <div className="flex items-center gap-6">
           <div className="relative">
@@ -155,14 +153,14 @@ export const CompanyManagement: React.FC = () => {
             <input 
               type="text" 
               placeholder="Search workspaces..."
-              className="pl-11 pr-6 py-3 bg-secondary border-transparent rounded-xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all w-72 text-sm font-medium text-foreground"
+              className="pl-11 pr-6 py-3 micro-surface border border-transparent rounded-xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all w-72 text-sm font-bold text-foreground"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <button 
             onClick={() => openModal()}
-            className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 transition-all"
+            className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-black rounded-xl hover:bg-primary/90 transition-all uppercase tracking-widest text-[10px] shadow-lg shadow-primary/10"
           >
             <Plus className="w-4 h-4" />
             Create Company
@@ -184,27 +182,29 @@ export const CompanyManagement: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredCompanies.map((company) => (
+            {filteredCompanies.map((company) => {
+              const memberCount = company.user_companies?.[0]?.count ?? 0;
+              return (
               <div 
                 key={company.id} 
                 onClick={() => navigate(`/company/${company.id}/folders`)}
-                className="bg-card p-8 rounded-[2.5rem] border border-border hover:border-primary/20 hover:bg-secondary/30 transition-all duration-300 group relative cursor-pointer"
+                className="bento-card micro-surface micro-surface-hover border-border/20 hover:border-primary/30 group relative cursor-pointer flex flex-col justify-between min-h-[220px]"
               >
                 <div className="flex items-start justify-between mb-6">
-                  <div className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center text-primary overflow-hidden border border-border group-hover:border-primary/20 transition-all">
+                  <div className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center overflow-hidden border border-border/10 group-hover:border-primary/20 transition-all">
                     {company.logoUrl ? (
-                      <img src={company.logoUrl} alt={company.name} className="w-full h-full object-cover" />
+                      <img src={company.logoUrl} alt={company.name} className="w-full h-full object-contain p-1 group-hover:scale-110 transition-transform duration-500" />
                     ) : (
-                      <Building2 className="w-8 h-8" />
+                      <Building2 className="w-8 h-8 text-muted-foreground/30 group-hover:text-primary transition-colors duration-500" />
                     )}
                   </div>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
+                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
                         openModal(company);
                       }}
-                      className="p-3 bg-card border border-border rounded-xl text-muted-foreground hover:text-primary hover:border-primary/20 transition-all"
+                      className="p-3 micro-surface border border-border/10 rounded-xl text-muted-foreground/40 hover:text-primary transition-all"
                       title="Edit Company"
                     >
                       <Edit2 className="w-4 h-4" />
@@ -214,7 +214,7 @@ export const CompanyManagement: React.FC = () => {
                         e.stopPropagation();
                         setCompanyToDelete(company);
                       }}
-                      className="p-3 bg-card border border-border rounded-xl text-muted-foreground hover:text-destructive hover:border-destructive/20 transition-all"
+                      className="p-3 micro-surface border border-border/10 rounded-xl text-muted-foreground/40 hover:text-destructive transition-all"
                       title="Delete Company"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -222,31 +222,33 @@ export const CompanyManagement: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between group-hover:text-primary transition-colors">
-                  <h3 className="text-xl font-bold text-foreground group-hover:text-primary">{company.name}</h3>
-                  <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all" />
-                </div>
-                
-                <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium mt-2">
-                  <Users className="w-4 h-4" />
-                  {profiles.filter(p => p.company_id === company.id).length} Active Members
+                <div>
+                  <div className="flex items-center justify-between group-hover:text-primary transition-colors mb-2">
+                    <h3 className="text-2xl font-black text-foreground group-hover:text-primary tracking-tight line-clamp-1">{company.name}</h3>
+                    <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all shrink-0" />
+                  </div>
+                  
+                  <div className="flex items-center gap-2 text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest mt-2 group-hover:text-muted-foreground transition-colors">
+                    <Users className="w-3 h-3" />
+                    {memberCount} Active Member{memberCount !== 1 ? 's' : ''}
+                  </div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
       </main>
 
       {/* Company Modal (Create/Edit) */}
       {isCompanyModalOpen && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[150] flex items-center justify-center p-6 animate-in fade-in duration-300">
-          <div className="bg-card rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-border animate-in zoom-in-95 duration-200">
-            <div className="p-10 border-b border-border flex items-center justify-between">
+        <div className="fixed inset-0 bg-background/60 backdrop-blur-2xl z-[150] flex items-center justify-center p-6 animate-in fade-in duration-500">
+          <div className="micro-surface rounded-[2.5rem] shadow-none w-full max-w-md overflow-hidden border border-border/10 animate-in zoom-in-95 duration-300">
+            <div className="p-10 border-b border-border/10 flex items-center justify-between">
               <div>
-                <h2 className="text-3xl font-bold text-foreground tracking-tight">
+                <h2 className="text-3xl font-black text-foreground tracking-tighter">
                   {editingCompany ? 'Edit Workspace' : 'New Workspace'}
                 </h2>
-                <p className="text-muted-foreground font-medium mt-1">
+                <p className="text-muted-foreground/60 font-medium mt-1 text-sm">
                   {editingCompany ? 'Update organization details' : 'Register a new organization'}
                 </p>
               </div>
@@ -258,16 +260,16 @@ export const CompanyManagement: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSaveCompany} className="p-10 space-y-8">
+            <form onSubmit={handleSaveCompany} className="p-10 space-y-10">
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Company Name</label>
+                  <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Company Name</label>
                   <div className="relative">
                     <Building2 className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30" />
                     <input
                       type="text"
                       placeholder="Enterprise Name"
-                      className="w-full pl-14 pr-6 py-4 bg-secondary border-transparent rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground"
+                      className="w-full pl-14 pr-6 py-4 micro-surface border border-border/10 rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight"
                       value={newCompanyName}
                       onChange={(e) => setNewCompanyName(e.target.value)}
                       required
@@ -276,13 +278,13 @@ export const CompanyManagement: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Company Logo</label>
+                  <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Company Logo</label>
                   <div className="flex items-center gap-6">
-                    <div className="w-20 h-20 bg-secondary rounded-2xl border-2 border-dashed border-border flex items-center justify-center overflow-hidden">
+                    <div className="w-20 h-20 micro-surface rounded-2xl border-2 border-dashed border-border/20 flex items-center justify-center overflow-hidden">
                       {logoPreview ? (
-                        <img src={logoPreview} alt="Preview" className="w-full h-full object-cover" />
+                        <img src={logoPreview} alt="Preview" className="w-full h-full object-contain p-1" />
                       ) : (
-                        <Building2 className="w-8 h-8 text-muted-foreground/30" />
+                        <Building2 className="w-8 h-8 text-muted-foreground/20" />
                       )}
                     </div>
                     <div className="flex-1">
@@ -295,11 +297,11 @@ export const CompanyManagement: React.FC = () => {
                       />
                       <label 
                         htmlFor="logo-upload"
-                        className="inline-block px-4 py-2 bg-card border border-border rounded-xl text-sm font-bold text-foreground hover:bg-secondary cursor-pointer transition-all"
+                        className="inline-flex px-4 py-2 micro-surface border border-border/10 rounded-xl text-[10px] font-black text-foreground uppercase tracking-widest hover:bg-secondary cursor-pointer transition-all"
                       >
                         Choose Image
                       </label>
-                      <p className="text-[10px] text-muted-foreground/50 mt-2 font-medium">PNG, JPG or SVG. Max 2MB.</p>
+                      <p className="text-[10px] text-muted-foreground/40 mt-3 font-bold uppercase tracking-widest">PNG, JPG or SVG. Max 2MB.</p>
                     </div>
                   </div>
                 </div>
@@ -308,7 +310,7 @@ export const CompanyManagement: React.FC = () => {
               <button
                 type="submit"
                 disabled={actionLoading}
-                className="w-full py-5 bg-primary text-primary-foreground font-bold rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-lg"
+                className="w-full py-5 bg-primary text-primary-foreground font-black rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-[11px] uppercase tracking-[0.2em] shadow-lg shadow-primary/10"
               >
                 {actionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : editingCompany ? 'Update Workspace' : 'Create Workspace'}
               </button>
