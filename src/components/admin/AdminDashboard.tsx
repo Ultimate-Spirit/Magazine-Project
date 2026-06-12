@@ -42,11 +42,13 @@ export const AdminDashboard: React.FC = () => {
 
       // Fetch aggregated stats from secure backend with cache-busting
       const statsRes = await fetch(`/_/backend/admin-stats?t=${Date.now()}`, { headers });
-      if (statsRes.ok) {
-        const statsData = await statsRes.json();
-        setStats(statsData);
-      } else {
-        console.error('Failed to fetch admin stats');
+      const statsData = await statsRes.json();
+      
+      // Force update state regardless of response status
+      setStats(statsData);
+
+      if (!statsRes.ok) {
+        console.error('Diagnostic Server Error:', statsData);
       }
 
       // Fetch recent global activity
@@ -61,8 +63,19 @@ export const AdminDashboard: React.FC = () => {
       }
 
     } catch (err: any) {
-      console.error('Error fetching dashboard stats:', err);
+      console.error('Fatal fetch error:', err);
+      // Surface the error directly in the UI if fetch itself fails
+      setStats({
+        total_users: `ERR: ${err.message}`,
+        active_accounts: `ERR: ${err.message}`,
+        active_workspaces: `ERR: ${err.message}`,
+        published_pages: `ERR: ${err.message}`,
+        pending_invites: `ERR: ${err.message}`,
+        recent_updates: `ERR: ${err.message}`,
+        active_sessions: `ERR: ${err.message}`
+      });
     } finally {
+      // MANDATORY: Kill loading state regardless of outcome
       setLoading(false);
     }
   };

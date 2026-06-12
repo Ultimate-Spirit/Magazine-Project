@@ -277,90 +277,110 @@ from concurrent.futures import ThreadPoolExecutor
 
 @app.get("/admin-stats", dependencies=[Depends(get_current_user)])
 async def get_admin_stats():
-    supabase_admin = get_supabase_admin()
-    if not supabase_admin:
-        print("CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing in backend environment.")
-        raise HTTPException(status_code=500, detail="Admin client not initialized for stats.")
+    try:
+        supabase_admin = get_supabase_admin()
+        if not supabase_admin:
+            print("CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing in backend environment.")
+            return JSONResponse(
+                content={"error": "ERR: Admin client not initialized", "total_users": "ERR: Config", "active_accounts": "ERR: Config", "active_workspaces": "ERR: Config", "published_pages": "ERR: Config", "pending_invites": "ERR: Config", "recent_updates": "ERR: Config", "active_sessions": "ERR: Config"},
+                status_code=200
+            )
 
-    def fetch_count(table, filters=None):
-        try:
-            query = supabase_admin.table(table).select('id', count='exact', head=True)
-            if filters:
-                for k, v in filters.items():
-                    query = query.eq(k, v)
-            res = query.execute()
-            return res.count if res.count is not None else 0
-        except Exception as e:
-            err_msg = f"ERR: {str(e)}"
-            print(f"DATABASE ERROR ({table}): {err_msg}")
-            return err_msg
+        def fetch_count(table, filters=None):
+            try:
+                query = supabase_admin.table(table).select('id', count='exact', head=True)
+                if filters:
+                    for k, v in filters.items():
+                        query = query.eq(k, v)
+                res = query.execute()
+                return res.count if res.count is not None else 0
+            except Exception as e:
+                err_msg = f"ERR: {str(e)}"
+                print(f"DATABASE ERROR ({table}): {err_msg}")
+                return err_msg
 
-    def fetch_recent_updates():
-        try:
-            last_24h = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
-            res = supabase_admin.table('activity_logs').select('id', count='exact', head=True).gte('created_at', last_24h).execute()
-            return res.count if res.count is not None else 0
-        except Exception as e:
-            err_msg = f"ERR: {str(e)}"
-            print(f"DATABASE ERROR (activity_logs): {err_msg}")
-            return err_msg
+        def fetch_recent_updates():
+            try:
+                last_24h = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+                res = supabase_admin.table('activity_logs').select('id', count='exact', head=True).gte('created_at', last_24h).execute()
+                return res.count if res.count is not None else 0
+            except Exception as e:
+                err_msg = f"ERR: {str(e)}"
+                print(f"DATABASE ERROR (activity_logs): {err_msg}")
+                return err_msg
 
-    def fetch_auth_stats():
-        stats = {"pending": 0, "active": 0, "error": None}
-        try:
-            users_res = supabase_admin.auth.admin.list_users()
-            auth_users = getattr(users_res, 'users', users_res) if not isinstance(users_res, list) else users_res
-            last_12h = datetime.now(timezone.utc) - timedelta(hours=12)
-            for u in auth_users:
-                if not hasattr(u, 'last_sign_in_at') or not u.last_sign_in_at:
-                    stats["pending"] += 1
-                else:
-                    sign_in_time = u.last_sign_in_at
-                    if isinstance(sign_in_time, str):
-                        try:
-                            sign_in_time = datetime.fromisoformat(sign_in_time.replace('Z', '+00:00'))
-                        except: continue
-                    if isinstance(sign_in_time, datetime):
-                        if sign_in_time.tzinfo is None:
-                            sign_in_time = sign_in_time.replace(tzinfo=timezone.utc)
-                        if sign_in_time >= last_12h:
-                            stats["active"] += 1
-        except Exception as e:
-            stats["error"] = f"ERR: {str(e)}"
-            print(f"AUTH ERROR: {stats['error']}")
-        return stats
+        def fetch_auth_stats():
+            stats = {"pending": 0, "active": 0, "error": None}
+            try:
+                users_res = supabase_admin.auth.admin.list_users()
+                auth_users = getattr(users_res, 'users', users_res) if not isinstance(users_res, list) else users_res
+                last_12h = datetime.now(timezone.utc) - timedelta(hours=12)
+                for u in auth_users:
+                    if not hasattr(u, 'last_sign_in_at') or not u.last_sign_in_at:
+                        stats["pending"] += 1
+                    else:
+                        sign_in_time = u.last_sign_in_at
+                        if isinstance(sign_in_time, str):
+                            try:
+                                sign_in_time = datetime.fromisoformat(sign_in_time.replace('Z', '+00:00'))
+                            except: continue
+                        if isinstance(sign_in_time, datetime):
+                            if sign_in_time.tzinfo is None:
+                                sign_in_time = sign_in_time.replace(tzinfo=timezone.utc)
+                            if sign_in_time >= last_12h:
+                                stats["active"] += 1
+            except Exception as e:
+                stats["error"] = f"ERR: {str(e)}"
+                print(f"AUTH ERROR: {stats['error']}")
+            return stats
 
-    # Run queries in parallel to slash loading time
-    loop = asyncio.get_event_loop()
-    with ThreadPoolExecutor() as pool:
-        tasks = [
-            loop.run_in_executor(pool, fetch_count, 'profiles'),
-            loop.run_in_executor(pool, fetch_count, 'profiles', {'is_active': True}),
-            loop.run_in_executor(pool, fetch_count, 'companies'),
-            loop.run_in_executor(pool, fetch_count, 'pages'),
-            loop.run_in_executor(pool, fetch_recent_updates),
-            loop.run_in_executor(pool, fetch_auth_stats)
-        ]
-        results = await asyncio.gather(*tasks)
+        # Run queries in parallel to slash loading time
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as pool:
+            tasks = [
+                loop.run_in_executor(pool, fetch_count, 'profiles'),
+                loop.run_in_executor(pool, fetch_count, 'profiles', {'is_active': True}),
+                loop.run_in_executor(pool, fetch_count, 'companies'),
+                loop.run_in_executor(pool, fetch_count, 'pages'),
+                loop.run_in_executor(pool, fetch_recent_updates),
+                loop.run_in_executor(pool, fetch_auth_stats)
+            ]
+            results = await asyncio.gather(*tasks)
 
-    payload = {
-        "total_users": results[0],
-        "active_accounts": results[1],
-        "active_workspaces": results[2],
-        "published_pages": results[3],
-        "recent_updates": results[4],
-        "pending_invites": results[5]["error"] if results[5]["error"] else results[5]["pending"],
-        "active_sessions": results[5]["error"] if results[5]["error"] else results[5]["active"]
-    }
-
-    return JSONResponse(
-        content=payload,
-        headers={
-            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-            "Pragma": "no-cache",
-            "Expires": "0",
+        payload = {
+            "total_users": results[0],
+            "active_accounts": results[1],
+            "active_workspaces": results[2],
+            "published_pages": results[3],
+            "recent_updates": results[4],
+            "pending_invites": results[5]["error"] if results[5]["error"] else results[5]["pending"],
+            "active_sessions": results[5]["error"] if results[5]["error"] else results[5]["active"]
         }
-    )
+
+        return JSONResponse(
+            content=payload,
+            headers={
+                "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0",
+            }
+        )
+    except Exception as fatal_e:
+        print(f"FATAL STATS ERROR: {str(fatal_e)}")
+        return JSONResponse(
+            content={
+                "error": f"ERR: {str(fatal_e)}",
+                "total_users": "ERR: Fatal",
+                "active_accounts": "ERR: Fatal",
+                "active_workspaces": "ERR: Fatal",
+                "published_pages": "ERR: Fatal",
+                "pending_invites": "ERR: Fatal",
+                "recent_updates": "ERR: Fatal",
+                "active_sessions": "ERR: Fatal"
+            },
+            status_code=200
+        )
+
 
 
 
