@@ -39,6 +39,7 @@ export interface Company {
   id: string;
   name: string;
   logoUrl?: string;
+  user_companies?: { count: number }[];
 }
 
 export interface Folder {

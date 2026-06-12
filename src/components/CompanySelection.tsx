@@ -22,13 +22,13 @@ export function CompanySelection({ onSelect }: Props) {
         if (isAdmin) {
           const { data, error } = await supabase
             .from('companies')
-            .select('*')
+            .select('*, user_companies(count)')
             .order('name');
           if (!error && data) setCompanies(data);
         } else {
           const { data, error } = await supabase
             .from('user_companies')
-            .select('companies(*)')
+            .select('companies(*, user_companies(count))')
             .eq('user_id', user?.id);
           
           if (!error && data) {
@@ -85,7 +85,9 @@ export function CompanySelection({ onSelect }: Props) {
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
-            {filteredCompanies.map((company) => (
+            {filteredCompanies.map((company) => {
+              const memberCount = company.user_companies?.[0]?.count ?? 0;
+              return (
               <div
                 key={company.id}
                 className="group relative bento-card micro-surface micro-surface-hover flex flex-col justify-between min-h-[260px] cursor-pointer overflow-hidden border border-border/20 hover:border-primary/30"
@@ -118,10 +120,13 @@ export function CompanySelection({ onSelect }: Props) {
                     <span className="px-3 py-1 rounded-lg micro-surface text-[10px] font-bold text-muted-foreground uppercase tracking-widest border border-border/10 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                       {profile?.roles?.name || (isAdmin ? 'Admin' : 'Authorized Personnel')}
                     </span>
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                      {memberCount} Active Member{memberCount !== 1 ? 's' : ''}
+                    </span>
                   </div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
 
           {filteredCompanies.length === 0 && (
