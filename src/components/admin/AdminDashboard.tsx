@@ -40,8 +40,8 @@ export const AdminDashboard: React.FC = () => {
         headers['Authorization'] = `Bearer ${session.access_token}`;
       }
 
-      // Fetch aggregated stats from secure backend
-      const statsRes = await fetch('/_/backend/admin-stats', { headers });
+      // Fetch aggregated stats from secure backend with cache-busting
+      const statsRes = await fetch(`/_/backend/admin-stats?t=${Date.now()}`, { headers });
       if (statsRes.ok) {
         const statsData = await statsRes.json();
         setStats(statsData);

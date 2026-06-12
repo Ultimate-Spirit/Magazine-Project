@@ -267,80 +267,95 @@ async def create_user_admin(request: UserCreateRequest):
 
 from datetime import datetime, timedelta, timezone
 
+from fastapi.responses import JSONResponse
+
 @app.get("/admin-stats", dependencies=[Depends(get_current_user)])
 async def get_admin_stats():
     supabase_admin = get_supabase_admin()
     if not supabase_admin:
+        print("CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing in backend environment.")
         raise HTTPException(status_code=500, detail="Admin client not initialized for stats.")
 
+    stats = {
+        "total_users": 0,
+        "active_accounts": 0,
+        "active_workspaces": 0,
+        "published_pages": 0,
+        "pending_invites": 0,
+        "recent_updates": 0,
+        "active_sessions": 0
+    }
+
+    # 1. Total Users (Mandatory)
     try:
-        # 1. Total Users
-        profiles_res = supabase_admin.table('profiles').select('id', count='exact', head=True).execute()
-        total_users = profiles_res.count or 0
-
-        # 2. Active Accounts
-        active_profiles_res = supabase_admin.table('profiles').select('id', count='exact', head=True).eq('is_active', True).execute()
-        active_accounts = active_profiles_res.count or 0
-
-        # 3. Active Workspaces
-        companies_res = supabase_admin.table('companies').select('id', count='exact', head=True).execute()
-        active_workspaces = companies_res.count or 0
-
-        # 4. Published Pages
-        pages_res = supabase_admin.table('pages').select('id', count='exact', head=True).execute()
-        published_pages = pages_res.count or 0
-
-        # 5. Recent Updates (last 24 hours)
-        last_24h = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
-        recent_updates_res = supabase_admin.table('activity_logs').select('id', count='exact', head=True).gte('created_at', last_24h).execute()
-        recent_updates = recent_updates_res.count or 0
-
-        # 6. Pending Invites & Active Sessions (requires auth metadata)
-        pending_invites = 0
-        active_sessions = 0
-        
-        try:
-            users_res = supabase_admin.auth.admin.list_users()
-            auth_users = getattr(users_res, 'users', users_res) if not isinstance(users_res, list) else users_res
-            
-            last_12h = datetime.now(timezone.utc) - timedelta(hours=12)
-            
-            for u in auth_users:
-                # Pending Invites: never logged in
-                if not hasattr(u, 'last_sign_in_at') or not u.last_sign_in_at:
-                    pending_invites += 1
-                else:
-                    # Active Sessions: logged in within 12 hours
-                    # last_sign_in_at could be a string or datetime
-                    sign_in_time = u.last_sign_in_at
-                    if isinstance(sign_in_time, str):
-                        try:
-                            # Handle typical ISO formats
-                            sign_in_time = datetime.fromisoformat(sign_in_time.replace('Z', '+00:00'))
-                        except Exception:
-                            continue
-                    
-                    if isinstance(sign_in_time, datetime):
-                        if sign_in_time.tzinfo is None:
-                            sign_in_time = sign_in_time.replace(tzinfo=timezone.utc)
-                        if sign_in_time >= last_12h:
-                            active_sessions += 1
-
-        except Exception as e:
-            print(f"Error fetching auth metadata for stats: {e}")
-
-        return {
-            "total_users": total_users,
-            "active_accounts": active_accounts,
-            "active_workspaces": active_workspaces,
-            "published_pages": published_pages,
-            "pending_invites": pending_invites,
-            "recent_updates": recent_updates,
-            "active_sessions": active_sessions
-        }
+        res = supabase_admin.table('profiles').select('id', count='exact', head=True).execute()
+        stats["total_users"] = res.count if res.count is not None else 0
     except Exception as e:
-        print(f"STATS FETCH ERROR: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to aggregate system stats")
+        print(f"DATABASE ERROR (profiles): {str(e)}")
+
+    # 2. Active Accounts
+    try:
+        res = supabase_admin.table('profiles').select('id', count='exact', head=True).eq('is_active', True).execute()
+        stats["active_accounts"] = res.count if res.count is not None else 0
+    except Exception as e:
+        print(f"DATABASE ERROR (active profiles): {str(e)}")
+
+    # 3. Active Workspaces
+    try:
+        res = supabase_admin.table('companies').select('id', count='exact', head=True).execute()
+        stats["active_workspaces"] = res.count if res.count is not None else 0
+    except Exception as e:
+        print(f"DATABASE ERROR (companies): {str(e)}")
+
+    # 4. Published Pages
+    try:
+        res = supabase_admin.table('pages').select('id', count='exact', head=True).execute()
+        stats["published_pages"] = res.count if res.count is not None else 0
+    except Exception as e:
+        print(f"DATABASE ERROR (pages/publications): {str(e)} - Table may be missing or renamed.")
+
+    # 5. Recent Updates (last 24 hours)
+    try:
+        last_24h = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+        res = supabase_admin.table('activity_logs').select('id', count='exact', head=True).gte('created_at', last_24h).execute()
+        stats["recent_updates"] = res.count if res.count is not None else 0
+    except Exception as e:
+        print(f"DATABASE ERROR (activity_logs): {str(e)} - Table may be missing.")
+
+    # 6. Auth Metadata Metrics
+    try:
+        users_res = supabase_admin.auth.admin.list_users()
+        auth_users = getattr(users_res, 'users', users_res) if not isinstance(users_res, list) else users_res
+        
+        last_12h = datetime.now(timezone.utc) - timedelta(hours=12)
+        
+        for u in auth_users:
+            if not hasattr(u, 'last_sign_in_at') or not u.last_sign_in_at:
+                stats["pending_invites"] += 1
+            else:
+                sign_in_time = u.last_sign_in_at
+                if isinstance(sign_in_time, str):
+                    try:
+                        sign_in_time = datetime.fromisoformat(sign_in_time.replace('Z', '+00:00'))
+                    except: continue
+                
+                if isinstance(sign_in_time, datetime):
+                    if sign_in_time.tzinfo is None:
+                        sign_in_time = sign_in_time.replace(tzinfo=timezone.utc)
+                    if sign_in_time >= last_12h:
+                        stats["active_sessions"] += 1
+    except Exception as e:
+        print(f"AUTH METADATA ERROR: {str(e)}")
+
+    return JSONResponse(
+        content=stats,
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        }
+    )
+
 
 @app.get("/list-users-unified", dependencies=[Depends(get_current_user)])
 async def list_users_unified():
