@@ -14,7 +14,7 @@ interface ActivityLog {
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<Record<string, any>>({
     total_users: 0,
     active_accounts: 0,
     active_workspaces: 0,
@@ -105,7 +105,7 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
             <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] mb-1">Total Users</p>
-            <p className="text-4xl font-black text-foreground">{stats.total_users}</p>
+            <p className="text-4xl font-black text-foreground break-all">{String(stats.total_users)}</p>
           </div>
 
           <div onClick={() => navigate('/admin/companies')} className="bento-card micro-surface micro-surface-hover border-border/20 group cursor-pointer overflow-hidden relative">
@@ -118,7 +118,7 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
             <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] mb-1">Active Workspaces</p>
-            <p className="text-4xl font-black text-foreground">{stats.active_workspaces}</p>
+            <p className="text-4xl font-black text-foreground break-all">{String(stats.active_workspaces)}</p>
           </div>
 
           <div className="bento-card micro-surface border-border/20">
@@ -128,7 +128,7 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
             <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] mb-1">Published Pages</p>
-            <p className="text-4xl font-black text-foreground">{stats.published_pages}</p>
+            <p className="text-4xl font-black text-foreground break-all">{String(stats.published_pages)}</p>
           </div>
 
           <div className="bento-card micro-surface border-border/20">
@@ -138,7 +138,7 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
             <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] mb-1">Active Accounts</p>
-            <p className="text-4xl font-black text-emerald-500">{stats.active_accounts}</p>
+            <p className="text-4xl font-black text-emerald-500 break-all">{String(stats.active_accounts)}</p>
           </div>
         </div>
 
@@ -187,16 +187,16 @@ export const AdminDashboard: React.FC = () => {
             
             <div className="flex-1 flex flex-col justify-between gap-4">
               {[
-                { icon: Zap, label: 'Pending Invites', value: stats.pending_invites },
-                { icon: FileEdit, label: 'Recent Updates', value: stats.recent_updates },
-                { icon: Lock, label: 'Active Sessions', value: stats.active_sessions },
+                { icon: Zap, label: 'Pending Invites', key: 'pending_invites' },
+                { icon: FileEdit, label: 'Recent Updates', key: 'recent_updates' },
+                { icon: Lock, label: 'Active Sessions', key: 'active_sessions' },
               ].map((m) => (
-                <div key={m.label} className="flex items-center justify-between p-6 micro-surface rounded-[1.5rem] border border-border/10 flex-1">
+                <div key={m.label} className="flex items-center justify-between p-6 micro-surface rounded-[1.5rem] border border-border/10 flex-1 min-h-0 overflow-hidden">
                   <div className="flex items-center gap-4">
                     <m.icon size={20} className="text-muted-foreground/40" />
                     <span className="text-xs font-black text-muted-foreground/60 uppercase tracking-[0.1em]">{m.label}</span>
                   </div>
-                  <span className="text-2xl font-black text-foreground">{m.value}</span>
+                  <span className="text-2xl font-black text-foreground break-all">{String(stats[m.key])}</span>
                 </div>
               ))}
             </div>

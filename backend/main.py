@@ -291,8 +291,9 @@ async def get_admin_stats():
             res = query.execute()
             return res.count if res.count is not None else 0
         except Exception as e:
-            print(f"DATABASE ERROR ({table}): {str(e)}")
-            return 0
+            err_msg = f"ERR: {str(e)}"
+            print(f"DATABASE ERROR ({table}): {err_msg}")
+            return err_msg
 
     def fetch_recent_updates():
         try:
@@ -300,11 +301,12 @@ async def get_admin_stats():
             res = supabase_admin.table('activity_logs').select('id', count='exact', head=True).gte('created_at', last_24h).execute()
             return res.count if res.count is not None else 0
         except Exception as e:
-            print(f"DATABASE ERROR (activity_logs): {str(e)}")
-            return 0
+            err_msg = f"ERR: {str(e)}"
+            print(f"DATABASE ERROR (activity_logs): {err_msg}")
+            return err_msg
 
     def fetch_auth_stats():
-        stats = {"pending": 0, "active": 0}
+        stats = {"pending": 0, "active": 0, "error": None}
         try:
             users_res = supabase_admin.auth.admin.list_users()
             auth_users = getattr(users_res, 'users', users_res) if not isinstance(users_res, list) else users_res
@@ -324,7 +326,8 @@ async def get_admin_stats():
                         if sign_in_time >= last_12h:
                             stats["active"] += 1
         except Exception as e:
-            print(f"AUTH ERROR: {str(e)}")
+            stats["error"] = f"ERR: {str(e)}"
+            print(f"AUTH ERROR: {stats['error']}")
         return stats
 
     # Run queries in parallel to slash loading time
@@ -346,8 +349,8 @@ async def get_admin_stats():
         "active_workspaces": results[2],
         "published_pages": results[3],
         "recent_updates": results[4],
-        "pending_invites": results[5]["pending"],
-        "active_sessions": results[5]["active"]
+        "pending_invites": results[5]["error"] if results[5]["error"] else results[5]["pending"],
+        "active_sessions": results[5]["error"] if results[5]["error"] else results[5]["active"]
     }
 
     return JSONResponse(
