@@ -454,8 +454,8 @@ export const RoleManagement: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleAssignUser} className="p-10 space-y-10">
-              <div className="space-y-2">
+            <form onSubmit={handleAssignUser} className="p-10 pb-12 space-y-8 flex flex-col max-h-[70vh]">
+              <div className="space-y-2 flex-shrink-0">
                 <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Select User</label>
                 <div className="relative">
                   <div className="relative">
@@ -475,36 +475,39 @@ export const RoleManagement: React.FC = () => {
                       }}
                     />
                   </div>
-                  {/* Dropdown List */}
-                  {!assignUserId && (
-                    <div className="absolute top-full left-0 w-full mt-2 max-h-64 overflow-y-auto bg-card border border-border/50 rounded-2xl shadow-2xl z-50 p-2 space-y-1 scrollbar-thin scrollbar-thumb-border">
-                      {profiles
-                        .filter(p => p.email.toLowerCase().includes(userSearchTerm.toLowerCase()) || (p.full_name?.toLowerCase() || '').includes(userSearchTerm.toLowerCase()))
-                        .map(p => (
-                          <button
-                            key={p.id}
-                            type="button"
-                            onClick={() => {
-                               setAssignUserId(p.id);
-                               setUserSearchTerm('');
-                            }}
-                            className="w-full flex flex-col items-start px-4 py-3 rounded-xl hover:bg-secondary/50 transition-colors text-left group"
-                          >
-                          <span className="font-black text-foreground text-sm group-hover:text-primary transition-colors tracking-tight">
-                            {p.full_name || 'No Name'}
-                          </span>
-                          <span className="text-[10px] font-bold text-muted-foreground/60">{p.email}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
+
+              {/* Dropdown List */}
+              {!assignUserId && (
+                <div className="flex-1 min-h-0">
+                  <div className="h-full max-h-[300px] overflow-y-auto micro-scrollbar bg-black/5 dark:bg-white/5 border border-border/5 rounded-2xl p-2 space-y-1">
+                    {profiles
+                      .filter(p => p.email.toLowerCase().includes(userSearchTerm.toLowerCase()) || (p.full_name?.toLowerCase() || '').includes(userSearchTerm.toLowerCase()))
+                      .map(p => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                             setAssignUserId(p.id);
+                             setUserSearchTerm('');
+                          }}
+                          className="w-full flex flex-col items-start px-4 py-3 rounded-xl micro-surface-hover transition-colors text-left group"
+                        >
+                        <span className="font-black text-foreground text-sm group-hover:text-primary transition-colors tracking-tight">
+                          {p.full_name || 'No Name'}
+                        </span>
+                        <span className="text-[10px] font-bold text-muted-foreground/60">{p.email}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <button
                 type="submit"
                 disabled={actionLoading || !assignUserId}
-                className="w-full py-5 bg-primary text-primary-foreground font-black rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-[11px] uppercase tracking-[0.2em]"
+                className="w-full py-5 bg-primary text-primary-foreground font-black rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-[11px] uppercase tracking-[0.2em] flex-shrink-0 mt-8"
               >
                 {actionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Confirm Assignment'}
               </button>

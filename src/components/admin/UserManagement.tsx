@@ -128,6 +128,17 @@ export const UserManagement: React.FC = () => {
         if (edgeError) throw new Error(edgeError.message || 'Failed to create user account.');
         if (edgeData?.error) throw new Error(edgeData.error);
         
+        // Ensure the profile is populated in case the database trigger lags or fails.
+        // We attempt to call our robust RPC if the edge function returned the new user's ID.
+        const createdUserId = edgeData?.user?.id || edgeData?.id;
+        if (createdUserId) {
+          await supabase.rpc('force_create_profile', {
+            target_user_id: createdUserId,
+            target_email: newUserEmail,
+            target_full_name: newUserName
+          });
+        }
+        
         showNotification('success', edgeData?.message || `Account created for ${newUserEmail}`);
       }
 
