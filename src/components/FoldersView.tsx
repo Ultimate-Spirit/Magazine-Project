@@ -228,6 +228,13 @@ export function FoldersView({ onSelectCompany }: Props) {
 
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-12 mb-20 px-8 md:px-12 xl:px-16 pt-12 shrink-0">
           <div className="space-y-4">
+            <button 
+              onClick={() => navigate('/')}
+              className="inline-flex items-center gap-2 px-4 py-2 micro-surface border border-border/10 rounded-full text-[10px] font-black text-muted-foreground/60 uppercase tracking-[0.2em] mb-4 hover:text-foreground hover:bg-secondary transition-all group"
+            >
+              <ArrowLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" />
+              Back to Workspaces
+            </button>
             <div className="flex items-center gap-3 text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.4em]">
               <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
               Dynamic Repository
@@ -236,6 +243,7 @@ export function FoldersView({ onSelectCompany }: Props) {
             <h1 className="text-6xl font-display font-black text-foreground tracking-tighter leading-none">
               Directory Hub
             </h1>
+
             <p className="text-muted-foreground/60 font-body text-lg max-w-xl leading-relaxed">
               Orchestrate your publication pipeline and manage digital assets within this workspace context.
             </p>
@@ -284,12 +292,14 @@ export function FoldersView({ onSelectCompany }: Props) {
                   </div>
                   <h3 className="text-3xl font-display font-black text-foreground mb-3 tracking-tighter">Empty Context</h3>
                   <p className="text-muted-foreground/50 font-medium mb-12 max-w-sm mx-auto">Start your journey by initializing a new publication directory.</p>
-                  <button 
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="px-10 py-5 micro-surface border border-border/10 rounded-2xl font-black text-foreground hover:bg-secondary transition-all uppercase tracking-widest text-[10px]"
-                  >
-                    Initialize Hub
-                  </button>
+                  {permissions?.can_create_folders && (
+                    <button 
+                      onClick={() => setIsCreateModalOpen(true)}
+                      className="px-10 py-5 micro-surface border border-border/10 rounded-2xl font-black text-foreground hover:bg-secondary transition-all uppercase tracking-widest text-[10px]"
+                    >
+                      Initialize Hub
+                    </button>
+                  )}
                 </div>
               ) : filteredFolders.length === 0 ? (
                 <div className="py-32 text-center micro-surface rounded-[2.5rem] border border-border/10">

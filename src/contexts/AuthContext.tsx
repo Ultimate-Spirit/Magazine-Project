@@ -68,11 +68,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
 
       if (session?.user) {
+        // Do NOT set loading to true here to avoid disruptive UI flashes on tab switch/token refresh
         await fetchProfile(session.user);
       } else {
         setProfile(null);
         setIsAdmin(false);
         setIsAuthorized(false);
+        // Only set loading false if we just logged out to ensure UI updates
+        setLoading(false); 
       }
     });
 

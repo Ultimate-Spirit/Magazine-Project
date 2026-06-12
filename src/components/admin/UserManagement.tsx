@@ -117,18 +117,28 @@ export const UserManagement: React.FC = () => {
       if (existingUser) {
         showNotification('error', `A user with email ${newUserEmail} already exists.`);
       } else {
-        const { data: edgeData, error: edgeError } = await supabase.functions.invoke('create-user', {
-          body: { 
-            email: newUserEmail, 
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        const res = await fetch('/_/backend/create-user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`
+          },
+          body: JSON.stringify({
+            email: newUserEmail,
             password: newUserPassword,
             full_name: newUserName
-          }
+          })
         });
 
-        if (edgeError) throw new Error(edgeError.message || 'Failed to create user account.');
-        if (edgeData?.error) throw new Error(edgeData.error);
+        const resData = await res.json();
         
-        showNotification('success', edgeData?.message || `Account created for ${newUserEmail}`);
+        if (!res.ok) {
+          throw new Error(resData.detail || 'Failed to provision account.');
+        }
+
+        showNotification('success', resData.message || `Account created for ${newUserEmail}`);
       }
 
       await logActivity('invited', 'user', newUserEmail, null, currentAdmin?.id || '');
@@ -162,6 +172,10 @@ export const UserManagement: React.FC = () => {
     setActionLoading(true);
 
     try {
+      // Check if selected role is system admin
+      const selectedRoleObj = roles.find(r => r.id === editRoleId);
+      const isSysAdmin = selectedRoleObj?.is_system_admin === true;
+
       // Execute UPDATE query against profiles table
       const { error } = await supabase
         .from('profiles')
@@ -174,6 +188,19 @@ export const UserManagement: React.FC = () => {
         .eq('id', userToEdit.id);
 
       if (error) throw error;
+
+      // If they are made a system admin, auto-assign all companies
+      if (isSysAdmin) {
+        const allCompanyIds = companies.map(c => c.id);
+        const existingLinks = userCompanies.filter(uc => uc.user_id === userToEdit.id).map(uc => uc.company_id);
+        const toAdd = allCompanyIds.filter(id => !existingLinks.includes(id));
+        
+        if (toAdd.length > 0) {
+          const inserts = toAdd.map(cid => ({ user_id: userToEdit.id, company_id: cid }));
+          const { error: insertErr } = await supabase.from('user_companies').insert(inserts);
+          if (insertErr) throw insertErr;
+        }
+      }
 
       await logActivity('updated', 'user', editEmail, companies[0]?.id || '', currentAdmin?.id || '');
 
@@ -230,11 +257,18 @@ export const UserManagement: React.FC = () => {
     p.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const assignedCompanies = companies.filter(c => editCompanyIds.includes(c.id));
+  const selectedRoleObj = roles.find(r => r.id === editRoleId);
+  const isCurrentlySysAdmin = selectedRoleObj?.is_system_admin === true;
+  
+  // If system admin, they get all companies visually locked
+  const activeCompanyIds = isCurrentlySysAdmin ? companies.map(c => c.id) : editCompanyIds;
+
+  const assignedCompanies = companies.filter(c => activeCompanyIds.includes(c.id));
   const unassignedCompanies = companies.filter(c => 
-    !editCompanyIds.includes(c.id) && 
+    !activeCompanyIds.includes(c.id) && 
     c.name.toLowerCase().includes(workspaceSearchTerm.toLowerCase())
   );
+
 
   const getAssignedCompaniesForUser = (userId: string) => {
     const mapping = userCompanies.filter(uc => uc.user_id === userId);
@@ -520,13 +554,15 @@ export const UserManagement: React.FC = () => {
                     {assignedCompanies.map(c => (
                       <div key={c.id} className="flex items-center gap-2 px-3 py-1.5 bg-primary/5 text-primary border border-primary/10 rounded-full group/chip animate-in zoom-in-95 duration-200">
                         <span className="text-[10px] font-black uppercase tracking-tight">{c.name}</span>
-                        <button 
-                          type="button"
-                          onClick={() => handleRemoveWorkspace(c.id)}
-                          className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
-                        >
-                          <X size={10} />
-                        </button>
+                        {!isCurrentlySysAdmin && (
+                          <button 
+                            type="button"
+                            onClick={() => handleRemoveWorkspace(c.id)}
+                            className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+                          >
+                            <X size={10} />
+                          </button>
+                        )}
                       </div>
                     ))}
                     {assignedCompanies.length === 0 && (
@@ -535,37 +571,40 @@ export const UserManagement: React.FC = () => {
                   </div>
 
                   {/* Selector */}
-                  <div className="space-y-4 pt-2">
-                    <div className="relative">
-                      <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/30" />
-                      <input 
-                        type="text"
-                        placeholder="Search unassigned..."
-                        className="w-full pl-10 pr-4 py-2 micro-surface border border-border/10 rounded-lg text-[10px] font-black uppercase tracking-widest outline-none focus:bg-card focus:border-primary/30 transition-all placeholder:text-muted-foreground/20"
-                        value={workspaceSearchTerm}
-                        onChange={(e) => setWorkspaceSearchTerm(e.target.value)}
-                      />
-                    </div>
+                  {!isCurrentlySysAdmin && (
+                    <div className="space-y-4 pt-2">
+                      <div className="relative">
+                        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/30" />
+                        <input 
+                          type="text"
+                          placeholder="Search unassigned..."
+                          className="w-full pl-10 pr-4 py-2 micro-surface border border-border/10 rounded-lg text-[10px] font-black uppercase tracking-widest outline-none focus:bg-card focus:border-primary/30 transition-all placeholder:text-muted-foreground/20"
+                          value={workspaceSearchTerm}
+                          onChange={(e) => setWorkspaceSearchTerm(e.target.value)}
+                        />
+                      </div>
 
-                    <div className="h-40 overflow-y-auto border border-border/5 rounded-xl bg-black/5 dark:bg-white/5 invisible-scrollbar">
-                      <div className="p-2 space-y-1">
-                        {unassignedCompanies.map(c => (
-                          <button
-                            key={c.id}
-                            type="button"
-                            onClick={() => handleAddWorkspace(c.id)}
-                            className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg micro-surface-hover transition-colors group text-left"
-                          >
-                            <span className="text-[11px] font-black text-foreground/70 group-hover:text-primary tracking-tight">{c.name}</span>
-                            <Plus size={12} className="text-muted-foreground/30 group-hover:text-primary" />
-                          </button>
-                        ))}
-                        {unassignedCompanies.length === 0 && (
-                          <p className="text-[9px] font-black text-muted-foreground/20 text-center py-12 uppercase tracking-widest">All available environments assigned.</p>
-                        )}
+                      <div className="h-40 overflow-y-auto border border-border/5 rounded-xl bg-black/5 dark:bg-white/5 invisible-scrollbar">
+                        <div className="p-2 space-y-1">
+                          {unassignedCompanies.map(c => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => handleAddWorkspace(c.id)}
+                              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg micro-surface-hover transition-colors group text-left"
+                            >
+                              <span className="text-[11px] font-black text-foreground/70 group-hover:text-primary tracking-tight">{c.name}</span>
+                              <Plus size={12} className="text-muted-foreground/30 group-hover:text-primary" />
+                            </button>
+                          ))}
+                          {unassignedCompanies.length === 0 && (
+                            <p className="text-[9px] font-black text-muted-foreground/20 text-center py-12 uppercase tracking-widest">All available environments assigned.</p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
+
                 </div>
 
                 {/* Account Status */}

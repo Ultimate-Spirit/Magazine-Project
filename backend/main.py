@@ -227,6 +227,38 @@ async def generate_pdf(data: dict):
         print(f"PDF GENERATION CRASH: {str(e)}")
         raise HTTPException(status_code=500, detail=f"PDF Generation Error: {str(e)}")
 
+class UserCreateRequest(schemas.BaseModel):
+    email: str
+    password: str
+    full_name: str
+
+@app.post("/create-user", dependencies=[Depends(get_current_user)])
+async def create_user_admin(request: UserCreateRequest):
+    supabase_admin = get_supabase_admin()
+    if not supabase_admin:
+        raise HTTPException(status_code=500, detail="Admin client not initialized for provisioning.")
+    
+    try:
+        # Create user with auto-confirmed email via Admin API
+        user_response = supabase_admin.auth.admin.create_user({
+            "email": request.email,
+            "password": request.password,
+            "email_confirm": True,
+            "user_metadata": {"full_name": request.full_name}
+        })
+        
+        # Verify the user object exists
+        user = getattr(user_response, 'user', user_response)
+        
+        # Attempt to inject full_name into profile directly in case trigger misses it
+        if user and hasattr(user, 'id'):
+            get_supabase().table("profiles").update({"full_name": request.full_name}).eq("id", user.id).execute()
+
+        return {"message": "Account provisioned successfully", "user_id": str(user.id) if hasattr(user, 'id') else None}
+    except Exception as e:
+        print(f"PROVISIONING ERROR: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
 @app.get("/list-users-unified", dependencies=[Depends(get_current_user)])
 async def list_users_unified():
     supabase = get_supabase()
