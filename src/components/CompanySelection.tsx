@@ -120,9 +120,11 @@ export function CompanySelection({ onSelect }: Props) {
                     <span className="px-3 py-1 rounded-lg micro-surface text-[10px] font-bold text-muted-foreground uppercase tracking-widest border border-border/10 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                       {profile?.roles?.name || (isAdmin ? 'Admin' : 'Authorized Personnel')}
                     </span>
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                      {memberCount} Active Member{memberCount !== 1 ? 's' : ''}
-                    </span>
+                    {isAdmin && (
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                        {memberCount} Active Member{memberCount !== 1 ? 's' : ''}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
