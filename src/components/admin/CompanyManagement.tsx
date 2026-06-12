@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { Plus, Trash2, Building2, Loader2, Search, X, CheckCircle2, Users, Edit2, ExternalLink } from 'lucide-react';
 import { ConfirmModal } from '../common/ConfirmModal';
-import type { Company, UserProfile } from '../../types';
+import type { Company } from '../../types';
 
 export const CompanyManagement: React.FC = () => {
   const navigate = useNavigate();
