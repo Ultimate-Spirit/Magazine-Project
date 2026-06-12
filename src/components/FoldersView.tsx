@@ -11,7 +11,8 @@ import {
   Trash2, 
   Edit2,
   Search,
-  Activity
+  Activity,
+  ArrowLeft
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { useAuth } from '../contexts/AuthContext';
