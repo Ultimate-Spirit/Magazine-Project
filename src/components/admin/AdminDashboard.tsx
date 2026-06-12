@@ -15,13 +15,13 @@ interface ActivityLog {
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState<Record<string, any>>({
-    total_users: 0,
-    active_accounts: 0,
-    active_workspaces: 0,
-    published_pages: 0,
-    pending_invites: 0,
-    recent_updates: 0,
-    active_sessions: 0
+    total_users: '...',
+    active_accounts: '...',
+    active_workspaces: '...',
+    published_pages: '...',
+    pending_invites: '...',
+    recent_updates: '...',
+    active_sessions: '...'
   });
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +79,7 @@ export const AdminDashboard: React.FC = () => {
     <div className="flex-1 overflow-y-auto bg-background font-sans invisible-scrollbar">
       <header className="h-24 px-10 flex items-center justify-between sticky top-0 z-[100] bg-background/80 backdrop-blur-xl faint-divider shrink-0">
         <div>
-          <h1 className="text-3xl font-black text-foreground tracking-tight">Command Center</h1>
+          <h1 className="text-3xl font-black text-foreground tracking-tight">Overview</h1>
           <div className="flex items-center gap-2 mt-1">
             <Calendar className="w-3 h-3 text-muted-foreground/40" />
             <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em]">
@@ -105,6 +105,7 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
             <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] mb-1">Total Users</p>
+            {/* @ts-ignore */}
             <p className="text-4xl font-black text-foreground break-all">{String(stats.total_users)}</p>
           </div>
 
@@ -118,6 +119,7 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
             <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] mb-1">Active Workspaces</p>
+            {/* @ts-ignore */}
             <p className="text-4xl font-black text-foreground break-all">{String(stats.active_workspaces)}</p>
           </div>
 
@@ -128,6 +130,7 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
             <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] mb-1">Published Pages</p>
+            {/* @ts-ignore */}
             <p className="text-4xl font-black text-foreground break-all">{String(stats.published_pages)}</p>
           </div>
 
@@ -138,6 +141,7 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
             <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] mb-1">Active Accounts</p>
+            {/* @ts-ignore */}
             <p className="text-4xl font-black text-emerald-500 break-all">{String(stats.active_accounts)}</p>
           </div>
         </div>
@@ -196,6 +200,7 @@ export const AdminDashboard: React.FC = () => {
                     <m.icon size={20} className="text-muted-foreground/40" />
                     <span className="text-xs font-black text-muted-foreground/60 uppercase tracking-[0.1em]">{m.label}</span>
                   </div>
+                  {/* @ts-ignore */}
                   <span className="text-2xl font-black text-foreground break-all">{String(stats[m.key])}</span>
                 </div>
               ))}
