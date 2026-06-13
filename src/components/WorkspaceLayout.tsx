@@ -1,59 +1,31 @@
+import React from 'react';
 import { User, Shield, LogOut, Building2, Moon, Sun, ChevronDown, Check } from 'lucide-react';
 import type { Company } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface Props {
-  company: Company;
   children: React.ReactNode;
+  company?: Company;
 }
 
-export function WorkspaceLayout({ company, children }: Props) {
-  const { isAdmin, signOut, user } = useAuth();
+export function WorkspaceLayout({ children, company }: Props) {
+  const { profile, signOut, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
-  const [authorizedCompanies, setAuthorizedCompanies] = useState<Company[]>([]);
   const navigate = useNavigate();
   const location = useLocation();
 
   const isSelectionPage = location.pathname === '/';
 
-  useEffect(() => {
-    const fetchAuthorizedWorkspaces = async () => {
-      if (!user) return;
-      try {
-        if (isAdmin) {
-          const { data } = await supabase.from('companies').select('*').order('name');
-          if (data) setAuthorizedCompanies(data);
-        } else {
-          const { data } = await supabase
-            .from('user_companies')
-            .select('companies(*)')
-            .eq('user_id', user.id);
-          if (data) {
-            setAuthorizedCompanies(data.map((item: any) => item.companies).filter(Boolean));
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching workspaces:', err);
-      }
-    };
-    fetchAuthorizedWorkspaces();
-  }, [user, isAdmin]);
-
-  const switchWorkspace = (cid: string) => {
-    setShowWorkspaceMenu(false);
-    navigate(`/company/${cid}/folders`);
-    window.location.reload(); // Force reload to refresh context
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary selection:text-primary-foreground font-sans">
-      <header className={`h-16 md:h-20 px-5 lg:px-10 xl:px-16 flex items-center justify-between sticky top-0 z-[100] bg-background/80 backdrop-blur-xl ${isSelectionPage ? '' : 'faint-divider'}`}>
+    <div className="min-h-screen bg-background flex flex-col transition-colors duration-300">
+      <header className={`h-16 md:h-20 px-2 lg:px-10 xl:px-16 flex items-center justify-between sticky top-0 z-[100] bg-background/80 backdrop-blur-xl ${isSelectionPage ? '' : 'faint-divider'}`}>
         <div className="flex items-center gap-4 md:gap-8">
           {isSelectionPage ? (
             <div className="flex items-center gap-3">
@@ -63,106 +35,82 @@ export function WorkspaceLayout({ company, children }: Props) {
               </span>
             </div>
           ) : (
-            <div className="relative">
-              <button 
-                onClick={() => setShowWorkspaceMenu(!showWorkspaceMenu)}
-                className="group flex items-center gap-2 md:gap-3 p-1.5 md:p-2 rounded-2xl hover:bg-secondary transition-all border border-transparent hover:border-border"
-              >
-                <div className="w-8 h-8 md:w-10 md:h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center transition-all group-hover:scale-95">
-                  {company.logoUrl ? (
-                    <img src={company.logoUrl} alt={company.name} className="w-full h-full object-contain p-1.5" />
-                  ) : (
-                    <Building2 size={20} />
-                  )}
-                </div>
-                <div className="hidden sm:flex flex-col items-start text-left">
-                  <div className="flex items-center gap-1.5">
-                    <h1 className="text-sm md:text-base font-bold leading-none tracking-tight">
-                      {company.name}
-                    </h1>
-                    <ChevronDown size={14} className={`text-muted-foreground transition-transform duration-300 ${showWorkspaceMenu ? 'rotate-180' : ''}`} />
-                  </div>
-                  <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1 opacity-60">
-                    Switch Workspace
-                  </p>
-                </div>
-              </button>
-
-              {showWorkspaceMenu && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-card border border-border rounded-2xl shadow-2xl py-2 z-[110] animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-4 py-2 border-b border-border/50 mb-1">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Authorized Workspaces</p>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto">
-                    {authorizedCompanies.map((c) => (
-                      <button
-                        key={c.id}
-                        onClick={() => switchWorkspace(c.id)}
-                        className="w-full flex items-center justify-between px-4 py-3 hover:bg-secondary transition-colors text-left"
-                      >
-                        <span className={`text-sm font-medium ${c.id === company.id ? 'text-primary' : 'text-foreground'}`}>
-                          {c.name}
-                        </span>
-                        {c.id === company.id && <Check size={14} className="text-primary" />}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
+                <Shield className="w-4 h-4 text-primary-foreground" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-black tracking-tight leading-none truncate max-w-[120px] md:max-w-none">
+                  {company?.name || 'Spirit OS'}
+                </span>
+                <span className="text-[8px] font-bold text-primary uppercase tracking-[0.2em] mt-1">
+                  Active Workspace
+                </span>
+              </div>
             </div>
           )}
         </div>
-        
-        <div className="flex items-center gap-2 md:gap-4">
-          <button
-            onClick={toggleTheme}
-            className="h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-all border border-border/50"
-            title={theme === 'light' ? 'Dark Mode' : 'Light Mode'}
-          >
-            {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
-          </button>
 
-          {isAdmin && (
-            <Link 
-              to="/admin"
-              className="h-10 px-4 md:h-12 md:px-6 flex items-center gap-2 md:gap-3 text-[10px] font-bold uppercase tracking-widest text-primary-foreground bg-primary rounded-xl md:rounded-2xl hover:opacity-90 transition-all border border-primary/20"
+        <div className="flex items-center gap-3 md:gap-6">
+          <div className="flex items-center gap-2 pr-4 border-r border-border/50">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-all"
             >
-              <Shield size={14} />
-              <span className="hidden md:block">Admin</span>
-            </Link>
-          )}
-          
-          <div className="relative">
-            <button 
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className={`h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-all border border-border/50 overflow-hidden ${isSelectionPage ? 'border-primary/20 bg-primary/5' : ''}`}
-            >
-              <User size={18} />
+              {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+            </button>
+            
+            {isAdmin && (
+              <button
+                onClick={() => navigate('/admin')}
+                className="hidden md:flex items-center gap-2 px-4 py-2 micro-surface border border-border/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:text-primary transition-all"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                Admin Console
+              </button>
+            )}
+          </div>
+
+          <div className="relative group">
+            <button className="flex items-center gap-3 p-1 rounded-2xl hover:bg-secondary transition-all">
+              <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center font-bold text-primary text-xs">
+                {profile?.email?.[0].toUpperCase()}
+              </div>
+              <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
             </button>
 
-            {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-64 bg-card border border-border rounded-2xl shadow-2xl py-2 z-[110] animate-in fade-in slide-in-from-top-2 duration-200">
-                <div className="px-4 py-2 border-b border-border/50 mb-1">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Authenticated</p>
-                  <p className="text-xs font-bold truncate text-foreground/80">{user?.email}</p>
-                </div>
+            {/* Account Dropdown */}
+            <div className="absolute top-full right-0 mt-2 w-64 micro-surface border border-border/10 rounded-3xl shadow-2xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all z-[200] overflow-hidden">
+              <div className="p-6 bg-card/50">
+                <p className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] mb-3">Identity Context</p>
+                <p className="text-sm font-black truncate">{profile?.full_name || 'System Identity'}</p>
+                <p className="text-[10px] font-bold text-muted-foreground/60 truncate mt-0.5">{profile?.email}</p>
+              </div>
+              
+              <div className="p-2 space-y-1">
+                {isAdmin && (
+                  <button
+                    onClick={() => navigate('/admin')}
+                    className="w-full md:hidden flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-secondary text-xs font-bold transition-all"
+                  >
+                    <Shield className="w-4 h-4 text-primary" />
+                    Admin Console
+                  </button>
+                )}
                 <button
-                  onClick={() => {
-                    signOut();
-                    setShowUserMenu(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-destructive hover:bg-destructive/5 transition-colors"
+                  onClick={handleSignOut}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-destructive/5 text-xs font-bold text-destructive transition-all"
                 >
-                  <LogOut size={16} />
+                  <LogOut className="w-4 h-4" />
                   Sign Out
                 </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col w-full max-w-[100vw] overflow-x-hidden">
+      <main className="flex-1 flex flex-col w-full max-w-full overflow-x-hidden">
         {children}
       </main>
     </div>

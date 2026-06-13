@@ -64,7 +64,7 @@ export function CompanySelection({ onSelect }: Props) {
                 <div className="w-2 h-2 rounded-full bg-primary" />
                 System Access
               </div>
-              <h1 className="text-4xl lg:text-6xl font-display font-black tracking-tighter leading-none">
+              <h1 className="text-2xl lg:text-6xl font-display font-black tracking-tighter leading-none">
                 Workspace Portal
               </h1>
               <p className="text-muted-foreground font-body text-base lg:text-lg max-w-xl leading-relaxed">

@@ -278,31 +278,32 @@ export const UserManagement: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background font-sans">
-      <header className="h-24 bg-card flex items-center justify-between px-12 border-b border-border shrink-0 z-10">
-        <h1 className="text-3xl font-bold text-foreground tracking-tight">User Management</h1>
+      <header className="h-20 lg:h-24 bg-card/30 backdrop-blur-md flex items-center justify-between px-4 lg:px-12 faint-divider shrink-0 z-10">
+        <h1 className="text-2xl lg:text-3xl font-black text-foreground tracking-tight leading-none">User Accounts</h1>
         
-        <div className="flex items-center gap-6">
-          <div className="relative">
+        <div className="flex items-center gap-2 lg:gap-6">
+          <div className="relative hidden md:block">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/30" />
             <input 
               type="text" 
-              placeholder="Search users..."
-              className="pl-11 pr-6 py-3 bg-secondary border-transparent rounded-xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all w-72 text-sm font-medium text-foreground"
+              placeholder="Search..."
+              className="pl-11 pr-6 py-3 micro-surface border border-border/10 rounded-xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all w-48 lg:w-72 text-sm font-bold text-foreground"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <button 
             onClick={() => setIsUserModalOpen(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/10"
+            className="flex items-center gap-2 px-4 lg:px-6 py-3 bg-primary text-primary-foreground font-black rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/10 uppercase tracking-widest text-[9px] lg:text-[10px]"
           >
             <Plus className="w-4 h-4" />
-            Add User
+            <span className="hidden sm:inline">Add User</span>
+            <span className="sm:hidden">Add</span>
           </button>
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-4 lg:px-6 pb-12 pt-8 lg:pt-12 w-full">
+      <main className="flex-1 overflow-y-auto px-2 lg:px-6 pb-12 pt-6 lg:pt-8 w-full max-w-full">
         {notification && (
           <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-destructive/10 text-destructive'}`}>
             <CheckCircle2 className="w-5 h-5" />
@@ -315,104 +316,106 @@ export const UserManagement: React.FC = () => {
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="bg-card rounded-[2rem] border border-border overflow-hidden">
-            <table className="w-full text-left border-collapse table-fixed">
-              <thead>
-                <tr className="faint-divider">
-                  <th className="w-[30%] px-12 py-6 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Identity</th>
-                  <th className="w-[20%] px-8 py-6 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Global Role</th>
-                  <th className="w-[25%] px-8 py-6 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Workspace Access</th>
-                  <th className="w-[15%] px-8 py-6 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Account Status</th>
-                  <th className="w-[10%] px-12 py-6 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                {filteredProfiles.map((p) => {
-                  const assigned = getAssignedCompaniesForUser(p.id);
-                  return (
-                    <tr key={p.id} className="group micro-surface-hover cursor-pointer transition-colors duration-300" onClick={() => openEditPanel(p)}>
-                      <td className="px-12 py-6 overflow-hidden">
-                        <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 ${p.is_active === false ? 'bg-secondary text-muted-foreground' : 'bg-primary/10 text-primary'}`}>
-                            {p.email[0].toUpperCase()}
+          <div className="bg-card rounded-[2rem] border border-border overflow-hidden w-full">
+            <div className="w-full overflow-x-auto block invisible-scrollbar">
+              <table className="w-full text-left border-collapse table-fixed min-w-[800px] lg:min-w-0">
+                <thead>
+                  <tr className="faint-divider">
+                    <th className="w-[30%] px-4 lg:px-12 py-6 text-[9px] lg:text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest whitespace-nowrap">Identity</th>
+                    <th className="w-[20%] px-4 lg:px-8 py-6 text-[9px] lg:text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest whitespace-nowrap">Global Role</th>
+                    <th className="w-[25%] px-4 lg:px-8 py-6 text-[9px] lg:text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest whitespace-nowrap">Workspace Access</th>
+                    <th className="w-[15%] px-4 lg:px-8 py-6 text-[9px] lg:text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest whitespace-nowrap">Account Status</th>
+                    <th className="w-[10%] px-4 lg:px-12 py-6 text-[9px] lg:text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest text-right whitespace-nowrap">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                  {filteredProfiles.map((p) => {
+                    const assigned = getAssignedCompaniesForUser(p.id);
+                    return (
+                      <tr key={p.id} className="group micro-surface-hover cursor-pointer transition-colors duration-300" onClick={() => openEditPanel(p)}>
+                        <td className="px-4 lg:px-12 py-6 overflow-hidden whitespace-nowrap">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 ${p.is_active === false ? 'bg-secondary text-muted-foreground' : 'bg-primary/10 text-primary'}`}>
+                              {p.email[0].toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className={`font-black truncate ${p.is_active === false ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{p.full_name || 'No Name'}</p>
+                              <p className="text-[10px] text-muted-foreground/60 font-bold tracking-wide truncate">{p.email}</p>
+                            </div>
                           </div>
-                          <div className="min-w-0">
-                            <p className={`font-black truncate ${p.is_active === false ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{p.full_name || 'No Name'}</p>
-                            <p className="text-xs text-muted-foreground/60 font-bold tracking-wide truncate">{p.email}</p>
+                        </td>
+                        <td className="px-4 lg:px-8 py-6 whitespace-nowrap">
+                          <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-[9px] lg:text-[10px] font-black uppercase tracking-widest border ${p.roles?.is_system_admin ? 'bg-primary/5 text-primary border-primary/20' : 'micro-surface border-border/10 text-muted-foreground'}`}>
+                            <Shield className="w-3 h-3" />
+                            {p.roles?.name || 'Unassigned'}
+                          </span>
+                        </td>
+                        <td className="px-4 lg:px-8 py-6 whitespace-nowrap">
+                          <div className="flex items-center gap-4">
+                            <div className="flex -space-x-3 overflow-hidden shrink-0">
+                              {assigned.slice(0, 3).map((c, i) => (
+                                <div key={c.id} className="inline-block h-8 w-8 rounded-full border-2 border-card micro-surface overflow-hidden" style={{ zIndex: 10 - i }}>
+                                  {c.logoUrl ? (
+                                    <img src={c.logoUrl} alt="" className="h-full w-full object-contain p-1" />
+                                  ) : (
+                                    <div className="h-full w-full flex items-center justify-center text-[8px] font-black text-muted-foreground">
+                                      {c.name.substring(0, 2).toUpperCase()}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                              {assigned.length > 3 && (
+                                <div className="flex items-center justify-center h-8 w-8 rounded-full border-2 border-card micro-surface text-[8px] font-bold text-muted-foreground z-0">
+                                  +{assigned.length - 3}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-left shrink-0">
+                              <span className="text-[10px] font-black text-foreground block">
+                                {assigned.length} {assigned.length === 1 ? 'WS' : 'WS'}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-8 py-6">
-                        <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border ${p.roles?.is_system_admin ? 'bg-primary/5 text-primary border-primary/20' : 'micro-surface border-border/10 text-muted-foreground'}`}>
-                          <Shield className="w-3 h-3" />
-                          {p.roles?.name || 'Unassigned'}
-                        </span>
-                      </td>
-                      <td className="px-8 py-6">
-                        <div className="flex items-center gap-4">
-                          <div className="flex -space-x-3 overflow-hidden shrink-0">
-                            {assigned.slice(0, 3).map((c, i) => (
-                              <div key={c.id} className="inline-block h-8 w-8 rounded-full border-2 border-card micro-surface overflow-hidden" style={{ zIndex: 10 - i }}>
-                                {c.logoUrl ? (
-                                  <img src={c.logoUrl} alt="" className="h-full w-full object-contain p-1" />
-                                ) : (
-                                  <div className="h-full w-full flex items-center justify-center text-[8px] font-black text-muted-foreground">
-                                    {c.name.substring(0, 2).toUpperCase()}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                            {assigned.length > 3 && (
-                              <div className="flex items-center justify-center h-8 w-8 rounded-full border-2 border-card micro-surface text-[8px] font-bold text-muted-foreground z-0">
-                                +{assigned.length - 3}
-                              </div>
-                            )}
-                          </div>
-                          <div className="text-left shrink-0">
-                            <span className="text-xs font-black text-foreground block">
-                              {assigned.length} {assigned.length === 1 ? 'WS' : 'WS'}
+                        </td>
+                        <td className="px-4 lg:px-8 py-6 whitespace-nowrap">
+                          {p.is_active === false ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[9px] lg:text-[10px] font-black uppercase tracking-wider bg-destructive/5 text-destructive border border-destructive/10">
+                              <ShieldAlert className="w-3 h-3" />
+                              Blocked
                             </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-8 py-6">
-                        {p.is_active === false ? (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-destructive/5 text-destructive border border-destructive/10">
-                            <ShieldAlert className="w-3 h-3" />
-                            Blocked
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-500/5 text-emerald-500 border border-emerald-500/10">
-                            <CheckCircle2 className="w-3 h-3" />
-                            Active
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-12 py-6 text-right">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); openEditPanel(p); }}
-                          className="p-3 text-muted-foreground/40 hover:text-primary micro-surface-hover rounded-xl transition-all"
-                        >
-                          <Edit2 className="w-5 h-5" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[9px] lg:text-[10px] font-black uppercase tracking-wider bg-emerald-500/5 text-emerald-500 border border-emerald-500/10">
+                              <CheckCircle2 className="w-3 h-3" />
+                              Active
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 lg:px-12 py-6 text-right whitespace-nowrap">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); openEditPanel(p); }}
+                            className="p-3 text-muted-foreground/40 hover:text-primary micro-surface-hover rounded-xl transition-all"
+                          >
+                            <Edit2 className="w-5 h-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </main>
 
       {/* User Creation Modal */}
       {isUserModalOpen && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center p-6">
-          <div className="bg-card rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-200 border border-border">
-            <div className="p-10 border-b border-border flex items-center justify-between">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center p-4 lg:p-6">
+          <div className="bg-card rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-200 border border-border/10">
+            <div className="p-8 lg:p-10 border-b border-border/10 flex items-center justify-between">
               <div>
-                <h2 className="text-3xl font-bold text-foreground tracking-tight">Create Professional Account</h2>
-                <p className="text-muted-foreground font-medium mt-1">Manually provision internal workspace access</p>
+                <h2 className="text-2xl lg:text-3xl font-black text-foreground tracking-tight">Provision Identity</h2>
+                <p className="text-muted-foreground/60 font-medium mt-1 text-sm lg:text-base">Grant internal platform access</p>
               </div>
               <button 
                 onClick={() => setIsUserModalOpen(false)}
@@ -422,16 +425,16 @@ export const UserManagement: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleCreateUser} className="p-10 space-y-8">
-              <div className="space-y-4">
+            <form onSubmit={handleCreateUser} className="p-8 lg:p-10 space-y-6 lg:space-y-8">
+              <div className="space-y-4 lg:space-y-5">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Full Name</label>
+                  <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Full Name</label>
                   <div className="relative">
                     <User className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30" />
                     <input
                       type="text"
                       placeholder="Jane Doe"
-                      className="w-full pl-14 pr-6 py-4 bg-secondary border-transparent rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground"
+                      className="w-full pl-14 pr-6 py-4 micro-surface border border-border/10 rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight"
                       value={newUserName}
                       onChange={(e) => setNewUserName(e.target.value)}
                       required
@@ -440,13 +443,13 @@ export const UserManagement: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Identity (Email)</label>
+                  <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Work Email</label>
                   <div className="relative">
                     <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30" />
                     <input
                       type="email"
                       placeholder="colleague@organization.com"
-                      className="w-full pl-14 pr-6 py-4 bg-secondary border-transparent rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground"
+                      className="w-full pl-14 pr-6 py-4 micro-surface border border-border/10 rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight"
                       value={newUserEmail}
                       onChange={(e) => setNewUserEmail(e.target.value)}
                       required
@@ -455,13 +458,13 @@ export const UserManagement: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1">Initial Password</label>
+                  <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Password</label>
                   <div className="relative">
                     <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30" />
                     <input
                       type="text"
                       placeholder="Secure temporary password"
-                      className="w-full pl-14 pr-6 py-4 bg-secondary border-transparent rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground"
+                      className="w-full pl-14 pr-6 py-4 micro-surface border border-border/10 rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight"
                       value={newUserPassword}
                       onChange={(e) => setNewUserPassword(e.target.value)}
                       required
@@ -474,9 +477,9 @@ export const UserManagement: React.FC = () => {
               <button
                 type="submit"
                 disabled={actionLoading}
-                className="w-full py-5 bg-primary text-primary-foreground font-bold rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all shadow-xl shadow-primary/10 flex items-center justify-center gap-3 text-lg"
+                className="w-full py-5 bg-primary text-primary-foreground font-black rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all shadow-xl shadow-primary/10 flex items-center justify-center gap-3 text-[11px] lg:text-base uppercase lg:normal-case tracking-[0.2em] lg:tracking-tight"
               >
-                {actionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Create User Account'}
+                {actionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Complete Provisioning'}
               </button>
             </form>
           </div>

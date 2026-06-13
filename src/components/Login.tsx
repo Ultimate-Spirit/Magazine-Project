@@ -39,7 +39,7 @@ export const Login: React.FC = () => {
             <Shield className="w-10 h-10" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-4xl font-black text-foreground tracking-tighter">Internal Access</h1>
+            <h1 className="text-2xl lg:text-4xl font-black text-foreground tracking-tighter">Internal Access</h1>
             <p className="text-muted-foreground/60 font-medium text-sm">Please sign in to your corporate workspace.</p>
           </div>
         </div>

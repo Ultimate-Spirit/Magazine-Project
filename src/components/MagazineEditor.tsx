@@ -249,34 +249,34 @@ export const MagazineEditor: React.FC = () => {
     <WorkspaceLayout 
       company={company || { id: 'none', name: 'Select Company' }}
     >
-      <div className="flex flex-col h-[calc(100vh-5rem)] bg-background relative overflow-hidden">
+      <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-[calc(100vh-5rem)] bg-background relative overflow-hidden w-full max-w-[100vw]">
         {/* Hidden Print Template (Off-screen) */}
         <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
           <PrintTemplate ref={printRef} data={editorData} />
         </div>
 
         {/* Editor Toolbar */}
-        <div className="h-20 bg-card border-b border-border flex items-center justify-between px-12 shrink-0">
-          <div className="flex items-center gap-6">
+        <div className="h-auto min-h-16 lg:h-20 bg-card border-b border-border flex flex-col lg:flex-row items-center justify-between px-2 lg:px-12 shrink-0 py-3 lg:py-0 gap-4">
+          <div className="flex items-center gap-3 lg:gap-6 w-full lg:w-auto">
             <button 
               onClick={goBackToFolder}
-              className="p-2 hover:bg-secondary rounded-xl text-muted-foreground hover:text-foreground transition-all"
+              className="p-2 hover:bg-secondary rounded-xl text-muted-foreground hover:text-foreground transition-all shrink-0"
             >
-              <ChevronLeft className="w-6 h-6" />
+              <ChevronLeft className="w-5 h-5 lg:w-6 lg:h-6" />
             </button>
-            <div>
+            <div className="min-w-0 flex-1">
               <input 
                 type="text" 
                 value={editorData.title}
                 onChange={(e) => setEditorData({ ...editorData, title: e.target.value })}
                 disabled={!canEdit}
-                className="text-xl font-black text-foreground bg-transparent border-none focus:ring-0 p-0 w-64 disabled:opacity-50"
+                className="text-base lg:text-xl font-black text-foreground bg-transparent border-none focus:ring-0 p-0 w-full lg:w-64 disabled:opacity-50 truncate"
               />
-              <p className="text-[10px] font-bold text-primary uppercase tracking-widest mt-0.5">Editor Mode</p>
+              <p className="text-[9px] font-bold text-primary uppercase tracking-widest mt-0.5">Editor Mode</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 lg:gap-4 w-full lg:w-auto overflow-x-auto invisible-scrollbar">
             <input 
               type="file" 
               ref={fileInputRef} 
@@ -287,46 +287,48 @@ export const MagazineEditor: React.FC = () => {
             <button 
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading || !canEdit}
-              className="flex items-center gap-2 px-6 py-3 bg-card border border-border text-foreground font-bold rounded-xl hover:bg-secondary transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-4 lg:px-6 py-2 lg:py-3 bg-card border border-border text-foreground font-bold rounded-xl hover:bg-secondary transition-all disabled:opacity-50 text-[10px] lg:text-sm whitespace-nowrap"
             >
-              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-              Import Excel
+              {uploading ? <Loader2 className="w-3 h-3 lg:w-4 lg:h-4 animate-spin" /> : <Upload className="w-3 h-3 lg:w-4 lg:h-4" />}
+              <span className="hidden sm:inline">Import Excel</span>
+              <span className="sm:hidden">Import</span>
             </button>
             <button 
               onClick={handleSave}
               disabled={saving || !canEdit}
-              className="flex items-center gap-2 px-6 py-3 bg-card border border-border text-foreground font-bold rounded-xl hover:bg-secondary transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-4 lg:px-6 py-2 lg:py-3 bg-card border border-border text-foreground font-bold rounded-xl hover:bg-secondary transition-all disabled:opacity-50 text-[10px] lg:text-sm whitespace-nowrap"
             >
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Save Progress
+              {saving ? <Loader2 className="w-3 h-3 lg:w-4 lg:h-4 animate-spin" /> : <Save className="w-3 h-3 lg:w-4 lg:h-4" />}
+              <span className="hidden sm:inline">Save Progress</span>
+              <span className="sm:hidden">Save</span>
             </button>
             <button 
               onClick={handleDownloadPDF}
               disabled={exporting}
-              className="flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-4 lg:px-8 py-2 lg:py-3 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50 text-[10px] lg:text-sm whitespace-nowrap"
             >
-              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              Export PDF
+              {exporting ? <Loader2 className="w-3 h-3 lg:w-4 lg:h-4 animate-spin" /> : <Download className="w-3 h-3 lg:w-4 lg:h-4" />}
+              PDF
             </button>
           </div>
         </div>
 
-        <div className="flex-1 flex overflow-hidden">
-          {/* Sidebar Tools */}
-          <div className="w-20 bg-card border-r border-border flex flex-col items-center py-8 gap-6">
-            <button className="p-4 bg-secondary text-primary rounded-2xl" title="Templates">
-              <Layout className="w-6 h-6" />
+        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+          {/* Mobile Tool Bar (Bottom) / Desktop Sidebar */}
+          <div className="order-last lg:order-first h-16 lg:h-full lg:w-20 bg-card border-t lg:border-t-0 lg:border-r border-border flex flex-row lg:flex-col items-center justify-around lg:justify-start lg:py-8 gap-6 shrink-0 z-20">
+            <button className="p-3 lg:p-4 bg-primary/10 text-primary rounded-xl lg:rounded-2xl" title="Templates">
+              <Layout className="w-5 h-5 lg:w-6 lg:h-6" />
             </button>
-            <button className="p-4 text-muted-foreground/40 hover:text-foreground hover:bg-secondary rounded-2xl transition-all" title="Structure">
-              <FileText className="w-6 h-6" />
+            <button className="p-3 lg:p-4 text-muted-foreground/40 hover:text-foreground hover:bg-secondary rounded-xl lg:rounded-2xl transition-all" title="Structure">
+              <FileText className="w-5 h-5 lg:w-6 lg:h-6" />
             </button>
-            <button className="p-4 text-muted-foreground/40 hover:text-foreground hover:bg-secondary rounded-2xl transition-all" title="Assets">
-              <ImageIcon className="w-6 h-6" />
+            <button className="p-3 lg:p-4 text-muted-foreground/40 hover:text-foreground hover:bg-secondary rounded-xl lg:rounded-2xl transition-all" title="Assets">
+              <ImageIcon className="w-5 h-5 lg:w-6 lg:h-6" />
             </button>
           </div>
 
           {/* Canvas Area (UI Version for live editing) */}
-          <main className="flex-1 overflow-y-auto p-12 flex justify-center bg-secondary/50">
+          <main className="flex-1 overflow-x-auto lg:overflow-y-auto p-2 lg:p-12 flex flex-col items-center bg-secondary/50 invisible-scrollbar scroll-smooth">
             {notification && (
               <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-destructive text-destructive-foreground'}`}>
                 {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
@@ -334,7 +336,7 @@ export const MagazineEditor: React.FC = () => {
               </div>
             )}
 
-            <div className="w-full max-w-[850px] bg-white rounded-sm p-20 flex flex-col min-h-[1100px] border border-slate-200 shadow-xl">
+            <div className="w-[850px] bg-white rounded-sm p-8 lg:p-20 flex flex-col min-h-[1100px] border border-slate-200 shadow-xl origin-top scale-[0.38] sm:scale-[0.7] md:scale-[0.8] lg:scale-100 transition-transform mb-20 lg:mb-0">
               <div className="border-b-4 border-slate-900 pb-12 mb-12">
                 <input 
                   className="w-full text-5xl font-black text-slate-900 border-none p-0 focus:ring-0 placeholder:text-slate-200 leading-[1.2] bg-transparent disabled:opacity-80"
@@ -352,9 +354,9 @@ export const MagazineEditor: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-20 mb-12">
+              <div className="grid grid-cols-2 gap-10 lg:gap-20 mb-12">
                 <div className="space-y-6">
-                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Executive Summary</h3>
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Executive Summary</h3>
                   <textarea 
                     className="w-full text-slate-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[150px] resize-none bg-transparent disabled:opacity-80"
                     value={editorData.summaryText}
@@ -364,10 +366,10 @@ export const MagazineEditor: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-8">
-                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Key Performance</h3>
-                  <div className="space-y-8">
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Key Performance</h3>
+                  <div className="space-y-6 lg:space-y-8">
                     {editorData.metrics.map((metric, idx) => (
-                      <div key={idx} className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                      <div key={idx} className="bg-slate-50 p-4 lg:p-6 rounded-2xl border border-slate-100">
                         <input 
                           className="w-full text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-transparent border-none p-0 focus:ring-0 disabled:opacity-80"
                           value={metric.label}
@@ -380,7 +382,7 @@ export const MagazineEditor: React.FC = () => {
                         />
                         <div className="flex items-baseline gap-2 mt-2">
                           <input 
-                            className="text-3xl font-black text-slate-900 bg-transparent border-none p-0 focus:ring-0 w-32 disabled:opacity-80"
+                            className="text-2xl lg:text-3xl font-black text-slate-900 bg-transparent border-none p-0 focus:ring-0 w-32 disabled:opacity-80"
                             value={metric.value}
                             onChange={(e) => {
                               const newMetrics = [...editorData.metrics];
@@ -389,7 +391,7 @@ export const MagazineEditor: React.FC = () => {
                             }}
                             disabled={!canEdit}
                           />
-                          <span className={`text-sm font-bold ${metric.percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          <span className="text-xs font-bold text-green-600">
                             {metric.percentage >= 0 ? '+' : ''}{metric.percentage}%
                           </span>
                         </div>
@@ -399,9 +401,9 @@ export const MagazineEditor: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-20 mb-auto">
+              <div className="grid grid-cols-2 gap-10 lg:gap-20 mb-auto">
                 <div className="space-y-6">
-                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Strategic Drivers</h3>
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Strategic Drivers</h3>
                   <textarea 
                     className="w-full text-slate-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent disabled:opacity-80"
                     value={editorData.growthDriversText}
@@ -411,7 +413,7 @@ export const MagazineEditor: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-6">
-                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Future Outlook</h3>
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Future Outlook</h3>
                   <textarea 
                     className="w-full text-slate-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent disabled:opacity-80"
                     value={editorData.outlookText}
@@ -422,15 +424,15 @@ export const MagazineEditor: React.FC = () => {
                 </div>
               </div>
 
-              <footer className="mt-20 pt-8 border-t border-slate-100 flex justify-between items-center text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+              <footer className="mt-20 pt-8 border-t border-slate-100 flex justify-between items-center text-[8px] font-bold text-slate-300 uppercase tracking-widest">
                 <input 
-                  className="bg-transparent border-none p-0 focus:ring-0 w-64 text-slate-300 disabled:opacity-80"
+                  className="bg-transparent border-none p-0 focus:ring-0 w-48 text-slate-300 disabled:opacity-80"
                   value={editorData.footerConfidentiality}
                   onChange={(e) => setEditorData({ ...editorData, footerConfidentiality: e.target.value })}
                   disabled={!canEdit}
                 />
                 <input 
-                  className="bg-transparent border-none p-0 focus:ring-0 text-right w-48 text-slate-300 disabled:opacity-80"
+                  className="bg-transparent border-none p-0 focus:ring-0 text-right w-32 text-slate-300 disabled:opacity-80"
                   value={editorData.footerDate}
                   onChange={(e) => setEditorData({ ...editorData, footerDate: e.target.value })}
                   disabled={!canEdit}
