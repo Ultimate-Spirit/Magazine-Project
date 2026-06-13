@@ -56,18 +56,18 @@ export function CompanySelection({ onSelect }: Props) {
 
   if (companies.length > 0) {
     return (
-      <div className="min-h-[calc(100vh-5rem)] bg-background flex flex-col p-8 md:p-12 xl:px-16 py-12 md:py-20 text-foreground">
+      <div className="min-h-[calc(100vh-5rem)] bg-background flex flex-col px-5 lg:px-10 py-8 lg:py-16 text-foreground">
         <div className="w-full max-w-full mx-auto flex flex-col">
-          <header className="flex flex-col md:flex-row md:items-end justify-between gap-12 mb-20">
+          <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 lg:gap-12 mb-12 lg:mb-20">
             <div className="space-y-4">
               <div className="flex items-center gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.4em]">
                 <div className="w-2 h-2 rounded-full bg-primary" />
                 System Access
               </div>
-              <h1 className="text-6xl font-display font-black tracking-tighter leading-none">
+              <h1 className="text-4xl lg:text-6xl font-display font-black tracking-tighter leading-none">
                 Workspace Portal
               </h1>
-              <p className="text-muted-foreground font-body text-lg max-w-xl leading-relaxed">
+              <p className="text-muted-foreground font-body text-base lg:text-lg max-w-xl leading-relaxed">
                 Select an assigned environment to continue.
               </p>
             </div>

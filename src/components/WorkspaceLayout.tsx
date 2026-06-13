@@ -53,7 +53,7 @@ export function WorkspaceLayout({ company, children }: Props) {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary selection:text-primary-foreground font-sans">
-      <header className={`h-16 md:h-20 px-4 md:px-12 xl:px-16 flex items-center justify-between sticky top-0 z-[100] bg-background/80 backdrop-blur-xl ${isSelectionPage ? '' : 'faint-divider'}`}>
+      <header className={`h-16 md:h-20 px-5 lg:px-10 xl:px-16 flex items-center justify-between sticky top-0 z-[100] bg-background/80 backdrop-blur-xl ${isSelectionPage ? '' : 'faint-divider'}`}>
         <div className="flex items-center gap-4 md:gap-8">
           {isSelectionPage ? (
             <div className="flex items-center gap-3">

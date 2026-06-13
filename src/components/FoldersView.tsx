@@ -227,7 +227,7 @@ export function FoldersView({ onSelectCompany }: Props) {
           </div>
         )}
 
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-12 mb-20 px-8 md:px-12 xl:px-16 pt-12 shrink-0">
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 lg:gap-12 mb-12 lg:mb-20 px-5 lg:px-10 xl:px-16 pt-8 lg:pt-12 shrink-0">
           <div className="space-y-4">
             <button 
               onClick={() => navigate('/')}
@@ -241,49 +241,51 @@ export function FoldersView({ onSelectCompany }: Props) {
               Dynamic Repository
               {refreshing && <Loader2 className="w-3 h-3 animate-spin ml-2" />}
             </div>
-            <h1 className="text-6xl font-display font-black text-foreground tracking-tighter leading-none">
+            <h1 className="text-4xl lg:text-6xl font-display font-black text-foreground tracking-tighter leading-none">
               Directory Hub
             </h1>
 
-            <p className="text-muted-foreground/60 font-body text-lg max-w-xl leading-relaxed">
+            <p className="text-muted-foreground/60 font-body text-base lg:text-lg max-w-xl leading-relaxed">
               Orchestrate your publication pipeline and manage digital assets within this workspace context.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="relative group">
+          <div className="flex flex-wrap items-center gap-4 w-full md:w-auto mt-4 md:mt-0">
+            <div className="relative group w-full md:w-auto flex-1 md:flex-none">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/30 transition-colors group-focus-within:text-primary" />
               <input
                 type="text"
                 placeholder="Find directory..."
-                className="pl-12 pr-6 py-4 micro-surface border border-border/10 rounded-2xl text-sm font-black text-foreground focus:ring-2 focus:ring-primary/10 outline-none transition-all w-64 placeholder:text-muted-foreground/30"
+                className="w-full pl-12 pr-6 py-4 micro-surface border border-border/10 rounded-2xl text-sm font-black text-foreground focus:ring-2 focus:ring-primary/10 outline-none transition-all md:w-64 placeholder:text-muted-foreground/30"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <button 
-              onClick={() => fetchData()}
-              className="p-4 micro-surface rounded-2xl text-muted-foreground/40 hover:text-primary transition-all border border-border/10"
-              title="Sync Workspace"
-            >
-              <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-            </button>
-            {permissions?.can_create_folders && (
+            <div className="flex items-center gap-3 w-full md:w-auto">
               <button 
-                onClick={() => {
-                  setFolderNameInput('');
-                  setIsCreateModalOpen(true);
-                }}
-                className="flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-black rounded-2xl hover:opacity-90 transition-all uppercase tracking-widest text-[10px] shadow-lg shadow-primary/10"
+                onClick={() => fetchData()}
+                className="p-4 micro-surface rounded-2xl text-muted-foreground/40 hover:text-primary transition-all border border-border/10"
+                title="Sync Workspace"
               >
-                <Plus className="w-5 h-5" />
-                New Directory
+                <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
               </button>
-            )}
+              {permissions?.can_create_folders && (
+                <button 
+                  onClick={() => {
+                    setFolderNameInput('');
+                    setIsCreateModalOpen(true);
+                  }}
+                  className="flex-1 md:flex-none flex items-center justify-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-black rounded-2xl hover:opacity-90 transition-all uppercase tracking-widest text-[10px] shadow-lg shadow-primary/10"
+                >
+                  <Plus className="w-5 h-5" />
+                  New Directory
+                </button>
+              )}
             </div>
+          </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-8 md:px-12 xl:px-16 pb-12">
+        <main className="flex-1 overflow-y-auto px-5 lg:px-10 xl:px-16 pb-12 w-full max-w-full">
           <div className="grid lg:grid-cols-12 gap-10 items-start">
             <div className="lg:col-span-8 xl:col-span-9 space-y-10">
               {folders.length === 0 ? (

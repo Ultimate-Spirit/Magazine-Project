@@ -119,7 +119,7 @@ export function FolderContents() {
     <WorkspaceLayout 
       company={company || { id: 'none', name: 'Workspace' }}
     >
-      <div className="w-full px-8 md:px-12 xl:px-16 py-16 text-foreground">
+      <div className="w-full px-5 lg:px-10 xl:px-16 py-8 lg:py-16 text-foreground">
         {notification && (
           <div className={`fixed top-8 right-8 z-[100] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right-8 duration-300 ${notification.type === 'success' ? 'bg-foreground text-background' : 'bg-destructive text-destructive-foreground'}`}>
             {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <AlertCircle className="w-5 h-5" />}
@@ -127,8 +127,8 @@ export function FolderContents() {
           </div>
         )}
 
-        <header className="flex flex-wrap items-end justify-between gap-6 mb-16 px-1">
-          <div>
+        <header className="flex flex-wrap items-end justify-between gap-6 mb-12 lg:mb-16 px-1">
+          <div className="w-full md:w-auto">
             <button 
               onClick={goBack}
               className="inline-flex items-center gap-2 px-4 py-2 micro-surface border border-border/10 rounded-full text-[10px] font-black text-muted-foreground/60 uppercase tracking-[0.2em] mb-4 hover:text-foreground hover:bg-secondary transition-all group"
@@ -136,18 +136,18 @@ export function FolderContents() {
               <ArrowLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" />
               Back to Directories
             </button>
-            <h1 className="text-5xl font-black text-foreground tracking-tight leading-none mb-4">
+            <h1 className="text-4xl lg:text-5xl font-black text-foreground tracking-tight leading-none mb-4">
               {folder?.name}
             </h1>
-            <p className="text-muted-foreground/60 font-medium text-lg max-w-xl">
+            <p className="text-muted-foreground/60 font-medium text-base lg:text-lg max-w-xl">
               Internal documentation and publication registry for this directory.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             <button 
               onClick={() => fetchData()}
-              className="p-4 micro-surface border border-border/10 rounded-xl text-muted-foreground/40 hover:text-primary transition-all"
+              className="p-4 micro-surface border border-border/10 rounded-xl text-muted-foreground/40 hover:text-primary transition-all flex-shrink-0"
               title="Sync Database"
             >
               <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
@@ -155,7 +155,7 @@ export function FolderContents() {
             {permissions?.can_create_publications && (
               <button 
                 onClick={() => navigate(`/folder/${folderId}/editor/new`)}
-                className="flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-black rounded-2xl hover:opacity-90 transition-all uppercase tracking-widest text-[10px] shadow-lg shadow-primary/10"
+                className="flex-1 md:flex-none flex items-center justify-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-black rounded-2xl hover:opacity-90 transition-all uppercase tracking-widest text-[10px] shadow-lg shadow-primary/10"
               >
                 <Plus className="w-5 h-5" />
                 Create New Page
