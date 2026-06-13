@@ -345,7 +345,7 @@ export const MagazineEditor: React.FC = () => {
           </div>
 
           {/* Canvas Area */}
-          <main className="flex-1 overflow-x-auto lg:overflow-y-auto p-2 lg:p-12 flex flex-col items-center bg-secondary/50 invisible-scrollbar scroll-smooth pb-48 lg:pb-12 w-full max-w-full">
+          <main className="flex-1 overflow-auto p-4 lg:p-12 flex flex-col items-center bg-secondary/50 invisible-scrollbar scroll-smooth pb-48 lg:pb-12">
             {notification && (
               <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-destructive text-destructive-foreground'}`}>
                 {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
@@ -353,10 +353,19 @@ export const MagazineEditor: React.FC = () => {
               </div>
             )}
 
+            {/* Sizing Wrapper: Physically occupies the scaled space to trigger correct container scrolling */}
             <div 
-               className="w-[850px] bg-white rounded-sm p-8 lg:p-20 flex flex-col min-h-[1100px] border border-slate-200 shadow-xl origin-top transition-transform mb-12"
-               style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
+              style={{ 
+                width: `${850 * zoom}px`, 
+                minHeight: `${1100 * zoom}px`,
+                transition: 'width 0.3s ease, min-height 0.3s ease'
+              }}
+              className="relative shrink-0 mb-12"
             >
+              <div 
+                className="w-[850px] bg-white rounded-sm p-8 lg:p-20 flex flex-col min-h-[1100px] border border-slate-200 shadow-xl origin-top-left transition-transform"
+                style={{ transform: `scale(${zoom})` }}
+              >
               <div className="border-b-4 border-slate-900 pb-12 mb-12">
                 <input 
                   className="w-full text-base lg:text-5xl font-black text-slate-900 border-none p-0 focus:ring-0 placeholder:text-slate-200 leading-[1.2] bg-transparent disabled:opacity-80"
