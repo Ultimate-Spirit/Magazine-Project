@@ -13,7 +13,9 @@ import {
   FileText,
   AlertCircle,
   Clock,
-  ChevronRight
+  ChevronRight,
+  Plus,
+  Minus
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { PrintTemplate } from './PrintTemplate';
@@ -38,6 +40,9 @@ export const MagazineEditor: React.FC = () => {
   const [exporting, setExporting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  
+  // Isolated Canvas Zoom State
+  const [zoom, setZoom] = useState(1);
 
   const [editorData, setEditorData] = useState({
     title: 'Untitled Report',
@@ -59,6 +64,18 @@ export const MagazineEditor: React.FC = () => {
   const printRef = useRef<HTMLDivElement>(null);
 
   const canEdit = permissions?.can_edit_all_publications || (permissions?.can_edit_own_publications && (page?.created_by === profile?.id || pageId === 'new'));
+
+  useEffect(() => {
+    // Initial zoom setting for mobile
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setZoom(0.4);
+      } else {
+        setZoom(1);
+      }
+    };
+    handleResize();
+  }, []);
 
   useEffect(() => {
     if (folderId) {
@@ -291,7 +308,7 @@ export const MagazineEditor: React.FC = () => {
               disabled={uploading || !canEdit}
               className="flex items-center gap-2 px-6 py-3 bg-card border border-border text-foreground font-bold rounded-xl hover:bg-secondary transition-all disabled:opacity-50 text-sm whitespace-nowrap"
             >
-              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+              {uploading ? <Loader2 className="w-3 h-3 lg:w-4 lg:h-4 animate-spin" /> : <Upload className="w-3 h-3 lg:w-4 lg:h-4" />}
               Import Excel
             </button>
             <button 
@@ -328,7 +345,7 @@ export const MagazineEditor: React.FC = () => {
           </div>
 
           {/* Canvas Area */}
-          <main className="flex-1 overflow-x-auto lg:overflow-y-auto p-2 lg:p-12 flex flex-col items-center bg-secondary/50 invisible-scrollbar scroll-smooth pb-32 lg:pb-12 w-full max-w-full">
+          <main className="flex-1 overflow-x-auto lg:overflow-y-auto p-2 lg:p-12 flex flex-col items-center bg-secondary/50 invisible-scrollbar scroll-smooth pb-48 lg:pb-12 w-full max-w-full">
             {notification && (
               <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-destructive text-destructive-foreground'}`}>
                 {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
@@ -336,7 +353,10 @@ export const MagazineEditor: React.FC = () => {
               </div>
             )}
 
-            <div className="w-[850px] bg-white rounded-sm p-8 lg:p-20 flex flex-col min-h-[1100px] border border-slate-200 shadow-xl origin-top scale-[0.38] sm:scale-[0.7] md:scale-[0.8] lg:scale-100 transition-transform mb-12">
+            <div 
+               className="w-[850px] bg-white rounded-sm p-8 lg:p-20 flex flex-col min-h-[1100px] border border-slate-200 shadow-xl origin-top transition-transform mb-12"
+               style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
+            >
               <div className="border-b-4 border-slate-900 pb-12 mb-12">
                 <input 
                   className="w-full text-base lg:text-5xl font-black text-slate-900 border-none p-0 focus:ring-0 placeholder:text-slate-200 leading-[1.2] bg-transparent disabled:opacity-80"
@@ -442,31 +462,46 @@ export const MagazineEditor: React.FC = () => {
           </main>
 
           {/* Sticky Mobile Action Center */}
-          <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-t border-border p-4 pb-safe flex items-center justify-between gap-3">
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading || !canEdit}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary rounded-xl text-xs font-bold transition-all disabled:opacity-50"
-            >
-              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-              Excel
-            </button>
-            <button 
-              onClick={handleSave}
-              disabled={saving || !canEdit}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary rounded-xl text-xs font-bold transition-all disabled:opacity-50"
-            >
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Save
-            </button>
-            <button 
-              onClick={handleDownloadPDF}
-              disabled={exporting}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-xl text-xs font-black transition-all disabled:opacity-50 uppercase tracking-widest"
-            >
-              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              PDF
-            </button>
+          <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-t border-border p-4 pb-safe flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+               {/* Zoom Controller */}
+               <div className="flex items-center gap-2 micro-surface px-3 py-1.5 rounded-full border border-border/10">
+                <button onClick={() => setZoom(Math.max(0.2, zoom - 0.1))} className="p-1 text-muted-foreground">
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <span className="text-[10px] font-black w-10 text-center uppercase tracking-tighter">
+                  {Math.round(zoom * 100)}%
+                </span>
+                <button onClick={() => setZoom(Math.min(2, zoom + 0.1))} className="p-1 text-muted-foreground">
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 flex-1 justify-end">
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading || !canEdit}
+                  className="flex items-center justify-center p-3 bg-secondary rounded-xl disabled:opacity-50"
+                >
+                  {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                </button>
+                <button 
+                  onClick={handleSave}
+                  disabled={saving || !canEdit}
+                  className="flex items-center justify-center p-3 bg-secondary rounded-xl disabled:opacity-50"
+                >
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                </button>
+                <button 
+                  onClick={handleDownloadPDF}
+                  disabled={exporting}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-xl text-xs font-black transition-all disabled:opacity-50 uppercase tracking-widest"
+                >
+                  {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  Export PDF
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
