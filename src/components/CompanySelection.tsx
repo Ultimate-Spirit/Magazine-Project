@@ -145,7 +145,7 @@ export function CompanySelection({ onSelect }: Props) {
         </div>
 
         {/* Premium Branding Footer */}
-        <footer className="fixed bottom-0 left-0 w-full px-8 md:px-16 py-8 flex flex-col md:flex-row items-center justify-between gap-4 pointer-events-none z-0">
+        <footer className="mt-auto w-full px-5 lg:px-10 xl:px-16 py-8 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-border/5">
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
@@ -154,8 +154,8 @@ export function CompanySelection({ onSelect }: Props) {
             <span className="text-[10px] font-black text-slate-500/60 uppercase tracking-[0.2em]">System Status: Online</span>
           </div>
 
-          <div className="flex items-center gap-4 opacity-15 hover:opacity-30 transition-opacity duration-500">
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] whitespace-nowrap">Spirit OS // Internal Access Only</span>
+          <div className="flex items-center gap-4 opacity-30">
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] whitespace-nowrap text-center">Spirit OS // Internal Access Only</span>
           </div>
         </footer>
       </div>

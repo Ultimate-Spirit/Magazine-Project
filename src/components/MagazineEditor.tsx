@@ -11,7 +11,9 @@ import {
   Loader2,
   CheckCircle2,
   FileText,
-  AlertCircle
+  AlertCircle,
+  Clock,
+  ChevronRight
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { PrintTemplate } from './PrintTemplate';
@@ -235,7 +237,7 @@ export const MagazineEditor: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
       </div>
     );
@@ -255,8 +257,8 @@ export const MagazineEditor: React.FC = () => {
           <PrintTemplate ref={printRef} data={editorData} />
         </div>
 
-        {/* Editor Toolbar */}
-        <div className="h-auto min-h-16 lg:h-20 bg-card border-b border-border flex flex-col lg:flex-row items-center justify-between px-2 lg:px-12 shrink-0 py-3 lg:py-0 gap-4">
+        {/* Editor Toolbar (Mainly for Title & Navigation) */}
+        <div className="h-auto min-h-16 lg:h-20 bg-card border-b border-border flex flex-col lg:flex-row items-center justify-between px-2 lg:px-12 shrink-0 py-3 lg:py-0 gap-4 z-30">
           <div className="flex items-center gap-3 lg:gap-6 w-full lg:w-auto">
             <button 
               onClick={goBackToFolder}
@@ -276,7 +278,7 @@ export const MagazineEditor: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 lg:gap-4 w-full lg:w-auto overflow-x-auto invisible-scrollbar">
+          <div className="hidden lg:flex items-center gap-4">
             <input 
               type="file" 
               ref={fileInputRef} 
@@ -287,48 +289,46 @@ export const MagazineEditor: React.FC = () => {
             <button 
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading || !canEdit}
-              className="flex items-center gap-2 px-4 lg:px-6 py-2 lg:py-3 bg-card border border-border text-foreground font-bold rounded-xl hover:bg-secondary transition-all disabled:opacity-50 text-[10px] lg:text-sm whitespace-nowrap"
+              className="flex items-center gap-2 px-6 py-3 bg-card border border-border text-foreground font-bold rounded-xl hover:bg-secondary transition-all disabled:opacity-50 text-sm whitespace-nowrap"
             >
-              {uploading ? <Loader2 className="w-3 h-3 lg:w-4 lg:h-4 animate-spin" /> : <Upload className="w-3 h-3 lg:w-4 lg:h-4" />}
-              <span className="hidden sm:inline">Import Excel</span>
-              <span className="sm:hidden">Import</span>
+              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+              Import Excel
             </button>
             <button 
               onClick={handleSave}
               disabled={saving || !canEdit}
-              className="flex items-center gap-2 px-4 lg:px-6 py-2 lg:py-3 bg-card border border-border text-foreground font-bold rounded-xl hover:bg-secondary transition-all disabled:opacity-50 text-[10px] lg:text-sm whitespace-nowrap"
+              className="flex items-center gap-2 px-6 py-3 bg-card border border-border text-foreground font-bold rounded-xl hover:bg-secondary transition-all disabled:opacity-50 text-sm whitespace-nowrap"
             >
               {saving ? <Loader2 className="w-3 h-3 lg:w-4 lg:h-4 animate-spin" /> : <Save className="w-3 h-3 lg:w-4 lg:h-4" />}
-              <span className="hidden sm:inline">Save Progress</span>
-              <span className="sm:hidden">Save</span>
+              Save Progress
             </button>
             <button 
               onClick={handleDownloadPDF}
               disabled={exporting}
-              className="flex items-center gap-2 px-4 lg:px-8 py-2 lg:py-3 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50 text-[10px] lg:text-sm whitespace-nowrap"
+              className="flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50 text-sm whitespace-nowrap"
             >
               {exporting ? <Loader2 className="w-3 h-3 lg:w-4 lg:h-4 animate-spin" /> : <Download className="w-3 h-3 lg:w-4 lg:h-4" />}
-              PDF
+              Export PDF
             </button>
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-          {/* Mobile Tool Bar (Bottom) / Desktop Sidebar */}
-          <div className="order-last lg:order-first h-16 lg:h-full lg:w-20 bg-card border-t lg:border-t-0 lg:border-r border-border flex flex-row lg:flex-col items-center justify-around lg:justify-start lg:py-8 gap-6 shrink-0 z-20">
-            <button className="p-3 lg:p-4 bg-primary/10 text-primary rounded-xl lg:rounded-2xl" title="Templates">
-              <Layout className="w-5 h-5 lg:w-6 lg:h-6" />
+        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+          {/* Sidebar Tools / Mobile Secondary Bar */}
+          <div className="hidden lg:flex w-20 bg-card border-r border-border flex-col items-center py-8 gap-6 shrink-0 z-20">
+            <button className="p-4 bg-primary/10 text-primary rounded-2xl" title="Templates">
+              <Layout className="w-6 h-6" />
             </button>
-            <button className="p-3 lg:p-4 text-muted-foreground/40 hover:text-foreground hover:bg-secondary rounded-xl lg:rounded-2xl transition-all" title="Structure">
-              <FileText className="w-5 h-5 lg:w-6 lg:h-6" />
+            <button className="p-4 text-muted-foreground/40 hover:text-foreground hover:bg-secondary rounded-2xl transition-all" title="Structure">
+              <FileText className="w-6 h-6" />
             </button>
-            <button className="p-3 lg:p-4 text-muted-foreground/40 hover:text-foreground hover:bg-secondary rounded-xl lg:rounded-2xl transition-all" title="Assets">
-              <ImageIcon className="w-5 h-5 lg:w-6 lg:h-6" />
+            <button className="p-4 text-muted-foreground/40 hover:text-foreground hover:bg-secondary rounded-2xl transition-all" title="Assets">
+              <ImageIcon className="w-6 h-6" />
             </button>
           </div>
 
-          {/* Canvas Area (UI Version for live editing) */}
-          <main className="flex-1 overflow-x-auto lg:overflow-y-auto p-2 lg:p-12 flex flex-col items-center bg-secondary/50 invisible-scrollbar scroll-smooth">
+          {/* Canvas Area */}
+          <main className="flex-1 overflow-x-auto lg:overflow-y-auto p-2 lg:p-12 flex flex-col items-center bg-secondary/50 invisible-scrollbar scroll-smooth pb-32 lg:pb-12">
             {notification && (
               <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-destructive text-destructive-foreground'}`}>
                 {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
@@ -336,17 +336,17 @@ export const MagazineEditor: React.FC = () => {
               </div>
             )}
 
-            <div className="w-[850px] bg-white rounded-sm p-8 lg:p-20 flex flex-col min-h-[1100px] border border-slate-200 shadow-xl origin-top scale-[0.38] sm:scale-[0.7] md:scale-[0.8] lg:scale-100 transition-transform mb-20 lg:mb-0">
+            <div className="w-[850px] bg-white rounded-sm p-8 lg:p-20 flex flex-col min-h-[1100px] border border-slate-200 shadow-xl origin-top scale-[0.38] sm:scale-[0.7] md:scale-[0.8] lg:scale-100 transition-transform mb-12">
               <div className="border-b-4 border-slate-900 pb-12 mb-12">
                 <input 
-                  className="w-full text-5xl font-black text-slate-900 border-none p-0 focus:ring-0 placeholder:text-slate-200 leading-[1.2] bg-transparent disabled:opacity-80"
+                  className="w-full text-base lg:text-5xl font-black text-slate-900 border-none p-0 focus:ring-0 placeholder:text-slate-200 leading-[1.2] bg-transparent disabled:opacity-80"
                   value={editorData.headline}
                   onChange={(e) => setEditorData({ ...editorData, headline: e.target.value })}
                   placeholder="Enter Headline"
                   disabled={!canEdit}
                 />
                 <input 
-                  className="w-full text-xl font-bold text-blue-600 mt-4 border-none p-0 focus:ring-0 placeholder:text-slate-200 uppercase tracking-widest leading-[1.2] bg-transparent disabled:opacity-80"
+                  className="w-full text-base lg:text-xl font-bold text-blue-600 mt-4 border-none p-0 focus:ring-0 placeholder:text-slate-200 uppercase tracking-widest leading-[1.2] bg-transparent disabled:opacity-80"
                   value={editorData.subheadline}
                   onChange={(e) => setEditorData({ ...editorData, subheadline: e.target.value })}
                   placeholder="REPORT CATEGORY"
@@ -358,7 +358,7 @@ export const MagazineEditor: React.FC = () => {
                 <div className="space-y-6">
                   <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Executive Summary</h3>
                   <textarea 
-                    className="w-full text-slate-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[150px] resize-none bg-transparent disabled:opacity-80"
+                    className="w-full text-slate-600 leading-relaxed text-base lg:text-sm border-none p-0 focus:ring-0 min-h-[150px] resize-none bg-transparent disabled:opacity-80"
                     value={editorData.summaryText}
                     onChange={(e) => setEditorData({ ...editorData, summaryText: e.target.value })}
                     placeholder="Enter summary text here..."
@@ -371,7 +371,7 @@ export const MagazineEditor: React.FC = () => {
                     {editorData.metrics.map((metric, idx) => (
                       <div key={idx} className="bg-slate-50 p-4 lg:p-6 rounded-2xl border border-slate-100">
                         <input 
-                          className="w-full text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-transparent border-none p-0 focus:ring-0 disabled:opacity-80"
+                          className="w-full text-base lg:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-transparent border-none p-0 focus:ring-0 disabled:opacity-80"
                           value={metric.label}
                           onChange={(e) => {
                             const newMetrics = [...editorData.metrics];
@@ -382,7 +382,7 @@ export const MagazineEditor: React.FC = () => {
                         />
                         <div className="flex items-baseline gap-2 mt-2">
                           <input 
-                            className="text-2xl lg:text-3xl font-black text-slate-900 bg-transparent border-none p-0 focus:ring-0 w-32 disabled:opacity-80"
+                            className="text-base lg:text-3xl font-black text-slate-900 bg-transparent border-none p-0 focus:ring-0 w-32 disabled:opacity-80"
                             value={metric.value}
                             onChange={(e) => {
                               const newMetrics = [...editorData.metrics];
@@ -405,7 +405,7 @@ export const MagazineEditor: React.FC = () => {
                 <div className="space-y-6">
                   <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Strategic Drivers</h3>
                   <textarea 
-                    className="w-full text-slate-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent disabled:opacity-80"
+                    className="w-full text-slate-600 leading-relaxed text-base lg:text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent disabled:opacity-80"
                     value={editorData.growthDriversText}
                     onChange={(e) => setEditorData({ ...editorData, growthDriversText: e.target.value })}
                     placeholder="Enter growth drivers..."
@@ -415,7 +415,7 @@ export const MagazineEditor: React.FC = () => {
                 <div className="space-y-6">
                   <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Future Outlook</h3>
                   <textarea 
-                    className="w-full text-slate-600 leading-relaxed text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent disabled:opacity-80"
+                    className="w-full text-slate-600 leading-relaxed text-base lg:text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent disabled:opacity-80"
                     value={editorData.outlookText}
                     onChange={(e) => setEditorData({ ...editorData, outlookText: e.target.value })}
                     placeholder="Enter outlook details..."
@@ -426,13 +426,13 @@ export const MagazineEditor: React.FC = () => {
 
               <footer className="mt-20 pt-8 border-t border-slate-100 flex justify-between items-center text-[8px] font-bold text-slate-300 uppercase tracking-widest">
                 <input 
-                  className="bg-transparent border-none p-0 focus:ring-0 w-48 text-slate-300 disabled:opacity-80"
+                  className="bg-transparent border-none p-0 focus:ring-0 w-48 text-base lg:text-[8px] text-slate-300 disabled:opacity-80 font-bold uppercase tracking-widest"
                   value={editorData.footerConfidentiality}
                   onChange={(e) => setEditorData({ ...editorData, footerConfidentiality: e.target.value })}
                   disabled={!canEdit}
                 />
                 <input 
-                  className="bg-transparent border-none p-0 focus:ring-0 text-right w-32 text-slate-300 disabled:opacity-80"
+                  className="bg-transparent border-none p-0 focus:ring-0 text-right w-32 text-base lg:text-[8px] text-slate-300 disabled:opacity-80 font-bold uppercase tracking-widest"
                   value={editorData.footerDate}
                   onChange={(e) => setEditorData({ ...editorData, footerDate: e.target.value })}
                   disabled={!canEdit}
@@ -440,6 +440,34 @@ export const MagazineEditor: React.FC = () => {
               </footer>
             </div>
           </main>
+
+          {/* Sticky Mobile Action Center */}
+          <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-t border-border p-4 pb-safe flex items-center justify-between gap-3">
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading || !canEdit}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+            >
+              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+              Excel
+            </button>
+            <button 
+              onClick={handleSave}
+              disabled={saving || !canEdit}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-secondary rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Save
+            </button>
+            <button 
+              onClick={handleDownloadPDF}
+              disabled={exporting}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-xl text-xs font-black transition-all disabled:opacity-50 uppercase tracking-widest"
+            >
+              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              PDF
+            </button>
+          </div>
         </div>
       </div>
     </WorkspaceLayout>

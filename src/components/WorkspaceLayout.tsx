@@ -80,8 +80,8 @@ export function WorkspaceLayout({ children, company }: Props) {
             </button>
 
             {/* Account Dropdown */}
-            <div className="absolute top-full right-0 mt-2 w-64 micro-surface border border-border/10 rounded-3xl shadow-2xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all z-[200] overflow-hidden">
-              <div className="p-6 bg-card/50">
+            <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-950 border border-border/10 rounded-3xl shadow-2xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all z-[100] overflow-hidden">
+              <div className="p-6 bg-slate-50 dark:bg-slate-900/50">
                 <p className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] mb-3">Identity Context</p>
                 <p className="text-sm font-black truncate">{profile?.full_name || 'System Identity'}</p>
                 <p className="text-[10px] font-bold text-muted-foreground/60 truncate mt-0.5">{profile?.email}</p>
