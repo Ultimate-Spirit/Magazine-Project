@@ -75,6 +75,8 @@ export const MagazineEditor: React.FC = () => {
       }
     };
     handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   useEffect(() => {
@@ -361,7 +363,7 @@ export const MagazineEditor: React.FC = () => {
                   width: `${850 * zoom}px`, 
                   minHeight: `${1100 * zoom}px`,
                   transition: 'width 0.3s ease, min-height 0.3s ease',
-                  margin: '0 auto' // Centers the canvas when it's smaller than the viewport
+                  margin: '0 auto' 
                 }}
                 className="relative shrink-0 mb-12"
               >
@@ -369,107 +371,108 @@ export const MagazineEditor: React.FC = () => {
                   className="w-[850px] bg-white rounded-sm p-8 lg:p-20 flex flex-col min-h-[1100px] border border-slate-200 shadow-xl origin-top-left transition-transform"
                   style={{ transform: `scale(${zoom})` }}
                 >
-                <div className="border-b-4 border-slate-900 pb-12 mb-12">
-                  <input 
-                    className="w-full text-base lg:text-5xl font-black text-slate-900 border-none p-0 focus:ring-0 placeholder:text-slate-200 leading-[1.2] bg-transparent disabled:opacity-80"
-                    value={editorData.headline}
-                    onChange={(e) => setEditorData({ ...editorData, headline: e.target.value })}
-                    placeholder="Enter Headline"
-                    disabled={!canEdit}
-                  />
-                  <input 
-                    className="w-full text-base lg:text-xl font-bold text-blue-600 mt-4 border-none p-0 focus:ring-0 placeholder:text-slate-200 uppercase tracking-widest leading-[1.2] bg-transparent disabled:opacity-80"
-                    value={editorData.subheadline}
-                    onChange={(e) => setEditorData({ ...editorData, subheadline: e.target.value })}
-                    placeholder="REPORT CATEGORY"
-                    disabled={!canEdit}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-10 lg:gap-20 mb-12">
-                  <div className="space-y-6">
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Executive Summary</h3>
-                    <textarea 
-                      className="w-full text-slate-600 leading-relaxed text-base lg:text-sm border-none p-0 focus:ring-0 min-h-[150px] resize-none bg-transparent disabled:opacity-80"
-                      value={editorData.summaryText}
-                      onChange={(e) => setEditorData({ ...editorData, summaryText: e.target.value })}
-                      placeholder="Enter summary text here..."
+                  <div className="border-b-4 border-slate-900 pb-12 mb-12">
+                    <input 
+                      className="w-full text-base lg:text-5xl font-black text-slate-900 border-none p-0 focus:ring-0 placeholder:text-slate-200 leading-[1.2] bg-transparent disabled:opacity-80"
+                      value={editorData.headline}
+                      onChange={(e) => setEditorData({ ...editorData, headline: e.target.value })}
+                      placeholder="Enter Headline"
+                      disabled={!canEdit}
+                    />
+                    <input 
+                      className="w-full text-base lg:text-xl font-bold text-blue-600 mt-4 border-none p-0 focus:ring-0 placeholder:text-slate-200 uppercase tracking-widest leading-[1.2] bg-transparent disabled:opacity-80"
+                      value={editorData.subheadline}
+                      onChange={(e) => setEditorData({ ...editorData, subheadline: e.target.value })}
+                      placeholder="REPORT CATEGORY"
                       disabled={!canEdit}
                     />
                   </div>
-                  <div className="space-y-8">
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Key Performance</h3>
-                    <div className="space-y-6 lg:space-y-8">
-                      {editorData.metrics.map((metric, idx) => (
-                        <div key={idx} className="bg-slate-50 p-4 lg:p-6 rounded-2xl border border-slate-100">
-                          <input 
-                            className="w-full text-base lg:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-transparent border-none p-0 focus:ring-0 disabled:opacity-80"
-                            value={metric.label}
-                            onChange={(e) => {
-                              const newMetrics = [...editorData.metrics];
-                              newMetrics[idx].label = e.target.value;
-                              setEditorData({ ...editorData, metrics: newMetrics });
-                            }}
-                            disabled={!canEdit}
-                          />
-                          <div className="flex items-baseline gap-2 mt-2">
+
+                  <div className="grid grid-cols-2 gap-10 lg:gap-20 mb-12">
+                    <div className="space-y-6">
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Executive Summary</h3>
+                      <textarea 
+                        className="w-full text-slate-600 leading-relaxed text-base lg:text-sm border-none p-0 focus:ring-0 min-h-[150px] resize-none bg-transparent disabled:opacity-80"
+                        value={editorData.summaryText}
+                        onChange={(e) => setEditorData({ ...editorData, summaryText: e.target.value })}
+                        placeholder="Enter summary text here..."
+                        disabled={!canEdit}
+                      />
+                    </div>
+                    <div className="space-y-8">
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Key Performance</h3>
+                      <div className="space-y-6 lg:space-y-8">
+                        {editorData.metrics.map((metric, idx) => (
+                          <div key={idx} className="bg-slate-50 p-4 lg:p-6 rounded-2xl border border-slate-100">
                             <input 
-                              className="text-base lg:text-3xl font-black text-slate-900 bg-transparent border-none p-0 focus:ring-0 w-32 disabled:opacity-80"
-                              value={metric.value}
+                              className="w-full text-base lg:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-transparent border-none p-0 focus:ring-0 disabled:opacity-80"
+                              value={metric.label}
                               onChange={(e) => {
                                 const newMetrics = [...editorData.metrics];
-                                newMetrics[idx].value = e.target.value;
+                                newMetrics[idx].label = e.target.value;
                                 setEditorData({ ...editorData, metrics: newMetrics });
                               }}
                               disabled={!canEdit}
                             />
-                            <span className="text-xs font-bold text-green-600">
-                              {metric.percentage >= 0 ? '+' : ''}{metric.percentage}%
-                            </span>
+                            <div className="flex items-baseline gap-2 mt-2">
+                              <input 
+                                className="text-base lg:text-3xl font-black text-slate-900 bg-transparent border-none p-0 focus:ring-0 w-32 disabled:opacity-80"
+                                value={metric.value}
+                                onChange={(e) => {
+                                  const newMetrics = [...editorData.metrics];
+                                  newMetrics[idx].value = e.target.value;
+                                  setEditorData({ ...editorData, metrics: newMetrics });
+                                }}
+                                disabled={!canEdit}
+                              />
+                              <span className="text-xs font-bold text-green-600">
+                                {metric.percentage >= 0 ? '+' : ''}{metric.percentage}%
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-10 lg:gap-20 mb-auto">
-                  <div className="space-y-6">
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Strategic Drivers</h3>
-                    <textarea 
-                      className="w-full text-slate-600 leading-relaxed text-base lg:text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent disabled:opacity-80"
-                      value={editorData.growthDriversText}
-                      onChange={(e) => setEditorData({ ...editorData, growthDriversText: e.target.value })}
-                      placeholder="Enter growth drivers..."
+                  <div className="grid grid-cols-2 gap-10 lg:gap-20 mb-auto">
+                    <div className="space-y-6">
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Strategic Drivers</h3>
+                      <textarea 
+                        className="w-full text-slate-600 leading-relaxed text-base lg:text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent disabled:opacity-80"
+                        value={editorData.growthDriversText}
+                        onChange={(e) => setEditorData({ ...editorData, growthDriversText: e.target.value })}
+                        placeholder="Enter growth drivers..."
+                        disabled={!canEdit}
+                      />
+                    </div>
+                    <div className="space-y-6">
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Future Outlook</h3>
+                      <textarea 
+                        className="w-full text-slate-600 leading-relaxed text-base lg:text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent disabled:opacity-80"
+                        value={editorData.outlookText}
+                        onChange={(e) => setEditorData({ ...editorData, outlookText: e.target.value })}
+                        placeholder="Enter outlook details..."
+                        disabled={!canEdit}
+                      />
+                    </div>
+                  </div>
+
+                  <footer className="mt-20 pt-8 border-t border-slate-100 flex justify-between items-center text-[8px] font-bold text-slate-300 uppercase tracking-widest">
+                    <input 
+                      className="bg-transparent border-none p-0 focus:ring-0 w-48 text-base lg:text-[8px] text-slate-300 disabled:opacity-80 font-bold uppercase tracking-widest"
+                      value={editorData.footerConfidentiality}
+                      onChange={(e) => setEditorData({ ...editorData, footerConfidentiality: e.target.value })}
                       disabled={!canEdit}
                     />
-                  </div>
-                  <div className="space-y-6">
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Future Outlook</h3>
-                    <textarea 
-                      className="w-full text-slate-600 leading-relaxed text-base lg:text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent disabled:opacity-80"
-                      value={editorData.outlookText}
-                      onChange={(e) => setEditorData({ ...editorData, outlookText: e.target.value })}
-                      placeholder="Enter outlook details..."
+                    <input 
+                      className="bg-transparent border-none p-0 focus:ring-0 text-right w-32 text-base lg:text-[8px] text-slate-300 disabled:opacity-80 font-bold uppercase tracking-widest"
+                      value={editorData.footerDate}
+                      onChange={(e) => setEditorData({ ...editorData, footerDate: e.target.value })}
                       disabled={!canEdit}
                     />
-                  </div>
+                  </footer>
                 </div>
-
-                <footer className="mt-20 pt-8 border-t border-slate-100 flex justify-between items-center text-[8px] font-bold text-slate-300 uppercase tracking-widest">
-                  <input 
-                    className="bg-transparent border-none p-0 focus:ring-0 w-48 text-base lg:text-[8px] text-slate-300 disabled:opacity-80 font-bold uppercase tracking-widest"
-                    value={editorData.footerConfidentiality}
-                    onChange={(e) => setEditorData({ ...editorData, footerConfidentiality: e.target.value })}
-                    disabled={!canEdit}
-                  />
-                  <input 
-                    className="bg-transparent border-none p-0 focus:ring-0 text-right w-32 text-base lg:text-[8px] text-slate-300 disabled:opacity-80 font-bold uppercase tracking-widest"
-                    value={editorData.footerDate}
-                    onChange={(e) => setEditorData({ ...editorData, footerDate: e.target.value })}
-                    disabled={!canEdit}
-                  />
-                </footer>
               </div>
             </div>
           </main>
