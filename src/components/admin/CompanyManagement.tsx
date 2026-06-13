@@ -168,7 +168,7 @@ export const CompanyManagement: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-12 pb-12 pt-12">
+      <main className="flex-1 overflow-y-auto px-4 lg:px-12 pb-12 pt-12">
         {notification && (
           <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-destructive/10 text-destructive'}`}>
             <CheckCircle2 className="w-5 h-5" />
@@ -181,14 +181,14 @@ export const CompanyManagement: React.FC = () => {
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             {filteredCompanies.map((company) => {
               const memberCount = company.user_companies?.[0]?.count ?? 0;
               return (
               <div 
                 key={company.id} 
                 onClick={() => navigate(`/company/${company.id}/folders`)}
-                className="bento-card micro-surface micro-surface-hover border-border/20 hover:border-primary/30 group relative cursor-pointer flex flex-col justify-between min-h-[220px]"
+                className="bento-card micro-surface micro-surface-hover border-border/20 hover:border-primary/30 group relative cursor-pointer flex flex-col justify-between min-h-[220px] p-5 lg:p-8"
               >
                 <div className="flex items-start justify-between mb-6">
                   <div className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center overflow-hidden border border-border/10 group-hover:border-primary/20 transition-all">

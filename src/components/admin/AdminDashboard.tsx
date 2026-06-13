@@ -107,55 +107,55 @@ export const AdminDashboard: React.FC = () => {
 
       <main className="p-10 space-y-10">
         {/* Primary Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div onClick={() => navigate('/admin/users')} className="bento-card micro-surface micro-surface-hover border-border/20 group cursor-pointer overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-all">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          <div onClick={() => navigate('/admin/users')} className="bento-card micro-surface micro-surface-hover border-border/20 group cursor-pointer overflow-hidden relative p-4 lg:p-6">
+            <div className="absolute top-0 right-0 p-4 lg:p-6 opacity-0 group-hover:opacity-100 transition-all">
               <ArrowUpRight size={16} className="text-primary" />
             </div>
-            <div className="mb-6">
+            <div className="mb-4 lg:mb-6">
               <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center text-muted-foreground/40 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
                 <Users size={18} />
               </div>
             </div>
             <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] mb-1">Total Users</p>
             {/* @ts-ignore */}
-            <p className="text-4xl font-black text-foreground break-all">{String(stats.total_users)}</p>
+            <p className="text-3xl lg:text-4xl font-black text-foreground break-all">{String(stats.total_users)}</p>
           </div>
 
-          <div onClick={() => navigate('/admin/companies')} className="bento-card micro-surface micro-surface-hover border-border/20 group cursor-pointer overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-all">
+          <div onClick={() => navigate('/admin/companies')} className="bento-card micro-surface micro-surface-hover border-border/20 group cursor-pointer overflow-hidden relative p-4 lg:p-6">
+            <div className="absolute top-0 right-0 p-4 lg:p-6 opacity-0 group-hover:opacity-100 transition-all">
               <ArrowUpRight size={16} className="text-primary" />
             </div>
-            <div className="mb-6">
+            <div className="mb-4 lg:mb-6">
               <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center text-muted-foreground/40 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
                 <Building2 size={18} />
               </div>
             </div>
             <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] mb-1">Active Workspaces</p>
             {/* @ts-ignore */}
-            <p className="text-4xl font-black text-foreground break-all">{String(stats.active_workspaces)}</p>
+            <p className="text-3xl lg:text-4xl font-black text-foreground break-all">{String(stats.active_workspaces)}</p>
           </div>
 
-          <div className="bento-card micro-surface border-border/20">
-            <div className="mb-6">
+          <div className="bento-card micro-surface border-border/20 p-4 lg:p-6">
+            <div className="mb-4 lg:mb-6">
               <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center text-muted-foreground/40">
                 <FileText size={18} />
               </div>
             </div>
             <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] mb-1">Published Pages</p>
             {/* @ts-ignore */}
-            <p className="text-4xl font-black text-foreground break-all">{String(stats.published_pages)}</p>
+            <p className="text-3xl lg:text-4xl font-black text-foreground break-all">{String(stats.published_pages)}</p>
           </div>
 
-          <div className="bento-card micro-surface border-border/20">
-            <div className="mb-6">
+          <div className="bento-card micro-surface border-border/20 p-4 lg:p-6">
+            <div className="mb-4 lg:mb-6">
               <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center text-muted-foreground/40">
                 <ShieldCheck size={18} />
               </div>
             </div>
             <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] mb-1">Active Accounts</p>
             {/* @ts-ignore */}
-            <p className="text-4xl font-black text-emerald-500 break-all">{String(stats.active_accounts)}</p>
+            <p className="text-3xl lg:text-4xl font-black text-emerald-500 break-all">{String(stats.active_accounts)}</p>
           </div>
         </div>
 

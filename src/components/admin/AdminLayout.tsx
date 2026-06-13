@@ -27,32 +27,32 @@ export const AdminLayout: React.FC = () => {
       {/* Mobile Backdrop */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-sm lg:hidden transition-opacity duration-300"
+          className="fixed inset-0 z-[90] bg-slate-900/20 backdrop-blur-sm lg:hidden transition-opacity duration-300"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-72 bg-card/95 backdrop-blur-md border-r border-border flex flex-col 
+        fixed inset-y-0 left-0 z-[100] w-72 bg-white dark:bg-slate-950 border-r border-border flex flex-col 
         transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="p-8 flex items-center justify-between gap-4">
+        <div className="h-16 px-4 flex items-center justify-between shrink-0 border-b border-border/50 lg:border-none lg:h-auto lg:p-8">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-primary rounded-2xl shadow-xl shadow-primary/20">
               <Shield className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
-              <span className="text-xl font-bold block">Admin</span>
-              <span className="text-xs font-bold text-primary uppercase tracking-widest">Console</span>
+              <span className="text-xl font-black block tracking-tighter">Admin</span>
+              <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Console</span>
             </div>
           </div>
           <button 
             onClick={() => setIsSidebarOpen(false)}
             className="lg:hidden p-2 text-muted-foreground hover:bg-secondary rounded-xl transition-all"
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6" />
           </button>
         </div>
         
@@ -94,7 +94,7 @@ export const AdminLayout: React.FC = () => {
         <div className="p-6 space-y-4">
           <div className="bg-muted/50 rounded-3xl p-6 border border-border/50 backdrop-blur-sm">
             <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-2">Authenticated As</p>
-            <p className="text-sm font-bold truncate">System Administrator</p>
+            <p className="text-sm font-bold truncate italic">System Administrator</p>
           </div>
           <button 
             onClick={handleSignOut}
@@ -107,9 +107,9 @@ export const AdminLayout: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden w-full max-w-full">
         {/* Mobile Header */}
-        <header className="h-16 border-b border-border/50 flex items-center px-6 lg:hidden bg-background/80 backdrop-blur-xl shrink-0">
+        <header className="fixed top-0 left-0 right-0 h-16 border-b border-slate-200 dark:border-slate-800 flex items-center px-6 lg:hidden bg-white dark:bg-slate-950 z-[40] shrink-0">
           <button 
             onClick={() => setIsSidebarOpen(true)}
             className="p-2 text-slate-500 hover:bg-slate-100/50 rounded-xl transition-all"
@@ -117,15 +117,18 @@ export const AdminLayout: React.FC = () => {
             <Menu className="w-6 h-6" />
           </button>
           <div className="ml-4">
-            <span className="text-sm font-black uppercase tracking-widest text-foreground/70">Admin Console</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground/50">Admin Console</span>
           </div>
         </header>
         
-        <div className="flex-1 overflow-hidden flex flex-col">
-          <Outlet />
+        <div className="flex-1 overflow-y-auto invisible-scrollbar flex flex-col pt-20 lg:pt-0 px-3 lg:px-8">
+          <div className="flex-1 w-full max-w-full mx-auto">
+            <Outlet />
+          </div>
         </div>
       </div>
     </div>
   );
+
 };
 

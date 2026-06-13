@@ -229,7 +229,7 @@ export const RoleManagement: React.FC = () => {
         </button>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-12 pb-12 pt-12">
+      <main className="flex-1 overflow-y-auto px-4 lg:px-12 pb-12 pt-12">
         {notification && (
           <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-destructive/10 text-destructive'}`}>
             <CheckCircle2 className="w-5 h-5" />
@@ -237,9 +237,9 @@ export const RoleManagement: React.FC = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {roles.map((role) => (
-            <div key={role.id} className="bento-card micro-surface micro-surface-hover flex flex-col justify-between min-h-[400px] border-border/20 hover:border-primary/30 group">
+            <div key={role.id} className="bento-card micro-surface micro-surface-hover flex flex-col justify-between min-h-[400px] border-border/20 hover:border-primary/30 group p-6 lg:p-10">
               <div>
                 <div className="flex items-center justify-between mb-8">
                   <div className={`p-4 rounded-2xl ${role.is_system_admin ? 'bg-primary/5 text-primary' : 'bg-secondary text-muted-foreground/40'}`}>
