@@ -90,7 +90,7 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <div className="flex-1 overflow-y-auto bg-background font-sans invisible-scrollbar">
-      <header className="h-24 px-6 lg:px-8 flex items-center justify-between sticky top-0 z-[100] bg-background/80 backdrop-blur-xl faint-divider shrink-0">
+      <header className="h-24 px-6 lg:px-8 flex items-center justify-between sticky top-0 z-[10] bg-background/80 backdrop-blur-xl faint-divider shrink-0">
         <div>
           <h1 className="text-3xl font-black text-foreground tracking-tight">Overview Portal</h1>
           <div className="flex items-center gap-2 mt-1">

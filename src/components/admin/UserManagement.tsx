@@ -278,7 +278,7 @@ export const UserManagement: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background font-sans">
-      <header className="h-24 bg-card flex items-center justify-between px-12 border-b border-border shrink-0">
+      <header className="h-24 bg-card flex items-center justify-between px-12 border-b border-border shrink-0 z-10">
         <h1 className="text-3xl font-bold text-foreground tracking-tight">User Management</h1>
         
         <div className="flex items-center gap-6">

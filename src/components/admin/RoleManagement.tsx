@@ -217,7 +217,7 @@ export const RoleManagement: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background font-sans">
-      <header className="h-24 bg-card/30 backdrop-blur-md flex items-center justify-between px-12 faint-divider shrink-0">
+      <header className="h-24 bg-card/30 backdrop-blur-md flex items-center justify-between px-12 faint-divider shrink-0 z-10">
         <h1 className="text-3xl font-black text-foreground tracking-tight">Access Control</h1>
         
         <button 
