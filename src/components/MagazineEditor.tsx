@@ -314,21 +314,21 @@ export const MagazineEditor: React.FC = () => {
         </div>
 
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
-          {/* Sidebar Tools / Mobile Secondary Bar */}
-          <div className="hidden lg:flex w-20 bg-card border-r border-border flex-col items-center py-8 gap-6 shrink-0 z-20">
-            <button className="p-4 bg-primary/10 text-primary rounded-2xl" title="Templates">
-              <Layout className="w-6 h-6" />
+          {/* Editor Formatting Tools (Horizontal on Mobile / Vertical Sidebar on Desktop) */}
+          <div className="flex flex-row lg:flex-col items-center justify-around lg:justify-start lg:py-8 gap-6 shrink-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b lg:border-b-0 lg:border-r border-border p-3 lg:w-20 lg:h-full">
+            <button className="p-3 lg:p-4 bg-primary/10 text-primary rounded-xl lg:rounded-2xl" title="Templates">
+              <Layout className="w-5 h-5 lg:w-6 lg:h-6" />
             </button>
-            <button className="p-4 text-muted-foreground/40 hover:text-foreground hover:bg-secondary rounded-2xl transition-all" title="Structure">
-              <FileText className="w-6 h-6" />
+            <button className="p-3 lg:p-4 text-muted-foreground/40 hover:text-foreground hover:bg-secondary rounded-xl lg:rounded-2xl transition-all" title="Structure">
+              <FileText className="w-5 h-5 lg:w-6 lg:h-6" />
             </button>
-            <button className="p-4 text-muted-foreground/40 hover:text-foreground hover:bg-secondary rounded-2xl transition-all" title="Assets">
-              <ImageIcon className="w-6 h-6" />
+            <button className="p-3 lg:p-4 text-muted-foreground/40 hover:text-foreground hover:bg-secondary rounded-xl lg:rounded-2xl transition-all" title="Assets">
+              <ImageIcon className="w-5 h-5 lg:w-6 lg:h-6" />
             </button>
           </div>
 
           {/* Canvas Area */}
-          <main className="flex-1 overflow-x-auto lg:overflow-y-auto p-2 lg:p-12 flex flex-col items-center bg-secondary/50 invisible-scrollbar scroll-smooth pb-32 lg:pb-12">
+          <main className="flex-1 overflow-x-auto lg:overflow-y-auto p-2 lg:p-12 flex flex-col items-center bg-secondary/50 invisible-scrollbar scroll-smooth pb-32 lg:pb-12 w-full max-w-full">
             {notification && (
               <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-destructive text-destructive-foreground'}`}>
                 {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
