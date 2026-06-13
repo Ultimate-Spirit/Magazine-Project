@@ -302,7 +302,7 @@ export const UserManagement: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-4 lg:px-12 pb-12 pt-12">
+      <main className="flex-1 overflow-y-auto px-4 lg:px-6 pb-12 pt-8 lg:pt-12 w-full">
         {notification && (
           <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-destructive/10 text-destructive'}`}>
             <CheckCircle2 className="w-5 h-5" />
