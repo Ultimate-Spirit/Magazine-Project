@@ -121,8 +121,8 @@ export const AdminLayout: React.FC = () => {
           </div>
         </header>
         
-        <div className="flex-1 overflow-y-auto invisible-scrollbar flex flex-col pt-20 lg:pt-0 px-3 lg:px-8">
-          <div className="flex-1 w-full max-w-full mx-auto">
+        <div className="flex-1 overflow-y-auto invisible-scrollbar flex flex-col pt-20 lg:pt-0 px-5 lg:px-10">
+          <div className="flex-1 w-full max-w-full">
             <Outlet />
           </div>
         </div>

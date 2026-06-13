@@ -105,7 +105,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
       </header>
 
-      <main className="p-10 space-y-10">
+      <main className="p-0 md:p-10 space-y-6 md:space-y-10 py-8">
         {/* Primary Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           <div onClick={() => navigate('/admin/users')} className="bento-card micro-surface micro-surface-hover border-border/20 group cursor-pointer overflow-hidden relative p-4 lg:p-6">
