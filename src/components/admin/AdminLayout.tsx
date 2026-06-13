@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Shield, Users, Building2, LayoutDashboard, Settings, LogOut, Moon, Sun } from 'lucide-react';
+import { Shield, Users, Building2, LayoutDashboard, Settings, LogOut, Moon, Sun, Menu, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -8,6 +8,7 @@ export const AdminLayout: React.FC = () => {
   const { signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -23,24 +24,45 @@ export const AdminLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex transition-colors duration-300">
+      {/* Mobile Backdrop */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-sm lg:hidden transition-opacity duration-300"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="w-72 bg-card border-r border-border flex flex-col">
-        <div className="p-8 flex items-center gap-4">
-          <div className="p-3 bg-primary rounded-2xl shadow-xl shadow-primary/20">
-            <Shield className="w-6 h-6 text-primary-foreground" />
+      <div className={`
+        fixed inset-y-0 left-0 z-50 w-72 bg-card/95 backdrop-blur-md border-r border-border flex flex-col 
+        transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <div className="p-8 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary rounded-2xl shadow-xl shadow-primary/20">
+              <Shield className="w-6 h-6 text-primary-foreground" />
+            </div>
+            <div>
+              <span className="text-xl font-bold block">Admin</span>
+              <span className="text-xs font-bold text-primary uppercase tracking-widest">Console</span>
+            </div>
           </div>
-          <div>
-            <span className="text-xl font-bold block">Admin</span>
-            <span className="text-xs font-bold text-primary uppercase tracking-widest">Console</span>
-          </div>
+          <button 
+            onClick={() => setIsSidebarOpen(false)}
+            className="lg:hidden p-2 text-muted-foreground hover:bg-secondary rounded-xl transition-all"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
         
-        <nav className="flex-1 px-6 space-y-2 mt-4">
+        <nav className="flex-1 px-6 space-y-2 mt-4 overflow-y-auto invisible-scrollbar">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.end}
+              onClick={() => setIsSidebarOpen(false)}
               className={({ isActive }) =>
                 `w-full flex items-center gap-3 px-4 py-4 rounded-2xl transition-all ${
                   isActive
@@ -70,7 +92,7 @@ export const AdminLayout: React.FC = () => {
         </nav>
 
         <div className="p-6 space-y-4">
-          <div className="bg-muted rounded-3xl p-6 border border-border">
+          <div className="bg-muted/50 rounded-3xl p-6 border border-border/50 backdrop-blur-sm">
             <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-2">Authenticated As</p>
             <p className="text-sm font-bold truncate">System Administrator</p>
           </div>
@@ -86,8 +108,24 @@ export const AdminLayout: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Outlet />
+        {/* Mobile Header */}
+        <header className="h-16 border-b border-border/50 flex items-center px-6 lg:hidden bg-background/80 backdrop-blur-xl shrink-0">
+          <button 
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 text-slate-500 hover:bg-slate-100/50 rounded-xl transition-all"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+          <div className="ml-4">
+            <span className="text-sm font-black uppercase tracking-widest text-foreground/70">Admin Console</span>
+          </div>
+        </header>
+        
+        <div className="flex-1 overflow-hidden flex flex-col">
+          <Outlet />
+        </div>
       </div>
     </div>
   );
 };
+
