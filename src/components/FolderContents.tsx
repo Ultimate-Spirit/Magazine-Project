@@ -15,13 +15,16 @@ import {
   ArrowLeft,
   Layout,
   Printer,
-  GripVertical
+  GripVertical,
+  Layers,
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { ConfirmModal } from './common/ConfirmModal';
 import { logActivity } from '../lib/activityLogger';
-import type { Page, Folder, Company } from '../types';
+import type { Page, Folder, Company, Template } from '../types';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 // @ts-ignore
 import html2canvas from 'html2canvas';
@@ -36,6 +39,7 @@ export function FolderContents() {
   const { profile, permissions } = useAuth();
   
   const [pages, setPages] = useState<Page[]>([]);
+  const [templates, setTemplates] = useState<Template[]>([]);
   const [folder, setFolder] = useState<Folder | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
@@ -66,6 +70,7 @@ export function FolderContents() {
     else setRefreshing(true);
     
     try {
+      // 1. Fetch folder with bundle
       const { data: folderData, error: folderErr } = await supabase
         .from('folders')
         .select('*, companies(*), template_bundles(*)')
@@ -77,6 +82,19 @@ export function FolderContents() {
       setFolder(folderData);
       setCompany(folderData?.companies || null);
 
+      // 2. Fetch all templates for this bundle, sorted by weight
+      if (folderData.bundle_id) {
+        const { data: templatesData, error: templatesErr } = await supabase
+          .from('templates')
+          .select('*')
+          .eq('bundle_id', folderData.bundle_id)
+          .order('weight', { ascending: true });
+        
+        if (templatesErr) throw templatesErr;
+        setTemplates(templatesData || []);
+      }
+
+      // 3. Fetch all pages in this folder
       const { data: pagesData, error: pagesErr } = await supabase
         .from('pages')
         .select('*, templates(*)')
@@ -100,6 +118,39 @@ export function FolderContents() {
       fetchData(true);
     }
   }, [folderId, profile, fetchData]);
+
+  const handleStartDraft = async (template: Template) => {
+    if (!permissions?.can_create_publications) {
+      showNotification('error', 'Unauthorized to create publications');
+      return;
+    }
+
+    setIsActionLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('pages')
+        .insert([{
+          folder_id: folderId,
+          title: template.template_name,
+          template_id: template.id,
+          data: template.payload || {},
+          created_by: profile?.id
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await logActivity('created', 'publication', template.template_name, company?.id || '', profile?.id || '');
+      
+      showNotification('success', 'Draft initialized successfully');
+      navigate(`/folder/${folderId}/editor/${data.id}`);
+    } catch (err: any) {
+      showNotification('error', err.message);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
 
   const confirmDeletePage = async () => {
     if (!pageToDelete) return;
@@ -199,9 +250,12 @@ export function FolderContents() {
     navigate(`/company/${company?.id || 'none'}/folders`, { replace: true });
   };
 
+  // Logic to separate "Custom/Legacy" pages that aren't part of the current bundle's template slots
+  const legacyPages = pages.filter(p => !templates.some(t => t.id === p.template_id));
+
   return (
     <WorkspaceLayout company={company || { id: 'none', name: 'Workspace' }}>
-      <div className="w-full px-2 lg:px-10 xl:px-16 py-6 lg:py-16 text-foreground relative">
+      <div className="w-full px-2 lg:px-10 xl:px-16 py-6 lg:py-16 text-foreground relative font-sans">
         {notification && (
           <div className={`fixed top-8 right-8 z-[100] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right-8 duration-300 ${notification.type === 'success' ? 'bg-foreground text-background' : 'bg-destructive text-destructive-foreground'}`}>
             {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <AlertCircle className="w-5 h-5" />}
@@ -218,18 +272,18 @@ export function FolderContents() {
               <ArrowLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" />
               Back
             </button>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
               <h1 className="text-3xl lg:text-5xl font-black text-foreground tracking-tight leading-none">
-                {folder?.name || 'Loading Directory...'}
+                {folder?.name || 'Directory'}
               </h1>
               {folder?.template_bundles && (
-                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-[10px] font-bold uppercase tracking-widest self-center mt-1">
-                  Blueprint: {folder.template_bundles?.bundle_name || 'Unnamed Bundle'}
+                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-[10px] font-bold uppercase tracking-widest self-center md:mt-1">
+                  Blueprint: {folder.template_bundles?.bundle_name || 'Standard'}
                 </span>
               )}
             </div>
             <p className="text-muted-foreground/60 font-medium text-sm lg:text-lg max-w-xl">
-              Internal documentation registry for this directory.
+              Strict blueprint execution layer. Fulfill all template slots to finalize publication.
             </p>
           </div>
 
@@ -244,107 +298,121 @@ export function FolderContents() {
             {(pages && pages.length > 0) && (
               <button 
                 onClick={openCompiler}
-                className="flex items-center justify-center gap-2 px-6 py-4 micro-surface border border-border/10 text-foreground font-black rounded-xl hover:bg-secondary transition-all uppercase tracking-widest text-[10px]"
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 bg-foreground text-background font-black rounded-2xl hover:opacity-90 transition-all uppercase tracking-widest text-[10px] shadow-lg"
               >
                 <Printer className="w-4 h-4" />
-                Export PDF
-              </button>
-            )}
-            {permissions?.can_create_publications && (
-              <button 
-                onClick={() => navigate(`/folder/${folderId}/editor/new`)}
-                className="flex-1 md:flex-none flex items-center justify-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-black rounded-2xl hover:opacity-90 transition-all uppercase tracking-widest text-[10px] shadow-lg shadow-primary/10"
-              >
-                <Plus className="w-5 h-5" />
-                New Page
+                Assemble Master PDF
               </button>
             )}
           </div>
         </header>
 
-        <div className="grid lg:grid-cols-12 gap-6 lg:gap-10">
-          <div className="lg:col-span-12">
-            {(!pages || pages.length === 0) ? (
-              <div className="micro-surface rounded-[2.5rem] border border-border/10 py-20 lg:py-32 text-center">
-                <div className="w-16 h-16 lg:w-20 lg:h-20 bg-secondary rounded-2xl border border-border/5 flex items-center justify-center mx-auto mb-6 lg:mb-8 text-muted-foreground/20">
-                  <Layout className="w-8 h-8 lg:w-10 lg:h-10" />
-                </div>
-                <h3 className="text-xl lg:text-2xl font-black mb-1 lg:mb-2 tracking-tight text-foreground">No pages found</h3>
-                <p className="text-muted-foreground/50 font-medium mb-8 lg:mb-10 text-xs lg:text-base">Start by creating a new publication or executive report.</p>
-                {permissions?.can_create_publications && (
-                  <button 
-                    onClick={() => navigate(`/folder/${folderId}/editor/new`)}
-                    className="px-10 py-4 micro-surface border border-border/10 rounded-xl font-bold hover:bg-secondary transition-all uppercase tracking-widest text-[9px] lg:text-[10px]"
+        {/* Blueprint Checklist Grid */}
+        <div className="space-y-12">
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <Sparkles className="w-5 h-5 text-primary" />
+              <h2 className="text-sm font-black uppercase tracking-[0.3em] text-muted-foreground/60">Blueprint Checklist Slots</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {templates.map((template) => {
+                const existingPage = pages.find(p => p.template_id === template.id);
+                const isCompleted = !!existingPage;
+
+                return (
+                  <div 
+                    key={template.id}
+                    className={`group relative micro-surface border rounded-[2rem] p-6 lg:p-8 flex flex-col justify-between min-h-[200px] lg:min-h-[240px] transition-all duration-500 ${isCompleted ? 'border-primary/20 opacity-100' : 'border-border/10 opacity-70 hover:opacity-100 hover:border-border/30'}`}
                   >
-                    Create First Page
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
-                {pages?.map((page) => (
-                  <div
-                    key={page.id}
-                    className="group relative bento-card micro-surface micro-surface-hover border border-border/10 hover:border-primary/30 transition-all duration-500 p-4 lg:p-8 flex flex-col justify-between min-h-[160px] lg:min-h-[220px] cursor-pointer"
-                    onClick={() => navigate(`/folder/${folderId}/editor/${page.id}`)}
-                  >
-                    <div className="absolute top-4 lg:top-6 right-4 lg:right-6 flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-200 lg:translate-y-1 lg:group-hover:translate-y-0">
-                      {(permissions?.can_edit_all_publications || (permissions?.can_edit_own_publications && page.created_by === profile?.id)) && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/folder/${folderId}/editor/${page.id}`);
-                          }}
-                          className="p-2 lg:p-2.5 micro-surface border border-border/10 rounded-xl text-muted-foreground/40 hover:text-primary transition-all"
-                          title="Edit"
+                    <div>
+                      <div className="flex items-start justify-between mb-4">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors duration-500 ${isCompleted ? 'bg-emerald-500/10 text-emerald-500' : 'bg-secondary text-muted-foreground/30'}`}>
+                          {isCompleted ? <CheckCircle2 className="w-6 h-6" /> : <Layout className="w-6 h-6" />}
+                        </div>
+                        <span className="px-2 py-0.5 rounded bg-muted/30 text-[8px] font-black uppercase tracking-widest text-muted-foreground border border-border/5">
+                          {template.category}
+                        </span>
+                      </div>
+                      <h3 className="text-xl font-black text-foreground tracking-tight leading-tight line-clamp-2">
+                        {template.template_name}
+                      </h3>
+                      <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest mt-2">
+                        {template.department_tag || 'General'}
+                      </p>
+                    </div>
+
+                    <div className="mt-8">
+                      {isCompleted ? (
+                        <button 
+                          onClick={() => navigate(`/folder/${folderId}/editor/${existingPage.id}`)}
+                          className="w-full py-3 bg-secondary text-foreground font-black rounded-xl hover:bg-muted transition-all text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
+                          Edit Page
                         </button>
-                      )}
-                      {(permissions?.can_delete_all_publications || (permissions?.can_delete_own_publications && page.created_by === profile?.id)) && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPageToDelete(page);
-                          }}
-                          className="p-2 lg:p-2.5 micro-surface border border-border/10 rounded-xl text-muted-foreground/40 hover:text-destructive transition-all"
-                          title="Delete"
+                      ) : (
+                        <button 
+                          onClick={() => handleStartDraft(template)}
+                          className="w-full py-3 bg-primary text-primary-foreground font-black rounded-xl hover:opacity-90 transition-all text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-primary/10"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Plus className="w-3.5 h-3.5" />
+                          Start Draft
                         </button>
                       )}
                     </div>
+                  </div>
+                );
+              })}
+              
+              {templates.length === 0 && (
+                 <div className="col-span-full py-20 text-center micro-surface border border-dashed border-border/20 rounded-[2.5rem]">
+                    <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px]">No blueprint slots defined for this bundle.</p>
+                 </div>
+              )}
+            </div>
+          </div>
 
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 lg:w-12 lg:h-12 bg-primary/5 rounded-xl border border-primary/10 flex items-center justify-center text-primary/40 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 shrink-0">
-                        <FileText className="w-5 h-5 lg:w-6 lg:h-6" />
+          {/* Legacy / Custom Pages Section */}
+          {legacyPages.length > 0 && (
+            <div className="space-y-6 pt-12 border-t border-border/5">
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-muted-foreground" />
+                <h2 className="text-sm font-black uppercase tracking-[0.3em] text-muted-foreground/40">Custom / Legacy Assets</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+                {legacyPages.map((page) => (
+                  <div
+                    key={page.id}
+                    className="group relative micro-surface border border-border/10 hover:border-primary/20 transition-all duration-500 p-6 rounded-2xl flex flex-col justify-between min-h-[160px] cursor-pointer"
+                    onClick={() => navigate(`/folder/${folderId}/editor/${page.id}`)}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center text-muted-foreground/30 group-hover:text-primary transition-colors">
+                        <FileText className="w-5 h-5" />
                       </div>
-                      {page.templates && (
-                         <span className="mt-1 px-2 py-0.5 rounded border border-border/10 text-[8px] font-black uppercase tracking-widest text-muted-foreground bg-secondary/50">
-                           {page.templates.category || 'Page'}
-                         </span>
-                      )}
+                      <button 
+                         onClick={(e) => { e.stopPropagation(); setPageToDelete(page); }}
+                         className="p-2 text-muted-foreground/20 hover:text-destructive transition-colors"
+                      >
+                         <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
-
                     <div className="mt-4">
-                      <h3 className="text-lg lg:text-xl font-black text-foreground mb-2 lg:mb-3 group-hover:text-primary transition-colors line-clamp-1 pr-10 tracking-tight">
-                        {page.title || 'Untitled Page'}
-                      </h3>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest flex items-center gap-2">
-                          <Clock className="w-3 h-3" />
-                          {page.updated_at ? new Date(page.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'N/A'}
-                        </span>
-                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-                      </div>
+                      <h4 className="font-bold text-foreground truncate">{page.title}</h4>
+                      <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest mt-1 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {new Date(page.updated_at).toLocaleDateString()}
+                      </p>
                     </div>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
+        {/* PDF Pre-Flight Compiler Modal */}
         {isMounted && isCompilerOpen && (
           <div className="fixed inset-0 z-[100] flex flex-col justify-end lg:justify-center items-center p-4 pb-0 lg:p-10 animate-in fade-in duration-300">
             <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md" onClick={() => !isCompiling && setIsCompilerOpen(false)} />
