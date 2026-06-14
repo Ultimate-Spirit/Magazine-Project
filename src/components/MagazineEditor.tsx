@@ -29,6 +29,8 @@ import type { Page, Company } from '../types';
 import html2canvas from 'html2canvas';
 // @ts-ignore
 import jsPDF from 'jspdf';
+import { PDFViewer, pdf } from '@react-pdf/renderer';
+import { AttendanceReportPDF } from './pdf/AttendanceReportPDF';
 
 import { useAuth } from '../contexts/AuthContext';
 import { logActivity } from '../lib/activityLogger';
@@ -361,43 +363,56 @@ export const MagazineEditor: React.FC = () => {
   };
 
   const handleDownloadPDF = async () => {
-    if (!liveCanvasRef.current) return;
-    
     setExporting(true);
-    const element = liveCanvasRef.current;
-    const originalTransform = element.style.transform;
     try {
+      // ── NATIVE PDF ENGINE for attendance dashboard ──────────────────────
+      if (editorData.layout_style === 'attendance_dashboard') {
+        const blob = await pdf(
+          <AttendanceReportPDF
+            heroImageUrl={editorData.hero?.imageUrl}
+            metrics={editorData.metrics}
+            departmentData={editorData.departmentData}
+            headcountData={editorData.headcountData}
+          />
+        ).toBlob();
+        const url = URL.createObjectURL(blob);
+        const a   = document.createElement('a');
+        a.href     = url;
+        a.download = `${editorData.title || 'Attendance-Report'}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showNotification('success', 'Native Vector PDF Exported');
+        return;
+      }
+
+      // ── LEGACY html2canvas path for other templates ─────────────────────
+      if (!liveCanvasRef.current) return;
+      const element        = liveCanvasRef.current;
+      const originalTransform = element.style.transform;
       element.style.transform = 'none';
-      
+
       const canvas = await html2canvas(element, {
-        scale: 2, 
-        useCORS: true, 
-        logging: false, 
-        backgroundColor: '#ffffff', 
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
         width: 794,
         height: 1123,
         scrollX: 0,
         scrollY: 0,
         // @ts-ignore
-        letterRendering: true
+        letterRendering: true,
       });
 
       element.style.transform = originalTransform;
-
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      const pdf = new jsPDF({ 
-        orientation: 'portrait', 
-        unit: 'px', 
-        format: [794, 1123] 
-      });
-      
-      pdf.addImage(imgData, 'JPEG', 0, 0, 794, 1123);
-      pdf.save(`${editorData.title}.pdf`);
+      const legacyPdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [794, 1123] });
+      legacyPdf.addImage(imgData, 'JPEG', 0, 0, 794, 1123);
+      legacyPdf.save(`${editorData.title}.pdf`);
       showNotification('success', 'A4 Architecture Exported');
     } catch (err: any) {
-      element.style.transform = originalTransform;
       console.error('PDF Export Error:', err);
-      showNotification('error', 'Failed to generate high-fidelity PDF');
+      showNotification('error', 'Failed to generate PDF');
     } finally {
       setExporting(false);
     }
@@ -493,6 +508,30 @@ export const MagazineEditor: React.FC = () => {
               </div>
             )}
 
+            {/* ── NATIVE PDF VIEWER: Attendance Dashboard ─────────────────── */}
+            {editorData.layout_style === 'attendance_dashboard' ? (
+              <div className="w-full h-full flex flex-col items-center justify-start p-8 gap-4">
+                <div className="flex items-center gap-3 self-start">
+                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                    Live PDF Preview · Vector Engine Active
+                  </span>
+                </div>
+                <PDFViewer
+                  width="794"
+                  height="1123"
+                  className="shadow-2xl rounded-sm border border-border/20"
+                  showToolbar={false}
+                >
+                  <AttendanceReportPDF
+                    heroImageUrl={editorData.hero?.imageUrl}
+                    metrics={editorData.metrics}
+                    departmentData={editorData.departmentData}
+                    headcountData={editorData.headcountData}
+                  />
+                </PDFViewer>
+              </div>
+            ) : (
             <div className="min-w-max p-4 lg:p-12 min-h-full flex items-start justify-center">
               {/* Visual Scaling Wrapper: Fits the A4 canvas into the screen without altering its DOM dimensions */}
               <div 
@@ -515,9 +554,7 @@ export const MagazineEditor: React.FC = () => {
                   onClick={(e) => e.target === e.currentTarget && setActiveBlockId(null)}
                 >
                   {/* DATA-DRIVEN ROUTING LAYER */}
-                  {editorData.layout_style === 'attendance_dashboard' ? (
-                    <AttendancePageTemplate payload={editorData} />
-                  ) : editorData.blocks && Array.isArray(editorData.blocks) ? (
+                  {editorData.blocks && Array.isArray(editorData.blocks) ? (
                     <div className="flex-1 flex flex-col">{renderDynamicBlocks()}</div>
                   ) : (
                     /* FALLBACK: LEGACY KPI DASHBOARD */
@@ -535,7 +572,7 @@ export const MagazineEditor: React.FC = () => {
                         <div className="space-y-8">
                           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Key Performance</h3>
                           <div className="space-y-6 lg:space-y-8">
-                            {editorData.metrics?.map((metric: any, idx: number) => (
+                            {(Array.isArray(editorData.metrics) ? editorData.metrics : []).map((metric: any, idx: number) => (
                               <div key={idx} className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
                                 <EditableText value={metric.label} onChange={(v) => {
                                   const nm = [...editorData.metrics]; nm[idx].label = v; setEditorData({ ...editorData, metrics: nm });
@@ -557,18 +594,10 @@ export const MagazineEditor: React.FC = () => {
                       </footer>
                     </div>
                   )}
-
-                  {/* Move footer inside the template components or as a shared overlay if needed, 
-                      but for A4 consistency, standardizing it within the template logic is better. */}
-                  {(editorData.blocks || editorData.layout_style) && (
-                    <footer className="absolute bottom-12 left-12 right-12 pt-8 border-t border-slate-100 flex justify-between items-center text-[8px] font-bold text-slate-300 uppercase tracking-widest">
-                      <EditableText value={editorData.footerConfidentiality} onChange={(v) => setEditorData({ ...editorData, footerConfidentiality: v })} className="w-48 text-[8px] text-slate-300" />
-                      <EditableText value={editorData.footerDate} onChange={(v) => setEditorData({ ...editorData, footerDate: v })} className="text-right w-32 text-[8px] text-slate-300" />
-                    </footer>
-                  )}
                 </div>
               </div>
             </div>
+            )} {/* end attendance_dashboard ternary */}
           </main>
 
           <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-t border-border p-4 pb-safe flex flex-col gap-3">
