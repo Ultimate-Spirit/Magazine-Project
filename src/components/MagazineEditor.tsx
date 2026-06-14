@@ -28,6 +28,53 @@ import jsPDF from 'jspdf';
 import { useAuth } from '../contexts/AuthContext';
 import { logActivity } from '../lib/activityLogger';
 
+// --- Dynamic Block Components ---
+
+const HeaderTagline = ({ text }: { text: string }) => (
+  <div className="text-center mb-12">
+    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] border-b border-slate-100 pb-2">
+      {text}
+    </span>
+  </div>
+);
+
+const Masthead = ({ text }: { text: string }) => (
+  <div className="text-center mb-16 px-4">
+    <h1 className="text-7xl lg:text-8xl font-black text-slate-900 tracking-tighter leading-none break-words">
+      {text}
+    </h1>
+  </div>
+);
+
+const MetaBanner = ({ items }: { items: { label: string, value: string }[] }) => (
+  <div className="flex justify-between items-center py-6 border-y-2 border-slate-900 mb-16 mx-4">
+    {(items || []).map((item, i) => (
+      <div key={i} className="text-center">
+        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{item.label}</p>
+        <p className="text-sm font-black text-slate-900 uppercase tracking-tight mt-1">{item.value}</p>
+      </div>
+    ))}
+  </div>
+);
+
+const FeatureGrid = ({ articles }: { articles: { tag: string, headline: string }[] }) => (
+  <div className="grid grid-cols-2 gap-x-12 gap-y-16 mb-16 mx-4">
+    {(articles || []).map((art, i) => (
+      <div key={i} className="space-y-3">
+        <span className="text-[8px] font-black text-blue-600 uppercase tracking-widest">{art.tag}</span>
+        <h3 className="text-xl font-black text-slate-900 leading-tight tracking-tight">{art.headline}</h3>
+      </div>
+    ))}
+  </div>
+);
+
+const HighlightBadge = ({ number, headline }: { number: string, headline: string }) => (
+  <div className="bg-slate-900 text-white p-10 rounded-[2rem] flex flex-col justify-between min-h-[240px] shadow-2xl m-4">
+    <span className="text-6xl font-black tracking-tighter opacity-20">{number}</span>
+    <h3 className="text-2xl font-black leading-tight tracking-tight">{headline}</h3>
+  </div>
+);
+
 export const MagazineEditor: React.FC = () => {
   const { folderId, pageId } = useParams<{ folderId: string, pageId: string }>();
   const navigate = useNavigate();
@@ -44,7 +91,8 @@ export const MagazineEditor: React.FC = () => {
   // Isolated Canvas Zoom State
   const [zoom, setZoom] = useState(1);
 
-  const [editorData, setEditorData] = useState({
+  // Dynamic state to handle multi-schema payloads
+  const [editorData, setEditorData] = useState<any>({
     title: 'Untitled Report',
     headline: 'Enter Main Headline',
     subheadline: 'Enter subheadline or report description here...',
@@ -66,7 +114,6 @@ export const MagazineEditor: React.FC = () => {
   const canEdit = permissions?.can_edit_all_publications || (permissions?.can_edit_own_publications && (page?.created_by === profile?.id || pageId === 'new'));
 
   useEffect(() => {
-    // Initial zoom setting for mobile
     const handleResize = () => {
       if (window.innerWidth < 1024) {
         setZoom(0.4);
@@ -220,16 +267,15 @@ export const MagazineEditor: React.FC = () => {
     
     setExporting(true);
     try {
-      // Use the 'Hidden Print Template' pattern for pixel-perfect A4 export
       const element = printRef.current;
       
       const canvas = await html2canvas(element, {
-        scale: 3, // High resolution
+        scale: 3, 
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
         scrollY: 0,
-        windowWidth: document.documentElement.offsetWidth
+        windowWidth: 850
       });
       
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
@@ -264,6 +310,28 @@ export const MagazineEditor: React.FC = () => {
 
   const goBackToFolder = () => {
     navigate(`/folder/${folderId}`, { replace: true });
+  };
+
+  // --- Dynamic Block Renderer Logic ---
+  const renderDynamicBlocks = () => {
+    if (!editorData.blocks || !Array.isArray(editorData.blocks)) return null;
+
+    return editorData.blocks.map((block: any, index: number) => {
+      switch (block.type) {
+        case 'header_tagline':
+          return <HeaderTagline key={index} text={block.text} />;
+        case 'masthead':
+          return <Masthead key={index} text={block.text} />;
+        case 'meta_banner':
+          return <MetaBanner key={index} items={block.items} />;
+        case 'feature_grid':
+          return <FeatureGrid key={index} articles={block.articles} />;
+        case 'highlight_badge':
+          return <HighlightBadge key={index} number={block.number} headline={block.headline} />;
+        default:
+          return null;
+      }
+    });
   };
 
   return (
@@ -310,7 +378,7 @@ export const MagazineEditor: React.FC = () => {
               disabled={uploading || !canEdit}
               className="flex items-center gap-2 px-6 py-3 bg-card border border-border text-foreground font-bold rounded-xl hover:bg-secondary transition-all disabled:opacity-50 text-sm whitespace-nowrap"
             >
-              {uploading ? <Loader2 className="w-3 h-3 lg:w-4 lg:h-4 animate-spin" /> : <Upload className="w-3 h-3 lg:w-4 lg:h-4" />}
+              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
               Import Excel
             </button>
             <button 
@@ -371,92 +439,102 @@ export const MagazineEditor: React.FC = () => {
                   className="w-[850px] bg-white rounded-sm p-8 lg:p-20 flex flex-col min-h-[1100px] border border-slate-200 shadow-xl origin-top-left transition-transform"
                   style={{ transform: `scale(${zoom})` }}
                 >
-                  <div className="border-b-4 border-slate-900 pb-12 mb-12">
-                    <input 
-                      className="w-full text-base lg:text-5xl font-black text-slate-900 border-none p-0 focus:ring-0 placeholder:text-slate-200 leading-[1.2] bg-transparent disabled:opacity-80"
-                      value={editorData.headline}
-                      onChange={(e) => setEditorData({ ...editorData, headline: e.target.value })}
-                      placeholder="Enter Headline"
-                      disabled={!canEdit}
-                    />
-                    <input 
-                      className="w-full text-base lg:text-xl font-bold text-blue-600 mt-4 border-none p-0 focus:ring-0 placeholder:text-slate-200 uppercase tracking-widest leading-[1.2] bg-transparent disabled:opacity-80"
-                      value={editorData.subheadline}
-                      onChange={(e) => setEditorData({ ...editorData, subheadline: e.target.value })}
-                      placeholder="REPORT CATEGORY"
-                      disabled={!canEdit}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-10 lg:gap-20 mb-12">
-                    <div className="space-y-6">
-                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Executive Summary</h3>
-                      <textarea 
-                        className="w-full text-slate-600 leading-relaxed text-base lg:text-sm border-none p-0 focus:ring-0 min-h-[150px] resize-none bg-transparent disabled:opacity-80"
-                        value={editorData.summaryText}
-                        onChange={(e) => setEditorData({ ...editorData, summaryText: e.target.value })}
-                        placeholder="Enter summary text here..."
-                        disabled={!canEdit}
-                      />
+                  {/* DYNAMIC RENDERING LAYER */}
+                  {editorData.blocks && Array.isArray(editorData.blocks) ? (
+                    <div className="flex-1 flex flex-col">
+                      {renderDynamicBlocks()}
                     </div>
-                    <div className="space-y-8">
-                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Key Performance</h3>
-                      <div className="space-y-6 lg:space-y-8">
-                        {editorData.metrics.map((metric, idx) => (
-                          <div key={idx} className="bg-slate-50 p-4 lg:p-6 rounded-2xl border border-slate-100">
-                            <input 
-                              className="w-full text-base lg:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-transparent border-none p-0 focus:ring-0 disabled:opacity-80"
-                              value={metric.label}
-                              onChange={(e) => {
-                                const newMetrics = [...editorData.metrics];
-                                newMetrics[idx].label = e.target.value;
-                                setEditorData({ ...editorData, metrics: newMetrics });
-                              }}
-                              disabled={!canEdit}
-                            />
-                            <div className="flex items-baseline gap-2 mt-2">
-                              <input 
-                                className="text-base lg:text-3xl font-black text-slate-900 bg-transparent border-none p-0 focus:ring-0 w-32 disabled:opacity-80"
-                                value={metric.value}
-                                onChange={(e) => {
-                                  const newMetrics = [...editorData.metrics];
-                                  newMetrics[idx].value = e.target.value;
-                                  setEditorData({ ...editorData, metrics: newMetrics });
-                                }}
-                                disabled={!canEdit}
-                              />
-                              <span className="text-xs font-bold text-green-600">
-                                {metric.percentage >= 0 ? '+' : ''}{metric.percentage}%
-                              </span>
-                            </div>
-                          </div>
-                        ))}
+                  ) : (
+                    /* FALLBACK: LEGACY KPI DASHBOARD LAYOUT */
+                    <>
+                      <div className="border-b-4 border-slate-900 pb-12 mb-12">
+                        <input 
+                          className="w-full text-base lg:text-5xl font-black text-slate-900 border-none p-0 focus:ring-0 placeholder:text-slate-200 leading-[1.2] bg-transparent disabled:opacity-80"
+                          value={editorData.headline}
+                          onChange={(e) => setEditorData({ ...editorData, headline: e.target.value })}
+                          placeholder="Enter Headline"
+                          disabled={!canEdit}
+                        />
+                        <input 
+                          className="w-full text-base lg:text-xl font-bold text-blue-600 mt-4 border-none p-0 focus:ring-0 placeholder:text-slate-200 uppercase tracking-widest leading-[1.2] bg-transparent disabled:opacity-80"
+                          value={editorData.subheadline}
+                          onChange={(e) => setEditorData({ ...editorData, subheadline: e.target.value })}
+                          placeholder="REPORT CATEGORY"
+                          disabled={!canEdit}
+                        />
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-10 lg:gap-20 mb-auto">
-                    <div className="space-y-6">
-                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Strategic Drivers</h3>
-                      <textarea 
-                        className="w-full text-slate-600 leading-relaxed text-base lg:text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent disabled:opacity-80"
-                        value={editorData.growthDriversText}
-                        onChange={(e) => setEditorData({ ...editorData, growthDriversText: e.target.value })}
-                        placeholder="Enter growth drivers..."
-                        disabled={!canEdit}
-                      />
-                    </div>
-                    <div className="space-y-6">
-                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Future Outlook</h3>
-                      <textarea 
-                        className="w-full text-slate-600 leading-relaxed text-base lg:text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent disabled:opacity-80"
-                        value={editorData.outlookText}
-                        onChange={(e) => setEditorData({ ...editorData, outlookText: e.target.value })}
-                        placeholder="Enter outlook details..."
-                        disabled={!canEdit}
-                      />
-                    </div>
-                  </div>
+                      <div className="grid grid-cols-2 gap-10 lg:gap-20 mb-12">
+                        <div className="space-y-6">
+                          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Executive Summary</h3>
+                          <textarea 
+                            className="w-full text-slate-600 leading-relaxed text-base lg:text-sm border-none p-0 focus:ring-0 min-h-[150px] resize-none bg-transparent disabled:opacity-80"
+                            value={editorData.summaryText}
+                            onChange={(e) => setEditorData({ ...editorData, summaryText: e.target.value })}
+                            placeholder="Enter summary text here..."
+                            disabled={!canEdit}
+                          />
+                        </div>
+                        <div className="space-y-8">
+                          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Key Performance</h3>
+                          <div className="space-y-6 lg:space-y-8">
+                            {editorData.metrics?.map((metric: any, idx: number) => (
+                              <div key={idx} className="bg-slate-50 p-4 lg:p-6 rounded-2xl border border-slate-100">
+                                <input 
+                                  className="w-full text-base lg:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-transparent border-none p-0 focus:ring-0 disabled:opacity-80"
+                                  value={metric.label}
+                                  onChange={(e) => {
+                                    const newMetrics = [...editorData.metrics];
+                                    newMetrics[idx].label = e.target.value;
+                                    setEditorData({ ...editorData, metrics: newMetrics });
+                                  }}
+                                  disabled={!canEdit}
+                                />
+                                <div className="flex items-baseline gap-2 mt-2">
+                                  <input 
+                                    className="text-base lg:text-3xl font-black text-slate-900 bg-transparent border-none p-0 focus:ring-0 w-32 disabled:opacity-80"
+                                    value={metric.value}
+                                    onChange={(e) => {
+                                      const newMetrics = [...editorData.metrics];
+                                      newMetrics[idx].value = e.target.value;
+                                      setEditorData({ ...editorData, metrics: newMetrics });
+                                    }}
+                                    disabled={!canEdit}
+                                  />
+                                  <span className="text-xs font-bold text-green-600">
+                                    {metric.percentage >= 0 ? '+' : ''}{metric.percentage}%
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-10 lg:gap-20 mb-auto">
+                        <div className="space-y-6">
+                          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Strategic Drivers</h3>
+                          <textarea 
+                            className="w-full text-slate-600 leading-relaxed text-base lg:text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent disabled:opacity-80"
+                            value={editorData.growthDriversText}
+                            onChange={(e) => setEditorData({ ...editorData, growthDriversText: e.target.value })}
+                            placeholder="Enter growth drivers..."
+                            disabled={!canEdit}
+                          />
+                        </div>
+                        <div className="space-y-6">
+                          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Future Outlook</h3>
+                          <textarea 
+                            className="w-full text-slate-600 leading-relaxed text-base lg:text-sm border-none p-0 focus:ring-0 min-h-[120px] resize-none bg-transparent disabled:opacity-80"
+                            value={editorData.outlookText}
+                            onChange={(e) => setEditorData({ ...editorData, outlookText: e.target.value })}
+                            placeholder="Enter outlook details..."
+                            disabled={!canEdit}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   <footer className="mt-20 pt-8 border-t border-slate-100 flex justify-between items-center text-[8px] font-bold text-slate-300 uppercase tracking-widest">
                     <input 
