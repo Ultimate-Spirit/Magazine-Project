@@ -185,7 +185,7 @@ export const BlueprintManager: React.FC = () => {
 
       {!selectedBundle ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {bundles.map(bundle => (
+          {bundles?.map(bundle => (
             <div 
               key={bundle.id}
               onClick={() => handleSelectBundle(bundle)}
@@ -195,16 +195,16 @@ export const BlueprintManager: React.FC = () => {
                 <Layers className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-xl font-black text-foreground group-hover:text-primary transition-colors">{bundle.bundle_name}</h3>
+                <h3 className="text-xl font-black text-foreground group-hover:text-primary transition-colors">{bundle?.bundle_name || 'Unnamed Bundle'}</h3>
                 <div className="flex items-center gap-2 mt-3">
-                  <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${bundle.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-500/10 text-slate-500'}`}>
-                    {bundle.status}
+                  <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${bundle?.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-500/10 text-slate-500'}`}>
+                    {bundle?.status || 'unknown'}
                   </span>
                 </div>
               </div>
             </div>
           ))}
-          {bundles.length === 0 && !showCreateBundle && (
+          {(!bundles || bundles.length === 0) && !showCreateBundle && (
             <div className="col-span-full py-20 text-center border-2 border-dashed border-border/20 rounded-[2.5rem]">
               <p className="text-muted-foreground font-medium">No blueprint bundles found.</p>
             </div>
@@ -213,7 +213,7 @@ export const BlueprintManager: React.FC = () => {
       ) : (
         <div className="space-y-8 animate-in fade-in slide-in-from-right-8">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-black">{selectedBundle.bundle_name} Templates</h2>
+            <h2 className="text-2xl font-black">{selectedBundle?.bundle_name || 'Bundle'} Templates</h2>
             <button 
               onClick={() => setShowCreateTemplate(true)}
               className="flex items-center gap-2 px-6 py-3 bg-card border border-border text-foreground rounded-xl font-bold hover:bg-secondary transition-all"
@@ -309,28 +309,28 @@ export const BlueprintManager: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/10">
-                  {templates.map(template => (
+                  {templates?.map(template => (
                     <tr key={template.id} className="hover:bg-muted/10 transition-colors">
-                      <td className="px-6 py-4 text-sm font-mono text-muted-foreground">{template.weight}</td>
-                      <td className="px-6 py-4 text-sm font-bold text-foreground">{template.template_name}</td>
+                      <td className="px-6 py-4 text-sm font-mono text-muted-foreground">{template?.weight ?? '-'}</td>
+                      <td className="px-6 py-4 text-sm font-bold text-foreground">{template?.template_name || 'Unnamed'}</td>
                       <td className="px-6 py-4">
                         <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${
-                          template.category === 'Cover' ? 'bg-purple-500/10 text-purple-500' :
-                          template.category === 'Last Page' ? 'bg-orange-500/10 text-orange-500' :
+                          template?.category === 'Cover' ? 'bg-purple-500/10 text-purple-500' :
+                          template?.category === 'Last Page' ? 'bg-orange-500/10 text-orange-500' :
                           'bg-blue-500/10 text-blue-500'
                         }`}>
-                          {template.category}
+                          {template?.category || 'Content'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-muted-foreground">
-                        {template.department_tag || '-'}
+                        {template?.department_tag || '-'}
                       </td>
                       <td className="px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                        {new Date(template.created_at).toLocaleDateString()}
+                        {template?.created_at ? new Date(template.created_at).toLocaleDateString() : 'N/A'}
                       </td>
                     </tr>
                   ))}
-                  {templates.length === 0 && (
+                  {(!templates || templates.length === 0) && (
                     <tr>
                       <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-medium">
                         No templates in this bundle yet.

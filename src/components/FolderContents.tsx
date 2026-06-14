@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { 
@@ -45,10 +45,16 @@ export function FolderContents() {
   const [pageToDelete, setPageToDelete] = useState<Page | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
+  // Hydration & Mounting Stability
+  const [isMounted, setIsMounted] = useState(false);
   const [isCompilerOpen, setIsCompilerOpen] = useState(false);
   const [compilerPages, setCompilerPages] = useState<Page[]>([]);
   const [isCompiling, setIsCompiling] = useState(false);
-  const printRef = React.useRef<HTMLDivElement>(null);
+  const printRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
@@ -60,7 +66,6 @@ export function FolderContents() {
     else setRefreshing(true);
     
     try {
-      // Fetch folder and associated company
       const { data: folderData, error: folderErr } = await supabase
         .from('folders')
         .select('*, companies(*), template_bundles(*)')
@@ -70,9 +75,8 @@ export function FolderContents() {
       if (folderErr) throw folderErr;
       
       setFolder(folderData);
-      setCompany(folderData.companies);
+      setCompany(folderData?.companies || null);
 
-      // Fetch pages inside this folder, including template relation for weights
       const { data: pagesData, error: pagesErr } = await supabase
         .from('pages')
         .select('*, templates(*)')
@@ -99,14 +103,11 @@ export function FolderContents() {
 
   const confirmDeletePage = async () => {
     if (!pageToDelete) return;
-    
     setIsActionLoading(true);
     try {
       const { error } = await supabase.from('pages').delete().eq('id', pageToDelete.id);
       if (error) throw error;
-
       await logActivity('deleted', 'publication', pageToDelete.title, company?.id || '', profile?.id || '');
-
       showNotification('success', 'Page deleted successfully');
       setPageToDelete(null);
       await fetchData();
@@ -118,8 +119,7 @@ export function FolderContents() {
   };
 
   const openCompiler = () => {
-    // Sort ascending by weight inherited from templates, fallback to 10
-    const sorted = [...pages].sort((a, b) => {
+    const sorted = [...(pages || [])].sort((a, b) => {
       const weightA = a.templates?.weight ?? 10;
       const weightB = b.templates?.weight ?? 10;
       return weightA - weightB;
@@ -130,86 +130,52 @@ export function FolderContents() {
 
   const handleDragEnd = (result: any) => {
     if (!result.destination) return;
-    
     const sourceIndex = result.source.index;
     const destIndex = result.destination.index;
-
-    // Strict Anchor Constraints
     const draggedPage = compilerPages[sourceIndex];
-    const draggedCategory = draggedPage.templates?.category;
-    
-    if (draggedCategory === 'Cover' || draggedCategory === 'Last Page') return; // Cannot drag anchors
-
+    const draggedCategory = draggedPage?.templates?.category;
+    if (draggedCategory === 'Cover' || draggedCategory === 'Last Page') return;
     const items = Array.from(compilerPages);
-    
-    // Check if destination is protected
     const destPage = items[destIndex];
-    if (destPage?.templates?.category === 'Cover') return; // Cannot drop on Cover position
-    if (destPage?.templates?.category === 'Last Page' && destIndex === items.length - 1) return; // Cannot drop on Last Page position
-    
+    if (destPage?.templates?.category === 'Cover') return;
+    if (destPage?.templates?.category === 'Last Page' && destIndex === items.length - 1) return;
     const [reorderedItem] = items.splice(sourceIndex, 1);
     items.splice(destIndex, 0, reorderedItem);
-    
-    // Re-verify Cover stays at 0, Last Page stays at bottom
     const coverIndex = items.findIndex(p => p.templates?.category === 'Cover');
     if (coverIndex > 0) {
       const cover = items.splice(coverIndex, 1)[0];
       items.unshift(cover);
     }
-    
     const lastPageIndex = items.findIndex(p => p.templates?.category === 'Last Page');
     if (lastPageIndex !== -1 && lastPageIndex !== items.length - 1) {
       const lastP = items.splice(lastPageIndex, 1)[0];
       items.push(lastP);
     }
-
     setCompilerPages(items);
   };
 
   const generatePDF = async () => {
     if (!printRef.current) return;
-    if (compilerPages.length === 0) return;
-    
+    if (!compilerPages || compilerPages.length === 0) return;
     setIsCompiling(true);
     try {
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-
       const container = printRef.current;
       const pagesToRender = Array.from(container.children) as HTMLElement[];
-
       for (let i = 0; i < pagesToRender.length; i++) {
         const pageElement = pagesToRender[i];
-        
-        // Ensure element is visible for capture
         const originalDisplay = pageElement.style.display;
         pageElement.style.display = 'block';
-
         const canvas = await html2canvas(pageElement, {
-          scale: 3,
-          useCORS: true,
-          logging: false,
-          backgroundColor: '#ffffff',
-          scrollY: 0,
-          windowWidth: 850 // Match template width
+          scale: 3, useCORS: true, logging: false, backgroundColor: '#ffffff', scrollY: 0, windowWidth: 850
         });
-        
         const imgData = canvas.toDataURL('image/jpeg', 1.0);
-        
-        if (i > 0) {
-          pdf.addPage();
-        }
+        if (i > 0) pdf.addPage();
         pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-        
-        // Restore display
         pageElement.style.display = originalDisplay;
       }
-      
       pdf.save(`${folder?.name || 'Magazine_Export'}.pdf`);
       showNotification('success', 'PDF compiled and downloaded');
       setIsCompilerOpen(false);
@@ -230,13 +196,11 @@ export function FolderContents() {
   }
 
   const goBack = () => {
-    navigate(`/company/${company?.id}/folders`, { replace: true });
+    navigate(`/company/${company?.id || 'none'}/folders`, { replace: true });
   };
 
   return (
-    <WorkspaceLayout 
-      company={company || { id: 'none', name: 'Workspace' }}
-    >
+    <WorkspaceLayout company={company || { id: 'none', name: 'Workspace' }}>
       <div className="w-full px-2 lg:px-10 xl:px-16 py-6 lg:py-16 text-foreground relative">
         {notification && (
           <div className={`fixed top-8 right-8 z-[100] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right-8 duration-300 ${notification.type === 'success' ? 'bg-foreground text-background' : 'bg-destructive text-destructive-foreground'}`}>
@@ -256,11 +220,11 @@ export function FolderContents() {
             </button>
             <div className="flex items-center gap-2 mb-2">
               <h1 className="text-3xl lg:text-5xl font-black text-foreground tracking-tight leading-none">
-                {folder?.name}
+                {folder?.name || 'Loading Directory...'}
               </h1>
               {folder?.template_bundles && (
                 <span className="px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-[10px] font-bold uppercase tracking-widest self-center mt-1">
-                  Blueprint: {folder.template_bundles.bundle_name}
+                  Blueprint: {folder.template_bundles?.bundle_name || 'Unnamed Bundle'}
                 </span>
               )}
             </div>
@@ -277,7 +241,7 @@ export function FolderContents() {
             >
               <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
-            {pages.length > 0 && (
+            {(pages && pages.length > 0) && (
               <button 
                 onClick={openCompiler}
                 className="flex items-center justify-center gap-2 px-6 py-4 micro-surface border border-border/10 text-foreground font-black rounded-xl hover:bg-secondary transition-all uppercase tracking-widest text-[10px]"
@@ -300,7 +264,7 @@ export function FolderContents() {
 
         <div className="grid lg:grid-cols-12 gap-6 lg:gap-10">
           <div className="lg:col-span-12">
-            {pages.length === 0 ? (
+            {(!pages || pages.length === 0) ? (
               <div className="micro-surface rounded-[2.5rem] border border-border/10 py-20 lg:py-32 text-center">
                 <div className="w-16 h-16 lg:w-20 lg:h-20 bg-secondary rounded-2xl border border-border/5 flex items-center justify-center mx-auto mb-6 lg:mb-8 text-muted-foreground/20">
                   <Layout className="w-8 h-8 lg:w-10 lg:h-10" />
@@ -316,10 +280,9 @@ export function FolderContents() {
                   </button>
                 )}
               </div>
-
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
-                {pages.map((page) => (
+                {pages?.map((page) => (
                   <div
                     key={page.id}
                     className="group relative bento-card micro-surface micro-surface-hover border border-border/10 hover:border-primary/30 transition-all duration-500 p-4 lg:p-8 flex flex-col justify-between min-h-[160px] lg:min-h-[220px] cursor-pointer"
@@ -358,19 +321,19 @@ export function FolderContents() {
                       </div>
                       {page.templates && (
                          <span className="mt-1 px-2 py-0.5 rounded border border-border/10 text-[8px] font-black uppercase tracking-widest text-muted-foreground bg-secondary/50">
-                           {page.templates.category}
+                           {page.templates.category || 'Page'}
                          </span>
                       )}
                     </div>
 
                     <div className="mt-4">
                       <h3 className="text-lg lg:text-xl font-black text-foreground mb-2 lg:mb-3 group-hover:text-primary transition-colors line-clamp-1 pr-10 tracking-tight">
-                        {page.title}
+                        {page.title || 'Untitled Page'}
                       </h3>
                       <div className="flex items-center justify-between">
                         <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest flex items-center gap-2">
                           <Clock className="w-3 h-3" />
-                          {new Date(page.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                          {page.updated_at ? new Date(page.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'N/A'}
                         </span>
                         <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                       </div>
@@ -382,8 +345,7 @@ export function FolderContents() {
           </div>
         </div>
 
-        {/* PDF Pre-Flight Compiler Modal */}
-        {isCompilerOpen && (
+        {isMounted && isCompilerOpen && (
           <div className="fixed inset-0 z-[100] flex flex-col justify-end lg:justify-center items-center p-4 pb-0 lg:p-10 animate-in fade-in duration-300">
             <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md" onClick={() => !isCompiling && setIsCompilerOpen(false)} />
             <div className="relative w-full max-w-2xl bg-white dark:bg-slate-950 border border-border/10 rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl flex flex-col max-h-[85vh] lg:max-h-[80vh] overflow-hidden animate-in slide-in-from-bottom-8">
@@ -406,7 +368,7 @@ export function FolderContents() {
                   <Droppable droppableId="pdf-pages">
                     {(provided) => (
                       <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-3">
-                        {compilerPages.map((page, index) => {
+                        {(compilerPages || []).map((page, index) => {
                           const isAnchor = page.templates?.category === 'Cover' || page.templates?.category === 'Last Page';
                           return (
                             <Draggable key={page.id} draggableId={page.id} index={index} isDragDisabled={isAnchor || isCompiling}>
@@ -424,7 +386,7 @@ export function FolderContents() {
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
-                                      <h4 className="text-sm font-black text-foreground truncate">{page.title}</h4>
+                                      <h4 className="text-sm font-black text-foreground truncate">{page.title || 'Untitled'}</h4>
                                       {isAnchor && (
                                         <span className="px-2 py-0.5 rounded bg-primary/20 text-primary text-[8px] font-black uppercase tracking-widest">
                                           Anchor: {page.templates?.category}
@@ -450,7 +412,7 @@ export function FolderContents() {
               <div className="p-6 lg:p-8 border-t border-border/5 bg-card/50 shrink-0">
                 <button
                   onClick={generatePDF}
-                  disabled={isCompiling || compilerPages.length === 0}
+                  disabled={isCompiling || !compilerPages || compilerPages.length === 0}
                   className="w-full py-5 bg-primary text-primary-foreground font-black rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest shadow-xl shadow-primary/20"
                 >
                   {isCompiling ? (
@@ -470,11 +432,10 @@ export function FolderContents() {
           </div>
         )}
 
-        {/* Hidden Print Container for multi-page assembly */}
         <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }} ref={printRef}>
-           {compilerPages.map(page => (
+           {(compilerPages || []).map(page => (
              <div key={page.id} style={{ display: 'none', width: '850px', height: '1100px', backgroundColor: 'white' }}>
-               <PrintTemplate data={page.data} />
+               <PrintTemplate data={page.data || {}} />
              </div>
            ))}
         </div>

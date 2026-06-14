@@ -54,7 +54,6 @@ export function FoldersView({ onSelectCompany }: Props) {
   };
 
   const fetchData = useCallback(async (isInitial = false) => {
-    // Only trigger hard loading if we have no data to prevent scroll reset
     if (isInitial && folders.length === 0) setLoading(true);
     else setRefreshing(true);
     
@@ -72,39 +71,31 @@ export function FoldersView({ onSelectCompany }: Props) {
       }
 
       if (folderData.error) throw folderData.error;
-      const fetchedFolders = folderData.data || [];
-      setFolders(fetchedFolders);
+      setFolders(folderData.data || []);
 
       if (bundlesData.data) {
         setActiveBundles(bundlesData.data);
       }
 
-      // Members scoping: Filter by user_companies junction for this specific workspace
       const authorizedMemberIds = (membersData.data || []).map(m => m.user_id);
+      setStats({ collaborators: authorizedMemberIds.length || 0, publications: 0 });
 
-      setStats({
-        collaborators: authorizedMemberIds.length || 0,
-        publications: 0
-      });
-
-      if (fetchedFolders.length > 0) {
+      if (folderData.data && folderData.data.length > 0) {
         const { count } = await supabase
           .from('pages')
           .select('id', { count: 'exact', head: true })
-          .in('folder_id', fetchedFolders.map(f => f.id));
-        
+          .in('folder_id', folderData.data.map(f => f.id));
         setStats(prev => ({ ...prev, publications: count || 0 }));
       }
 
       const { data: logData } = await supabase
         .from('activity_logs')
         .select('id, action_type, entity_type, entity_name, created_at, profiles(full_name, email)')
-        .eq('company_id', targetCid) // Strict scoping
+        .eq('company_id', targetCid)
         .order('created_at', { ascending: false })
         .limit(8);
 
       if (logData) setActivities(logData);
-
     } catch (err: any) {
       console.error('Fetch Error:', err);
       showNotification('error', err.message);
@@ -135,11 +126,8 @@ export function FoldersView({ onSelectCompany }: Props) {
           bundle_id: selectedBundleId,
           owner_id: profile?.id
         }]);
-
       if (error) throw error;
-
       await logActivity('created', 'folder', folderNameInput.trim(), targetCid, profile?.id || '');
-
       showNotification('success', 'Directory initialized');
       setFolderNameInput('');
       setSelectedBundleId('');
@@ -155,18 +143,14 @@ export function FoldersView({ onSelectCompany }: Props) {
   const handleUpdateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingFolder || !folderNameInput.trim()) return;
-
     setIsActionLoading(true);
     try {
       const { error } = await supabase
         .from('folders')
         .update({ name: folderNameInput.trim(), updated_at: new Date().toISOString() })
         .eq('id', editingFolder.id);
-
       if (error) throw error;
-
       await logActivity('updated', 'folder', folderNameInput.trim(), targetCid, profile?.id || '');
-
       showNotification('success', 'Directory renamed');
       setEditingFolder(null);
       setFolderNameInput('');
@@ -180,14 +164,11 @@ export function FoldersView({ onSelectCompany }: Props) {
 
   const confirmDeleteFolder = async () => {
     if (!folderToDelete) return;
-    
     setIsActionLoading(true);
     try {
       const { error } = await supabase.from('folders').delete().eq('id', folderToDelete.id);
       if (error) throw error;
-
       await logActivity('deleted', 'folder', folderToDelete.name, targetCid, profile?.id || '');
-
       showNotification('success', 'Folder deleted');
       setFolderToDelete(null);
       await fetchData();
@@ -198,15 +179,15 @@ export function FoldersView({ onSelectCompany }: Props) {
     }
   };
 
-  const filteredFolders = folders.filter(f => 
-    f.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredFolders = (folders || []).filter(f => 
+    f.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const getRelativeTime = (dateStr: string) => {
+    if (!dateStr) return 'N/A';
     const now = new Date();
     const then = new Date(dateStr);
     const diffInSecs = Math.floor((now.getTime() - then.getTime()) / 1000);
-    
     if (diffInSecs < 60) return 'just now';
     const mins = Math.floor(diffInSecs / 60);
     if (mins < 60) return `${mins}m ago`;
@@ -300,7 +281,7 @@ export function FoldersView({ onSelectCompany }: Props) {
         <main className="flex-1 overflow-y-auto px-5 lg:px-10 xl:px-16 pb-12 w-full max-w-full">
           <div className="grid lg:grid-cols-12 gap-10 items-start">
             <div className="lg:col-span-8 xl:col-span-9 space-y-10">
-              {folders.length === 0 ? (
+              {(!folders || folders.length === 0) ? (
                 <div className="micro-surface rounded-[3rem] py-32 text-center border border-border/10">
                   <div className="w-24 h-24 bg-secondary rounded-[2rem] flex items-center justify-center mx-auto mb-10 border border-border/5">
                     <FolderIcon className="w-10 h-10 text-muted-foreground/20" />
@@ -335,7 +316,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                       onClick={() => navigate(`/folder/${folder.id}`)}
                     >
                       <div className="flex items-start justify-between">
-                        <div className="w-14 h-14 lg:w-16 h-16 micro-surface rounded-xl lg:rounded-2xl flex items-center justify-center text-muted-foreground/30 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 border border-border/10">
+                        <div className="w-14 h-14 lg:w-16 lg:h-16 micro-surface rounded-xl lg:rounded-2xl flex items-center justify-center text-muted-foreground/30 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 border border-border/10">
                           <FolderIcon className="w-7 h-7 lg:w-8 lg:h-8" />
                         </div>
 
@@ -370,16 +351,14 @@ export function FoldersView({ onSelectCompany }: Props) {
 
                       <div>
                         <h3 className="text-xl lg:text-2xl font-display font-black text-foreground mb-2 lg:mb-3 group-hover:text-primary transition-colors tracking-tighter line-clamp-1 pr-4">
-                          {folder.name}
+                          {folder.name || 'Unnamed Directory'}
                         </h3>
-                        {folder.template_bundles && (
-                          <div className="mb-3 flex items-center gap-2">
-                            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-[9px] font-bold uppercase tracking-widest border border-primary/20">
-                              <Layers className="w-3 h-3" />
-                              {folder.template_bundles.bundle_name}
-                            </span>
-                          </div>
-                        )}
+                        <div className="mb-3 flex items-center gap-2">
+                          <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${folder?.template_bundles ? 'bg-primary/10 text-primary border-primary/20' : 'bg-slate-500/10 text-slate-500 border-slate-500/20'} text-[9px] font-bold uppercase tracking-widest border`}>
+                            <Layers className="w-3 h-3" />
+                            {folder?.template_bundles?.bundle_name || 'Legacy Folder'}
+                          </span>
+                        </div>
                         <div className="flex items-center justify-between">
                           <span className="px-3 py-1 rounded-lg micro-surface text-[9px] lg:text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest border border-border/10">
                             {getRelativeTime(folder.updated_at)}
@@ -393,19 +372,17 @@ export function FoldersView({ onSelectCompany }: Props) {
             </div>
 
             <aside className="lg:col-span-4 xl:col-span-3 space-y-6 lg:space-y-8">
-              {/* Local Metrics */}
               <div className="grid grid-cols-2 gap-3 lg:gap-4">
                 <div className="micro-surface rounded-2xl lg:rounded-[2rem] p-6 lg:p-8 border border-border/10">
                   <p className="text-[9px] lg:text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] mb-3 lg:mb-4">Users</p>
-                  <p className="text-2xl lg:text-3xl font-black text-foreground tracking-tight">{stats.collaborators}</p>
+                  <p className="text-2xl lg:text-3xl font-black text-foreground tracking-tight">{stats.collaborators || 0}</p>
                 </div>
                 <div className="micro-surface rounded-2xl lg:rounded-[2rem] p-6 lg:p-8 border border-border/10">
                   <p className="text-[9px] lg:text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] mb-3 lg:mb-4">Pages</p>
-                  <p className="text-2xl lg:text-3xl font-black text-foreground tracking-tight">{stats.publications}</p>
+                  <p className="text-2xl lg:text-3xl font-black text-foreground tracking-tight">{stats.publications || 0}</p>
                 </div>
               </div>
 
-              {/* Event Stream */}
               <div className="micro-surface rounded-[2rem] lg:rounded-[2.5rem] border border-border/10 overflow-hidden flex flex-col min-h-[300px] lg:min-h-[400px]">
                 <div className="p-5 lg:p-6 faint-divider flex items-center justify-between bg-card/20">
                   <div className="flex items-center gap-3">
@@ -415,7 +392,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                 </div>
                 <div className="p-3 lg:p-4 flex-1 overflow-y-auto invisible-scrollbar">
                   <div className="space-y-1">
-                    {activities.length === 0 ? (
+                    {(!activities || activities.length === 0) ? (
                       <div className="py-20 text-center text-muted-foreground/20 italic text-[9px] lg:text-[10px] font-bold uppercase tracking-widest">No local actions recorded.</div>
                     ) : activities.map((log) => (
                       <div key={log.id} className="flex items-center gap-3 p-2.5 lg:p-3 rounded-xl micro-surface-hover group transition-all duration-300">
@@ -424,10 +401,10 @@ export function FoldersView({ onSelectCompany }: Props) {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-[10px] lg:text-[11px] font-black text-foreground truncate">
-                            {log.profiles?.full_name || log.profiles?.email.split('@')[0]}
+                            {log.profiles?.full_name || log.profiles?.email?.split('@')[0] || 'Unknown'}
                             <span className="text-muted-foreground/50 font-medium ml-1.5 lowercase italic tracking-tight">{log.action_type} {log.entity_type}</span>
                           </p>
-                          <p className="text-[8px] lg:text-[9px] font-bold text-primary/60 uppercase tracking-widest truncate">{log.entity_name}</p>
+                          <p className="text-[8px] lg:text-[9px] font-bold text-primary/60 uppercase tracking-widest truncate">{log.entity_name || 'Asset'}</p>
                         </div>
                       </div>
                     ))}
@@ -438,13 +415,12 @@ export function FoldersView({ onSelectCompany }: Props) {
           </div>
         </main>
 
-        {/* Modals */}
         <ConfirmModal
           isOpen={isCreateModalOpen || !!editingFolder}
           title={editingFolder ? "Rename Directory" : "Initialize Directory"}
-          message={editingFolder ? `Change the identifier for "${editingFolder.name}"` : "Define a new organizational context for your publications."}
+          message={editingFolder ? `Change the identifier for "${editingFolder?.name}"` : "Define a new organizational context for your publications."}
           confirmLabel={editingFolder ? "Rename" : "Initialize"}
-          onConfirm={() => {}} // Not used as form handles submission
+          onConfirm={() => {}}
           onCancel={() => {
             setIsCreateModalOpen(false);
             setEditingFolder(null);
@@ -475,8 +451,8 @@ export function FoldersView({ onSelectCompany }: Props) {
                   required
                 >
                   <option value="" disabled>Select a Blueprint Bundle...</option>
-                  {activeBundles.map(bundle => (
-                    <option key={bundle.id} value={bundle.id}>{bundle.bundle_name}</option>
+                  {(activeBundles || []).map(bundle => (
+                    <option key={bundle.id} value={bundle.id}>{bundle?.bundle_name || 'Unnamed Bundle'}</option>
                   ))}
                 </select>
               </div>
