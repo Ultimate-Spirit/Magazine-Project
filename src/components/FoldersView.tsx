@@ -12,13 +12,14 @@ import {
   Edit2,
   Search,
   Activity,
-  ArrowLeft
+  ArrowLeft,
+  Layers
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { ConfirmModal } from './common/ConfirmModal';
 import { logActivity } from '../lib/activityLogger';
-import type { Folder, Company } from '../types';
+import type { Folder, Company, TemplateBundle } from '../types';
 
 interface Props {
   onSelectCompany: (company: Company) => void;
@@ -31,6 +32,7 @@ export function FoldersView({ onSelectCompany }: Props) {
   
   const targetCid = (companyId || '').toLowerCase();
   const [folders, setFolders] = useState<Folder[]>([]);
+  const [activeBundles, setActiveBundles] = useState<TemplateBundle[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -41,6 +43,7 @@ export function FoldersView({ onSelectCompany }: Props) {
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [folderNameInput, setFolderNameInput] = useState('');
+  const [selectedBundleId, setSelectedBundleId] = useState<string>('');
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
@@ -56,10 +59,11 @@ export function FoldersView({ onSelectCompany }: Props) {
     else setRefreshing(true);
     
     try {
-      const [compData, folderData, membersData] = await Promise.all([
+      const [compData, folderData, membersData, bundlesData] = await Promise.all([
         supabase.from('companies').select('*').eq('id', targetCid).single(),
-        supabase.from('folders').select('*').eq('company_id', targetCid).order('updated_at', { ascending: false }),
-        supabase.from('user_companies').select('user_id').eq('company_id', targetCid)
+        supabase.from('folders').select('*, template_bundles(*)').eq('company_id', targetCid).order('updated_at', { ascending: false }),
+        supabase.from('user_companies').select('user_id').eq('company_id', targetCid),
+        supabase.from('template_bundles').select('*').eq('status', 'active')
       ]);
 
       if (compData.data) {
@@ -70,6 +74,10 @@ export function FoldersView({ onSelectCompany }: Props) {
       if (folderData.error) throw folderData.error;
       const fetchedFolders = folderData.data || [];
       setFolders(fetchedFolders);
+
+      if (bundlesData.data) {
+        setActiveBundles(bundlesData.data);
+      }
 
       // Members scoping: Filter by user_companies junction for this specific workspace
       const authorizedMemberIds = (membersData.data || []).map(m => m.user_id);
@@ -114,7 +122,7 @@ export function FoldersView({ onSelectCompany }: Props) {
 
   const handleCreateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!folderNameInput.trim()) return;
+    if (!folderNameInput.trim() || !selectedBundleId) return;
     
     setIsActionLoading(true);
     try {
@@ -123,7 +131,9 @@ export function FoldersView({ onSelectCompany }: Props) {
         .insert([{ 
           name: folderNameInput.trim(), 
           company_id: targetCid,
-          created_by: profile?.id
+          created_by: profile?.id,
+          bundle_id: selectedBundleId,
+          owner_id: profile?.id
         }]);
 
       if (error) throw error;
@@ -132,6 +142,7 @@ export function FoldersView({ onSelectCompany }: Props) {
 
       showNotification('success', 'Directory initialized');
       setFolderNameInput('');
+      setSelectedBundleId('');
       setIsCreateModalOpen(false);
       await fetchData();
     } catch (err: any) {
@@ -273,6 +284,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                 <button 
                   onClick={() => {
                     setFolderNameInput('');
+                    setSelectedBundleId('');
                     setIsCreateModalOpen(true);
                   }}
                   className="flex-1 md:flex-none flex items-center justify-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-black rounded-2xl hover:opacity-90 transition-all uppercase tracking-widest text-[10px] shadow-lg shadow-primary/10"
@@ -323,7 +335,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                       onClick={() => navigate(`/folder/${folder.id}`)}
                     >
                       <div className="flex items-start justify-between">
-                        <div className="w-14 h-14 lg:w-16 lg:h-16 micro-surface rounded-xl lg:rounded-2xl flex items-center justify-center text-muted-foreground/30 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 border border-border/10">
+                        <div className="w-14 h-14 lg:w-16 h-16 micro-surface rounded-xl lg:rounded-2xl flex items-center justify-center text-muted-foreground/30 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 border border-border/10">
                           <FolderIcon className="w-7 h-7 lg:w-8 lg:h-8" />
                         </div>
 
@@ -360,6 +372,14 @@ export function FoldersView({ onSelectCompany }: Props) {
                         <h3 className="text-xl lg:text-2xl font-display font-black text-foreground mb-2 lg:mb-3 group-hover:text-primary transition-colors tracking-tighter line-clamp-1 pr-4">
                           {folder.name}
                         </h3>
+                        {folder.template_bundles && (
+                          <div className="mb-3 flex items-center gap-2">
+                            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-[9px] font-bold uppercase tracking-widest border border-primary/20">
+                              <Layers className="w-3 h-3" />
+                              {folder.template_bundles.bundle_name}
+                            </span>
+                          </div>
+                        )}
                         <div className="flex items-center justify-between">
                           <span className="px-3 py-1 rounded-lg micro-surface text-[9px] lg:text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest border border-border/10">
                             {getRelativeTime(folder.updated_at)}
@@ -429,6 +449,7 @@ export function FoldersView({ onSelectCompany }: Props) {
             setIsCreateModalOpen(false);
             setEditingFolder(null);
             setFolderNameInput('');
+            setSelectedBundleId('');
           }}
           variant="info"
         >
@@ -443,9 +464,27 @@ export function FoldersView({ onSelectCompany }: Props) {
                 placeholder="e.g. Q4 Executive Reports"
               />
             </div>
+            
+            {!editingFolder && (
+              <div className="space-y-2 text-left">
+                <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Blueprint Template</label>
+                <select
+                  className="w-full px-6 py-4 micro-surface border border-border/10 rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight appearance-none cursor-pointer"
+                  value={selectedBundleId}
+                  onChange={(e) => setSelectedBundleId(e.target.value)}
+                  required
+                >
+                  <option value="" disabled>Select a Blueprint Bundle...</option>
+                  {activeBundles.map(bundle => (
+                    <option key={bundle.id} value={bundle.id}>{bundle.bundle_name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <button
               type="submit"
-              disabled={isActionLoading || !folderNameInput.trim()}
+              disabled={isActionLoading || !folderNameInput.trim() || (!editingFolder && !selectedBundleId)}
               className="w-full py-5 bg-primary text-primary-foreground font-black rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-[11px] uppercase tracking-[0.2em]"
             >
               {isActionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (editingFolder ? "Apply Changes" : "Initialize Directory")}

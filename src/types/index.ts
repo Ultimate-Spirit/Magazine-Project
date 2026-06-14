@@ -42,12 +42,33 @@ export interface Company {
   user_companies?: { count: number }[];
 }
 
+export interface TemplateBundle {
+  id: string;
+  bundle_name: string;
+  status: 'active' | 'archived';
+  created_at: string;
+}
+
+export interface Template {
+  id: string;
+  bundle_id: string;
+  template_name: string;
+  category: 'Cover' | 'Content' | 'Newsletter' | 'Last Page';
+  department_tag: string;
+  weight: number;
+  payload: any;
+  created_at: string;
+}
+
 export interface Folder {
   id: string;
   company_id: string;
   name: string;
   created_by?: string;
   updated_at: string;
+  bundle_id?: string;
+  owner_id?: string;
+  template_bundles?: TemplateBundle;
 }
 
 export interface Page {
@@ -58,4 +79,6 @@ export interface Page {
   data: any;
   created_by?: string;
   updated_at: string;
+  template_id?: string;
+  templates?: Template;
 }

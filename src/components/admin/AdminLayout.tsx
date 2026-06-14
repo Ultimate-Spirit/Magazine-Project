@@ -32,6 +32,7 @@ export const AdminLayout: React.FC = () => {
     { to: '/admin/companies', icon: Building2, label: 'Workspaces' },
     { to: '/admin/users', icon: Users, label: 'User Accounts' },
     { to: '/admin/roles', icon: Shield, label: 'Access Control' },
+    { to: '/admin/blueprints', icon: LayoutTemplate, label: 'Blueprints Engine' },
   ];
 
   return (
