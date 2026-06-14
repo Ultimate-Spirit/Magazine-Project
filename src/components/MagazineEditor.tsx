@@ -281,7 +281,7 @@ export const MagazineEditor: React.FC = () => {
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const printRef = useRef<HTMLDivElement>(null);
+  const liveCanvasRef = useRef<HTMLDivElement>(null); // Ref for Live Preview capture
 
   const canEdit = permissions?.can_edit_all_publications || (permissions?.can_edit_own_publications && (page?.created_by === profile?.id || pageId === 'new'));
 
@@ -361,21 +361,35 @@ export const MagazineEditor: React.FC = () => {
   };
 
   const handleDownloadPDF = async () => {
-    if (!printRef.current) return;
+    if (!liveCanvasRef.current) return;
     
     setExporting(true);
     try {
-      const element = printRef.current;
+      const element = liveCanvasRef.current;
+      
+      // Temporarily remove transform for clean capture
+      const originalTransform = element.style.transform;
+      element.style.transform = 'none';
+
       const canvas = await html2canvas(element, {
-        scale: 3, useCORS: true, logging: false, backgroundColor: '#ffffff', scrollY: 0, windowWidth: 850
+        scale: 3, 
+        useCORS: true, 
+        logging: false, 
+        backgroundColor: '#ffffff', 
+        scrollY: 0, 
+        windowWidth: 850
       });
+
+      // Restore transform
+      element.style.transform = originalTransform;
+
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`${editorData.title}.pdf`);
-      showNotification('success', 'High-fidelity PDF exported successfully');
+      showNotification('success', 'Live State PDF Exported');
     } catch (err: any) {
       console.error('PDF Export Error:', err);
       showNotification('error', 'Failed to generate high-fidelity PDF');
@@ -416,10 +430,7 @@ export const MagazineEditor: React.FC = () => {
   return (
     <WorkspaceLayout company={company || { id: 'none', name: 'Select Company' }}>
       <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-[calc(100vh-5rem)] bg-background relative overflow-hidden w-full max-w-[100vw]">
-        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-          <PrintTemplate ref={printRef} data={editorData} />
-        </div>
-
+        
         <div className="h-auto min-h-16 lg:h-20 bg-card border-b border-border flex flex-col lg:flex-row items-center justify-between px-2 lg:px-12 shrink-0 py-3 lg:py-0 gap-4 z-30">
           <div className="flex items-center gap-3 lg:gap-6 w-full lg:w-auto">
             <button onClick={() => navigate(`/folder/${folderId}`)} className="p-2 hover:bg-secondary rounded-xl text-muted-foreground hover:text-foreground transition-all shrink-0">
@@ -483,6 +494,7 @@ export const MagazineEditor: React.FC = () => {
                 className="relative shrink-0 mb-12"
               >
                 <div 
+                  ref={liveCanvasRef}
                   className="w-[850px] bg-white rounded-sm p-8 lg:p-20 flex flex-col min-h-[1100px] border border-slate-200 shadow-xl origin-top-left transition-transform relative"
                   style={{ transform: `scale(${zoom})` }}
                   onClick={(e) => e.target === e.currentTarget && setActiveBlockId(null)}

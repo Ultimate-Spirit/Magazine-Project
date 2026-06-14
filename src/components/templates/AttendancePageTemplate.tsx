@@ -15,8 +15,8 @@ interface AttendancePageProps {
   payload: {
     metrics?: {
       compliance: string;
-      leave_utilization: string;
-      new_joiners: string;
+      utilization: string; // Corrected from leave_utilization
+      joiners: string; // Corrected from new_joiners
     };
     departmentData?: Array<{ name: string; value: number }>;
     headcountData?: Array<{ month: string; joiners: number; leavers: number }>;
@@ -47,11 +47,11 @@ export const AttendancePageTemplate: React.FC<AttendancePageProps> = ({ payload 
           </div>
           <div className="p-8 bg-slate-50 border border-slate-100 rounded-3xl space-y-2">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Leave Utilization</p>
-            <p className="text-4xl font-black text-slate-900">{metrics?.leave_utilization || '0.0%'}</p>
+            <p className="text-4xl font-black text-slate-900">{metrics?.utilization || '0.0%'}</p>
           </div>
           <div className="p-8 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total New Joiners</p>
-            <p className="text-4xl font-black">{metrics?.new_joiners || '0'}</p>
+            <p className="text-4xl font-black">{metrics?.joiners || '0'}</p>
           </div>
         </div>
       </header>
@@ -64,7 +64,7 @@ export const AttendancePageTemplate: React.FC<AttendancePageProps> = ({ payload 
           <div className="h-px flex-1 bg-slate-900/5" />
         </div>
 
-        <div className="h-[300px] w-full">
+        <div className="w-full h-72 mt-6">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               layout="vertical"
@@ -102,7 +102,7 @@ export const AttendancePageTemplate: React.FC<AttendancePageProps> = ({ payload 
           <div className="h-px flex-1 bg-slate-900/5" />
         </div>
 
-        <div className="h-[250px] w-full px-4">
+        <div className="w-full h-72 mt-6 px-4">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={headcountData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
