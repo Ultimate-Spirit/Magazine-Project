@@ -18,7 +18,8 @@ import {
   GripVertical,
   Layers,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  RotateCcw
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { useAuth } from '../contexts/AuthContext';
@@ -47,6 +48,7 @@ export function FolderContents() {
   
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   const [pageToDelete, setPageToDelete] = useState<Page | null>(null);
+  const [pageToReset, setPageToReset] = useState<{ page: Page, template: Template } | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
   // Hydration & Mounting Stability
@@ -127,13 +129,16 @@ export function FolderContents() {
 
     setIsActionLoading(true);
     try {
+      // Explicitly spread the master blueprint payload into the new page's data column
+      const masterPayload = template.payload || {};
+      
       const { data, error } = await supabase
         .from('pages')
         .insert([{
           folder_id: folderId,
           title: template.template_name,
           template_id: template.id,
-          data: template.payload || {},
+          data: masterPayload,
           created_by: profile?.id
         }])
         .select()
@@ -143,8 +148,38 @@ export function FolderContents() {
 
       await logActivity('created', 'publication', template.template_name, company?.id || '', profile?.id || '');
       
-      showNotification('success', 'Draft initialized successfully');
+      showNotification('success', 'Blueprint slot initialized');
       navigate(`/folder/${folderId}/editor/${data.id}`);
+    } catch (err: any) {
+      showNotification('error', err.message);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleResetToTemplate = async () => {
+    if (!pageToReset) return;
+    
+    setIsActionLoading(true);
+    try {
+      const { page, template } = pageToReset;
+      
+      const { error } = await supabase
+        .from('pages')
+        .update({
+          title: template.template_name,
+          data: template.payload || {},
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', page.id);
+
+      if (error) throw error;
+
+      await logActivity('updated', 'publication (reset)', template.template_name, company?.id || '', profile?.id || '');
+      
+      showNotification('success', 'Page restored to master blueprint');
+      setPageToReset(null);
+      await fetchData();
     } catch (err: any) {
       showNotification('error', err.message);
     } finally {
@@ -342,15 +377,24 @@ export function FolderContents() {
                       </p>
                     </div>
 
-                    <div className="mt-8">
+                    <div className="mt-8 flex gap-2">
                       {isCompleted ? (
-                        <button 
-                          onClick={() => navigate(`/folder/${folderId}/editor/${existingPage.id}`)}
-                          className="w-full py-3 bg-secondary text-foreground font-black rounded-xl hover:bg-muted transition-all text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                          Edit Page
-                        </button>
+                        <>
+                          <button 
+                            onClick={() => navigate(`/folder/${folderId}/editor/${existingPage.id}`)}
+                            className="flex-1 py-3 bg-secondary text-foreground font-black rounded-xl hover:bg-muted transition-all text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                            Edit Page
+                          </button>
+                          <button 
+                            onClick={() => setPageToReset({ page: existingPage, template })}
+                            className="p-3 micro-surface border border-border/10 text-muted-foreground hover:text-primary rounded-xl transition-all"
+                            title="Reset to Template"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                          </button>
+                        </>
                       ) : (
                         <button 
                           onClick={() => handleStartDraft(template)}
@@ -509,6 +553,17 @@ export function FolderContents() {
         </div>
 
       </div>
+
+      <ConfirmModal
+        isOpen={!!pageToReset}
+        title="Restore Blueprint Layout"
+        message="This action will permanently erase your work on this page and restore it to the original master template layout. This cannot be undone."
+        confirmLabel="Reset to Blueprint"
+        onConfirm={handleResetToTemplate}
+        onCancel={() => setPageToReset(null)}
+        isLoading={isActionLoading}
+        variant="danger"
+      />
 
       <ConfirmModal
         isOpen={!!pageToDelete}
