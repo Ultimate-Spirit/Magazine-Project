@@ -1,7 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Loader2, Plus, LayoutTemplate, Layers, AlertCircle, Save } from 'lucide-react';
+import { 
+  Loader2, 
+  Plus, 
+  LayoutTemplate, 
+  Layers, 
+  AlertCircle, 
+  Save, 
+  Edit2, 
+  Trash2, 
+  Archive, 
+  MoreVertical,
+  ChevronRight,
+  CheckCircle2,
+  X
+} from 'lucide-react';
 import type { TemplateBundle, Template } from '../../types';
+import { ConfirmModal } from '../common/ConfirmModal';
 
 export const BlueprintManager: React.FC = () => {
   const [bundles, setBundles] = useState<TemplateBundle[]>([]);
@@ -11,17 +26,24 @@ export const BlueprintManager: React.FC = () => {
 
   const [showCreateBundle, setShowCreateBundle] = useState(false);
   const [newBundleName, setNewBundleName] = useState('');
+  
+  const [editingBundle, setEditingBundle] = useState<TemplateBundle | null>(null);
+  const [bundleToDelete, setBundleToDelete] = useState<TemplateBundle | null>(null);
 
   const [showCreateTemplate, setShowCreateTemplate] = useState(false);
-  const [newTemplate, setNewTemplate] = useState({
+  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+  const [templateToDelete, setTemplateToDelete] = useState<Template | null>(null);
+  
+  const [templateForm, setTemplateForm] = useState({
     template_name: '',
-    category: 'Content' as const,
+    category: 'Content' as any,
     department_tag: '',
     weight: 10,
     payload: '{}'
   });
 
   const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     fetchBundles();
@@ -33,6 +55,7 @@ export const BlueprintManager: React.FC = () => {
       const { data, error: fetchErr } = await supabase
         .from('template_bundles')
         .select('*')
+        .order('status', { ascending: true }) // active first
         .order('created_at', { ascending: false });
       
       if (fetchErr) throw fetchErr;
@@ -72,6 +95,7 @@ export const BlueprintManager: React.FC = () => {
 
   const handleCreateBundle = async () => {
     if (!newBundleName.trim()) return;
+    setActionLoading(true);
     try {
       const { data, error: insertErr } = await supabase
         .from('template_bundles')
@@ -85,36 +109,95 @@ export const BlueprintManager: React.FC = () => {
       setNewBundleName('');
     } catch (err: any) {
       setError(err.message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  const handleCreateTemplate = async () => {
-    if (!selectedBundle || !newTemplate.template_name.trim()) return;
+  const handleUpdateBundle = async () => {
+    if (!editingBundle || !newBundleName.trim()) return;
+    setActionLoading(true);
+    try {
+      const { data, error: updateErr } = await supabase
+        .from('template_bundles')
+        .update({ bundle_name: newBundleName })
+        .eq('id', editingBundle.id)
+        .select()
+        .single();
+      
+      if (updateErr) throw updateErr;
+      setBundles(bundles.map(b => b.id === data.id ? data : b));
+      setEditingBundle(null);
+      setNewBundleName('');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleArchiveBundle = async (bundle: TemplateBundle) => {
+    setActionLoading(true);
+    try {
+      const newStatus = bundle.status === 'active' ? 'archived' : 'active';
+      const { data, error: updateErr } = await supabase
+        .from('template_bundles')
+        .update({ status: newStatus })
+        .eq('id', bundle.id)
+        .select()
+        .single();
+      
+      if (updateErr) throw updateErr;
+      setBundles(bundles.map(b => b.id === data.id ? data : b));
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleSaveTemplate = async () => {
+    if (!selectedBundle || !templateForm.template_name.trim()) return;
+    setActionLoading(true);
     try {
       let parsedPayload = {};
       try {
-        parsedPayload = JSON.parse(newTemplate.payload);
+        parsedPayload = typeof templateForm.payload === 'string' ? JSON.parse(templateForm.payload) : templateForm.payload;
       } catch (e) {
         throw new Error("Invalid JSON in payload");
       }
 
-      const { data, error: insertErr } = await supabase
-        .from('templates')
-        .insert([{
-          bundle_id: selectedBundle.id,
-          template_name: newTemplate.template_name,
-          category: newTemplate.category,
-          department_tag: newTemplate.department_tag,
-          weight: newTemplate.weight,
-          payload: parsedPayload
-        }])
-        .select()
-        .single();
+      const templateData = {
+        bundle_id: selectedBundle.id,
+        template_name: templateForm.template_name,
+        category: templateForm.category,
+        department_tag: templateForm.department_tag,
+        weight: templateForm.weight,
+        payload: parsedPayload
+      };
 
-      if (insertErr) throw insertErr;
-      setTemplates([...templates, data].sort((a, b) => a.weight - b.weight));
+      if (editingTemplate) {
+        const { data, error: updateErr } = await supabase
+          .from('templates')
+          .update(templateData)
+          .eq('id', editingTemplate.id)
+          .select()
+          .single();
+        if (updateErr) throw updateErr;
+        setTemplates(templates.map(t => t.id === data.id ? data : t).sort((a, b) => a.weight - b.weight));
+      } else {
+        const { data, error: insertErr } = await supabase
+          .from('templates')
+          .insert([templateData])
+          .select()
+          .single();
+        if (insertErr) throw insertErr;
+        setTemplates([...templates, data].sort((a, b) => a.weight - b.weight));
+      }
+
       setShowCreateTemplate(false);
-      setNewTemplate({
+      setEditingTemplate(null);
+      setTemplateForm({
         template_name: '',
         category: 'Content',
         department_tag: '',
@@ -123,7 +206,40 @@ export const BlueprintManager: React.FC = () => {
       });
     } catch (err: any) {
       setError(err.message);
+    } finally {
+      setActionLoading(false);
     }
+  };
+
+  const handleDeleteTemplate = async () => {
+    if (!templateToDelete) return;
+    setActionLoading(true);
+    try {
+      const { error: delErr } = await supabase
+        .from('templates')
+        .delete()
+        .eq('id', templateToDelete.id);
+      
+      if (delErr) throw delErr;
+      setTemplates(templates.filter(t => t.id !== templateToDelete.id));
+      setTemplateToDelete(null);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const openEditTemplate = (template: Template) => {
+    setEditingTemplate(template);
+    setTemplateForm({
+      template_name: template.template_name,
+      category: template.category,
+      department_tag: template.department_tag || '',
+      weight: template.weight,
+      payload: JSON.stringify(template.payload, null, 2)
+    });
+    setShowCreateTemplate(true);
   };
 
   if (loading) {
@@ -135,7 +251,7 @@ export const BlueprintManager: React.FC = () => {
   }
 
   return (
-    <div className="p-4 lg:p-12 space-y-12 max-w-7xl mx-auto">
+    <div className="p-4 lg:p-12 space-y-12 max-w-7xl mx-auto font-sans">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h1 className="text-3xl lg:text-5xl font-black tracking-tight text-foreground">Blueprint Engine</h1>
@@ -143,7 +259,11 @@ export const BlueprintManager: React.FC = () => {
         </div>
         {!selectedBundle ? (
           <button 
-            onClick={() => setShowCreateBundle(true)}
+            onClick={() => {
+              setEditingBundle(null);
+              setNewBundleName('');
+              setShowCreateBundle(true);
+            }}
             className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
           >
             <Plus className="w-5 h-5" />
@@ -152,7 +272,7 @@ export const BlueprintManager: React.FC = () => {
         ) : (
           <button 
             onClick={() => setSelectedBundle(null)}
-            className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
+            className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
           >
             ← Back to Bundles
           </button>
@@ -160,15 +280,16 @@ export const BlueprintManager: React.FC = () => {
       </div>
 
       {error && (
-        <div className="p-4 bg-destructive/10 text-destructive rounded-xl flex items-center gap-3 border border-destructive/20">
+        <div className="p-4 bg-destructive/10 text-destructive rounded-xl flex items-center gap-3 border border-destructive/20 animate-in fade-in slide-in-from-top-2">
           <AlertCircle className="w-5 h-5" />
-          <p className="font-bold text-sm">{error}</p>
+          <p className="font-bold text-sm flex-1">{error}</p>
+          <button onClick={() => setError(null)} className="p-1 hover:bg-destructive/10 rounded-lg"><X className="w-4 h-4" /></button>
         </div>
       )}
 
-      {showCreateBundle && !selectedBundle && (
-        <div className="micro-surface p-6 lg:p-8 rounded-3xl border border-border/10 space-y-6 animate-in fade-in slide-in-from-top-4">
-          <h3 className="text-xl font-black text-foreground">Initialize New Blueprint Bundle</h3>
+      {(showCreateBundle || editingBundle) && !selectedBundle && (
+        <div className="micro-surface p-6 lg:p-8 rounded-[2rem] border border-border/10 space-y-6 animate-in fade-in slide-in-from-top-4">
+          <h3 className="text-xl font-black text-foreground">{editingBundle ? 'Rename Blueprint Bundle' : 'Initialize New Blueprint Bundle'}</h3>
           <div className="flex gap-4">
             <input 
               type="text" 
@@ -176,13 +297,23 @@ export const BlueprintManager: React.FC = () => {
               className="flex-1 bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium"
               value={newBundleName}
               onChange={(e) => setNewBundleName(e.target.value)}
+              autoFocus
             />
-            <button 
-              onClick={handleCreateBundle}
-              className="px-8 py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all whitespace-nowrap"
-            >
-              Create
-            </button>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => { setShowCreateBundle(false); setEditingBundle(null); }}
+                className="px-6 py-3 micro-surface border border-border/10 rounded-xl font-bold hover:bg-secondary transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={editingBundle ? handleUpdateBundle : handleCreateBundle}
+                disabled={actionLoading || !newBundleName.trim()}
+                className="px-8 py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all whitespace-nowrap disabled:opacity-50"
+              >
+                {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (editingBundle ? 'Update' : 'Create')}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -192,18 +323,41 @@ export const BlueprintManager: React.FC = () => {
           {bundles?.map(bundle => (
             <div 
               key={bundle.id}
-              onClick={() => handleSelectBundle(bundle)}
-              className="group cursor-pointer micro-surface hover:micro-surface-hover p-6 lg:p-8 rounded-[2rem] border border-border/10 transition-all space-y-6"
+              className={`group relative micro-surface p-6 lg:p-8 rounded-[2rem] border border-border/10 transition-all flex flex-col justify-between min-h-[200px] ${bundle.status === 'archived' ? 'opacity-50 grayscale' : 'hover:micro-surface-hover'}`}
             >
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                <Layers className="w-6 h-6" />
+              <div className="flex justify-between items-start">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${bundle.status === 'archived' ? 'bg-slate-500/10 text-slate-500' : 'bg-primary/10 text-primary'}`}>
+                  <Layers className="w-6 h-6" />
+                </div>
+                <div className="flex gap-1">
+                  <button 
+                    onClick={() => {
+                      setEditingBundle(bundle);
+                      setNewBundleName(bundle.bundle_name);
+                      setShowCreateBundle(false);
+                    }}
+                    className="p-2 micro-surface border border-border/10 rounded-xl text-muted-foreground hover:text-primary transition-all"
+                    title="Edit Name"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => handleArchiveBundle(bundle)}
+                    className={`p-2 micro-surface border border-border/10 rounded-xl transition-all ${bundle.status === 'active' ? 'text-muted-foreground hover:text-orange-500' : 'text-emerald-500 hover:text-emerald-600'}`}
+                    title={bundle.status === 'active' ? 'Archive' : 'Unarchive'}
+                  >
+                    {bundle.status === 'active' ? <Archive className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
-              <div>
+
+              <div className="mt-6 cursor-pointer" onClick={() => handleSelectBundle(bundle)}>
                 <h3 className="text-xl font-black text-foreground group-hover:text-primary transition-colors">{bundle?.bundle_name || 'Unnamed Bundle'}</h3>
-                <div className="flex items-center gap-2 mt-3">
+                <div className="flex items-center justify-between mt-3">
                   <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${bundle?.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-500/10 text-slate-500'}`}>
                     {bundle?.status || 'unknown'}
                   </span>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0" />
                 </div>
               </div>
             </div>
@@ -217,35 +371,48 @@ export const BlueprintManager: React.FC = () => {
       ) : (
         <div className="space-y-8 animate-in fade-in slide-in-from-right-8">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-black">{selectedBundle?.bundle_name || 'Bundle'} Templates</h2>
+            <div>
+              <h2 className="text-2xl font-black">{selectedBundle?.bundle_name || 'Bundle'} Templates</h2>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">Configure layout slots for this blueprint</p>
+            </div>
             <button 
-              onClick={() => setShowCreateTemplate(true)}
+              onClick={() => {
+                setEditingTemplate(null);
+                setTemplateForm({
+                  template_name: '',
+                  category: 'Content',
+                  department_tag: '',
+                  weight: 10,
+                  payload: '{}'
+                });
+                setShowCreateTemplate(true);
+              }}
               className="flex items-center gap-2 px-6 py-3 bg-card border border-border text-foreground rounded-xl font-bold hover:bg-secondary transition-all"
             >
-              <LayoutTemplate className="w-4 h-4" />
-              Add Template
+              <Plus className="w-4 h-4" />
+              Add Template Slot
             </button>
           </div>
 
           {showCreateTemplate && (
-            <div className="micro-surface p-6 lg:p-8 rounded-3xl border border-border/10 space-y-6">
-              <h3 className="text-lg font-bold">New Template Definition</h3>
+            <div className="micro-surface p-6 lg:p-8 rounded-[2rem] border border-border/10 space-y-6 animate-in slide-in-from-top-4">
+              <h3 className="text-lg font-bold">{editingTemplate ? 'Update Template Definition' : 'New Template Definition'}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Template Name</label>
                   <input 
                     type="text" 
                     className="w-full bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                    value={newTemplate.template_name}
-                    onChange={(e) => setNewTemplate({ ...newTemplate, template_name: e.target.value })}
+                    value={templateForm.template_name}
+                    onChange={(e) => setTemplateForm({ ...templateForm, template_name: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Category</label>
                   <select 
                     className="w-full bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none"
-                    value={newTemplate.category}
-                    onChange={(e) => setNewTemplate({ ...newTemplate, category: e.target.value as any })}
+                    value={templateForm.category}
+                    onChange={(e) => setTemplateForm({ ...templateForm, category: e.target.value as any })}
                   >
                     <option value="Cover">Cover</option>
                     <option value="Content">Content</option>
@@ -259,8 +426,8 @@ export const BlueprintManager: React.FC = () => {
                     type="text" 
                     placeholder="e.g. Sales, Marketing"
                     className="w-full bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                    value={newTemplate.department_tag}
-                    onChange={(e) => setNewTemplate({ ...newTemplate, department_tag: e.target.value })}
+                    value={templateForm.department_tag}
+                    onChange={(e) => setTemplateForm({ ...templateForm, department_tag: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
@@ -268,33 +435,34 @@ export const BlueprintManager: React.FC = () => {
                   <input 
                     type="number" 
                     className="w-full bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                    value={newTemplate.weight}
-                    onChange={(e) => setNewTemplate({ ...newTemplate, weight: parseInt(e.target.value) || 0 })}
+                    value={templateForm.weight}
+                    onChange={(e) => setTemplateForm({ ...templateForm, weight: parseInt(e.target.value) || 0 })}
                   />
                   <p className="text-[10px] text-muted-foreground mt-1">0 for Cover, 10 for Content, 1000 for Last Page</p>
                 </div>
                 <div className="col-span-full space-y-2">
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Initial Payload (JSON)</label>
                   <textarea 
-                    className="w-full h-32 bg-background border border-border rounded-xl px-4 py-3 text-sm font-mono text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-y"
-                    value={newTemplate.payload}
-                    onChange={(e) => setNewTemplate({ ...newTemplate, payload: e.target.value })}
+                    className="w-full h-48 bg-background border border-border rounded-xl px-4 py-3 text-sm font-mono text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-y"
+                    value={templateForm.payload}
+                    onChange={(e) => setTemplateForm({ ...templateForm, payload: e.target.value })}
                   />
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-4 border-t border-border/10">
                 <button 
-                  onClick={() => setShowCreateTemplate(false)}
+                  onClick={() => { setShowCreateTemplate(false); setEditingTemplate(null); }}
                   className="px-6 py-2.5 rounded-xl font-bold text-muted-foreground hover:bg-secondary transition-colors text-sm"
                 >
                   Cancel
                 </button>
                 <button 
-                  onClick={handleCreateTemplate}
-                  className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all text-sm flex items-center gap-2"
+                  onClick={handleSaveTemplate}
+                  disabled={actionLoading || !templateForm.template_name.trim()}
+                  className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all text-sm flex items-center gap-2 disabled:opacity-50"
                 >
-                  <Save className="w-4 h-4" />
-                  Save Template
+                  {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  {editingTemplate ? 'Update Slot' : 'Save Template'}
                 </button>
               </div>
             </div>
@@ -309,12 +477,12 @@ export const BlueprintManager: React.FC = () => {
                     <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Template Name</th>
                     <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Category</th>
                     <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Department</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Created</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/10">
                   {templates?.map(template => (
-                    <tr key={template.id} className="hover:bg-muted/10 transition-colors">
+                    <tr key={template.id} className="hover:bg-muted/10 transition-colors group">
                       <td className="px-6 py-4 text-sm font-mono text-muted-foreground">{template?.weight ?? '-'}</td>
                       <td className="px-6 py-4 text-sm font-bold text-foreground">{template?.template_name || 'Unnamed'}</td>
                       <td className="px-6 py-4">
@@ -329,8 +497,23 @@ export const BlueprintManager: React.FC = () => {
                       <td className="px-6 py-4 text-sm font-medium text-muted-foreground">
                         {template?.department_tag || '-'}
                       </td>
-                      <td className="px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                        {template?.created_at ? new Date(template.created_at).toLocaleDateString() : 'N/A'}
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => openEditTemplate(template)}
+                            className="p-2 micro-surface border border-border/10 rounded-lg text-muted-foreground hover:text-primary transition-all"
+                            title="Edit Definition"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button 
+                            onClick={() => setTemplateToDelete(template)}
+                            className="p-2 micro-surface border border-border/10 rounded-lg text-muted-foreground hover:text-destructive transition-all"
+                            title="Delete Slot"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -347,6 +530,17 @@ export const BlueprintManager: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!templateToDelete}
+        title="Delete Template Slot"
+        message={`Are you sure you want to permanently delete the "${templateToDelete?.template_name}" slot? This will not delete existing pages but new pages can no longer be started from this definition.`}
+        confirmLabel="Delete Permanent"
+        onConfirm={handleDeleteTemplate}
+        onCancel={() => setTemplateToDelete(null)}
+        isLoading={actionLoading}
+        variant="danger"
+      />
     </div>
   );
 };
