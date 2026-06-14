@@ -36,16 +36,18 @@ export const BlueprintManager: React.FC = () => {
         .order('created_at', { ascending: false });
       
       if (fetchErr) throw fetchErr;
-      setBundles(data || []);
+      setBundles(Array.isArray(data) ? data : []);
     } catch (err: any) {
-      console.error(err);
+      console.error('Fetch Bundles Error:', err);
       setError(err.message);
+      setBundles([]);
     } finally {
       setLoading(false);
     }
   };
 
   const fetchTemplates = async (bundleId: string) => {
+    if (!bundleId) return;
     try {
       const { data, error: fetchErr } = await supabase
         .from('templates')
@@ -54,14 +56,16 @@ export const BlueprintManager: React.FC = () => {
         .order('weight', { ascending: true });
       
       if (fetchErr) throw fetchErr;
-      setTemplates(data || []);
+      setTemplates(Array.isArray(data) ? data : []);
     } catch (err: any) {
-      console.error(err);
+      console.error('Fetch Templates Error:', err);
       setError(err.message);
+      setTemplates([]);
     }
   };
 
   const handleSelectBundle = (bundle: TemplateBundle) => {
+    if (!bundle?.id) return;
     setSelectedBundle(bundle);
     fetchTemplates(bundle.id);
   };

@@ -63,6 +63,7 @@ function App() {
                   <Route path="companies" element={<CompanyManagement />} />
                   <Route path="roles" element={<RoleManagement />} />
                   <Route path="blueprints" element={<BlueprintManager />} />
+                  <Route path="*" element={<Navigate to="/admin" replace />} />
                 </Route>
               </Routes>
             </ProtectedRoute>

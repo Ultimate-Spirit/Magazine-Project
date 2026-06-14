@@ -47,7 +47,19 @@ export function CompanySelection({ onSelect }: Props) {
   }, [user, isAdmin]);
 
   if (loading) {
-    return null;
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-background z-[100]">
+        <div className="flex flex-col items-center gap-6 animate-in fade-in duration-500">
+          <div className="w-16 h-16 bg-secondary rounded-[2rem] flex items-center justify-center border border-border/10 shadow-2xl">
+            <Loader2 className="animate-spin h-8 w-8 text-primary" />
+          </div>
+          <div className="text-center space-y-1">
+            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.5em] animate-pulse">Syncing Portal</p>
+            <p className="text-[8px] text-muted-foreground/40 font-bold uppercase tracking-widest">Verifying Workspace Permissions</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const filteredCompanies = companies.filter(c => 

@@ -27,36 +27,51 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-background p-6">
-          <div className="max-w-md w-full micro-surface p-8 lg:p-12 rounded-[2.5rem] border border-destructive/20 text-center space-y-8 animate-in fade-in zoom-in-95 duration-500">
-            <div className="w-20 h-20 bg-destructive/10 rounded-[2rem] flex items-center justify-center mx-auto border border-destructive/20 text-destructive shadow-2xl shadow-destructive/20">
-              <AlertCircle className="w-10 h-10" />
-            </div>
-            
-            <div className="space-y-3">
-              <h2 className="text-3xl font-black tracking-tight text-foreground">Fatal Runtime Error</h2>
-              <p className="text-muted-foreground font-medium">A critical exception occurred in the rendering engine.</p>
-            </div>
-
-            <div className="p-4 bg-secondary/50 rounded-2xl border border-border/10 text-left overflow-hidden">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Trace Message</p>
-              <p className="text-xs font-mono text-destructive break-all line-clamp-4">
-                {this.state.error?.message || 'Unknown structural failure'}
-              </p>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white dark:bg-black p-6 overflow-auto">
+          <div className="max-w-2xl w-full bg-red-50 dark:bg-red-950/20 p-8 lg:p-12 rounded-[2.5rem] border border-red-200 dark:border-red-900/50 text-left space-y-8 animate-in fade-in zoom-in-95 duration-500 shadow-2xl">
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 bg-red-100 dark:bg-red-900/40 rounded-2xl flex items-center justify-center text-red-600 dark:text-red-400 shrink-0">
+                <AlertCircle className="w-8 h-8" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black tracking-tight text-red-900 dark:text-red-100 uppercase">System Integrity Failure</h2>
+                <p className="text-red-700 dark:text-red-400 font-medium text-sm mt-1">The rendering engine encountered a fatal exception.</p>
+              </div>
             </div>
 
-            <button 
-              onClick={() => window.location.reload()}
-              className="w-full py-5 bg-primary text-primary-foreground font-black rounded-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest shadow-xl shadow-primary/20"
-            >
-              <RefreshCcw className="w-5 h-5" />
-              Reset Application
-            </button>
+            <div className="space-y-4">
+              <div className="p-6 bg-white dark:bg-black/40 rounded-2xl border border-red-100 dark:border-red-900/30 overflow-auto max-h-[300px] shadow-inner">
+                <p className="text-[10px] font-black text-red-400 dark:text-red-500 uppercase tracking-widest mb-3">Diagnostic Trace</p>
+                <pre className="text-xs font-mono text-red-600 dark:text-red-300 whitespace-pre-wrap break-all leading-relaxed">
+                  {this.state.error?.stack || this.state.error?.message || 'Unknown structural failure'}
+                </pre>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="flex-1 py-4 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 transition-all flex items-center justify-center gap-3 text-xs uppercase tracking-widest shadow-lg shadow-red-600/20"
+                >
+                  <RefreshCcw className="w-4 h-4" />
+                  Reload Application
+                </button>
+                <button 
+                  onClick={() => window.location.href = '/'}
+                  className="flex-1 py-4 bg-slate-900 dark:bg-slate-100 text-white dark:text-black font-black rounded-xl hover:opacity-90 transition-all text-xs uppercase tracking-widest"
+                >
+                  Return to Safety
+                </button>
+              </div>
+            </div>
+
+            <p className="text-center text-[9px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-[0.3em]">
+              Spirit OS // Stability Layer Active
+            </p>
           </div>
         </div>
       );
     }
 
-    return this.children;
+    return this.props.children;
   }
 }
