@@ -367,29 +367,27 @@ export const MagazineEditor: React.FC = () => {
     try {
       const element = liveCanvasRef.current;
       
-      // Temporarily remove transform for clean capture
-      const originalTransform = element.style.transform;
-      element.style.transform = 'none';
-
       const canvas = await html2canvas(element, {
-        scale: 3, 
+        scale: 2, 
         useCORS: true, 
         logging: false, 
         backgroundColor: '#ffffff', 
         scrollY: 0, 
-        windowWidth: 850
+        windowWidth: 794,
+        // @ts-ignore
+        letterRendering: true
       });
 
-      // Restore transform
-      element.style.transform = originalTransform;
-
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      const pdf = new jsPDF({ 
+        orientation: 'portrait', 
+        unit: 'px', 
+        format: [794, 1123] 
+      });
+      
+      pdf.addImage(imgData, 'JPEG', 0, 0, 794, 1123);
       pdf.save(`${editorData.title}.pdf`);
-      showNotification('success', 'Live State PDF Exported');
+      showNotification('success', 'A4 Architecture Exported');
     } catch (err: any) {
       console.error('PDF Export Error:', err);
       showNotification('error', 'Failed to generate high-fidelity PDF');
@@ -488,15 +486,25 @@ export const MagazineEditor: React.FC = () => {
               </div>
             )}
 
-            <div className="min-w-max p-4 lg:p-12 min-h-full">
+            <div className="min-w-max p-4 lg:p-12 min-h-full flex items-start justify-center">
+              {/* Visual Scaling Wrapper: Fits the A4 canvas into the screen without altering its DOM dimensions */}
               <div 
-                style={{ width: `${850 * zoom}px`, minHeight: `${1100 * zoom}px`, transition: 'width 0.3s ease, min-height 0.3s ease', margin: '0 auto' }}
-                className="relative shrink-0 mb-12"
+                style={{ 
+                  width: `${794 * zoom}px`, 
+                  height: `${1123 * zoom}px`, 
+                  transition: 'all 0.3s ease' 
+                }}
+                className="relative shrink-0 mb-12 origin-top"
               >
                 <div 
                   ref={liveCanvasRef}
-                  className="w-[850px] bg-white rounded-sm p-8 lg:p-20 flex flex-col min-h-[1100px] border border-slate-200 shadow-xl origin-top-left transition-transform relative"
-                  style={{ transform: `scale(${zoom})` }}
+                  style={{ 
+                    width: '794px', 
+                    height: '1123px', 
+                    transform: `scale(${zoom})`,
+                    transformOrigin: 'top left'
+                  }}
+                  className="bg-white relative overflow-hidden shadow-2xl transition-transform"
                   onClick={(e) => e.target === e.currentTarget && setActiveBlockId(null)}
                 >
                   {/* DATA-DRIVEN ROUTING LAYER */}
@@ -506,7 +514,7 @@ export const MagazineEditor: React.FC = () => {
                     <div className="flex-1 flex flex-col">{renderDynamicBlocks()}</div>
                   ) : (
                     /* FALLBACK: LEGACY KPI DASHBOARD */
-                    <>
+                    <div className="p-12 lg:p-20 flex flex-col h-full">
                       <div className="border-b-4 border-slate-900 pb-12 mb-12">
                         <EditableText value={editorData.headline} onChange={(v) => setEditorData({ ...editorData, headline: v })} className="w-full text-5xl font-black text-slate-900" />
                         <EditableText value={editorData.subheadline} onChange={(v) => setEditorData({ ...editorData, subheadline: v })} className="w-full text-xl font-bold text-blue-600 mt-4 uppercase tracking-widest" />
@@ -535,13 +543,22 @@ export const MagazineEditor: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                    </>
+
+                      <footer className="mt-auto pt-8 border-t border-slate-100 flex justify-between items-center text-[8px] font-bold text-slate-300 uppercase tracking-widest">
+                        <EditableText value={editorData.footerConfidentiality} onChange={(v) => setEditorData({ ...editorData, footerConfidentiality: v })} className="w-48 text-[8px] text-slate-300" />
+                        <EditableText value={editorData.footerDate} onChange={(v) => setEditorData({ ...editorData, footerDate: v })} className="text-right w-32 text-[8px] text-slate-300" />
+                      </footer>
+                    </div>
                   )}
 
-                  <footer className="mt-auto pt-8 border-t border-slate-100 flex justify-between items-center text-[8px] font-bold text-slate-300 uppercase tracking-widest">
-                    <EditableText value={editorData.footerConfidentiality} onChange={(v) => setEditorData({ ...editorData, footerConfidentiality: v })} className="w-48 text-[8px] text-slate-300" />
-                    <EditableText value={editorData.footerDate} onChange={(v) => setEditorData({ ...editorData, footerDate: v })} className="text-right w-32 text-[8px] text-slate-300" />
-                  </footer>
+                  {/* Move footer inside the template components or as a shared overlay if needed, 
+                      but for A4 consistency, standardizing it within the template logic is better. */}
+                  {(editorData.blocks || editorData.layout_style) && (
+                    <footer className="absolute bottom-12 left-12 right-12 pt-8 border-t border-slate-100 flex justify-between items-center text-[8px] font-bold text-slate-300 uppercase tracking-widest">
+                      <EditableText value={editorData.footerConfidentiality} onChange={(v) => setEditorData({ ...editorData, footerConfidentiality: v })} className="w-48 text-[8px] text-slate-300" />
+                      <EditableText value={editorData.footerDate} onChange={(v) => setEditorData({ ...editorData, footerDate: v })} className="text-right w-32 text-[8px] text-slate-300" />
+                    </footer>
+                  )}
                 </div>
               </div>
             </div>
