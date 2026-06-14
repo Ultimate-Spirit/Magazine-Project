@@ -24,10 +24,12 @@ interface AttendancePageProps {
 }
 
 export const AttendancePageTemplate: React.FC<AttendancePageProps> = ({ payload }) => {
-  const { metrics, departmentData, headcountData } = payload;
+  const metrics = payload?.metrics;
+  const departmentData = Array.isArray(payload?.departmentData) ? payload.departmentData : [];
+  const headcountData = Array.isArray(payload?.headcountData) ? payload.headcountData : [];
 
   return (
-    <div className="flex-1 flex flex-col bg-white text-slate-900 p-12 space-y-12">
+    <div className="flex-1 flex flex-col bg-white text-slate-900 p-12 space-y-12 min-h-full">
       {/* ATTENDANCE OVERVIEW BANNER */}
       <header className="space-y-6">
         <div className="flex items-center gap-4">
@@ -66,7 +68,7 @@ export const AttendancePageTemplate: React.FC<AttendancePageProps> = ({ payload 
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               layout="vertical"
-              data={departmentData || []}
+              data={departmentData}
               margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
             >
               <XAxis type="number" hide />
@@ -83,8 +85,8 @@ export const AttendancePageTemplate: React.FC<AttendancePageProps> = ({ payload 
                 radius={[0, 4, 4, 0]} 
                 barSize={20}
               >
-                {(departmentData || []).map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.value < 85 ? '#ef4444' : '#0f172a'} />
+                {departmentData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={(entry?.value || 0) < 85 ? '#ef4444' : '#0f172a'} />
                 ))}
               </Bar>
             </BarChart>
@@ -102,7 +104,7 @@ export const AttendancePageTemplate: React.FC<AttendancePageProps> = ({ payload 
 
         <div className="h-[250px] w-full px-4">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={headcountData || []}>
+            <LineChart data={headcountData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis 
                 dataKey="month" 

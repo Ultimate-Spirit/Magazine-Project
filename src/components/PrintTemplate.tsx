@@ -57,19 +57,23 @@ export const PrintTemplate = React.forwardRef<HTMLDivElement, PrintTemplateProps
         <div className="space-y-8">
           <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Key Performance</h3>
           <div className="space-y-6">
-            {data.metrics.map((metric, idx) => (
+            {Array.isArray(data?.metrics) ? data.metrics.map((metric, idx) => (
               <div key={idx} className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
-                  {metric.label}
+                  {metric?.label || 'Metric'}
                 </p>
                 <div className="flex items-baseline justify-between">
-                  <span className="text-3xl font-black text-slate-900">{metric.value}</span>
-                  <span className={`text-sm font-bold ${metric.percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {metric.percentage >= 0 ? '+' : ''}{metric.percentage}%
+                  <span className="text-3xl font-black text-slate-900">{metric?.value || '0.0'}</span>
+                  <span className={`text-sm font-bold ${(metric?.percentage || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {(metric?.percentage || 0) >= 0 ? '+' : ''}{metric?.percentage || 0}%
                   </span>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="p-8 border border-dashed border-slate-200 rounded-3xl text-center">
+                <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Complex Data Structure - Refer to Canvas</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
