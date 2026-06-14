@@ -11,6 +11,8 @@
     },
     "api": {
       "root": "api",
+      "entrypoint": "generate-pdf.js",
+      "builder": "@vercel/node",
       "routePrefix": "/api"
     }
   },
