@@ -359,6 +359,30 @@ export const MagazineEditor: React.FC = () => {
     }
   };
 
+  const handleDownloadPDF = async () => {
+    if (!printRef.current) return;
+    
+    setExporting(true);
+    try {
+      const element = printRef.current;
+      const canvas = await html2canvas(element, {
+        scale: 3, useCORS: true, logging: false, backgroundColor: '#ffffff', scrollY: 0, windowWidth: 850
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`${editorData.title}.pdf`);
+      showNotification('success', 'High-fidelity PDF exported successfully');
+    } catch (err: any) {
+      console.error('PDF Export Error:', err);
+      showNotification('error', 'Failed to generate high-fidelity PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const updateBlock = (index: number, updates: any) => {
     const newBlocks = [...editorData.blocks];
     newBlocks[index] = { ...newBlocks[index], ...updates };
