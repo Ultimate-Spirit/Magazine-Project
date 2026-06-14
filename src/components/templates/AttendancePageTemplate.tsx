@@ -1,14 +1,16 @@
 import React from 'react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  LineChart, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  LineChart,
   Line,
-  Cell,
-  LabelList
+  LabelList,
 } from 'recharts';
+
+// ─── PRINT-SAFE TICK STYLE ────────────────────────────────────────────────────
+const AXIS_TICK = { fontSize: 10, fontWeight: 500, fill: '#9ca3af' };
 
 interface AttendancePageProps {
   payload: {
@@ -26,145 +28,299 @@ interface AttendancePageProps {
 }
 
 export const AttendancePageTemplate: React.FC<AttendancePageProps> = ({ payload }) => {
-  const heroImageUrl = payload?.hero?.imageUrl || 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=1000&q=80';
+  const heroImageUrl =
+    payload?.hero?.imageUrl ||
+    'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=1000&q=80';
   const metrics = payload?.metrics;
   const departmentData = Array.isArray(payload?.departmentData) ? payload.departmentData : [];
   const headcountData = Array.isArray(payload?.headcountData) ? payload.headcountData : [];
 
   return (
-    <div className="w-[794px] h-[1123px] min-h-[1123px] max-h-[1123px] bg-white relative flex flex-col overflow-hidden shadow-none mx-auto print:shadow-none font-sans">
-      {/* HERO IMAGE CONTAINER */}
-      <div className="relative w-full h-64 shrink-0 bg-slate-100">
-        <img 
-          src={heroImageUrl} 
+    <div
+      className="bg-white font-sans"
+      style={{
+        width: '794px',
+        height: '1123px',
+        minHeight: '1123px',
+        maxHeight: '1123px',
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
+      {/* ── HERO IMAGE ─────────────────────────────────────────────────────── */}
+      <div style={{ position: 'relative', width: '100%', height: '256px', flexShrink: 0, background: '#e2e8f0' }}>
+        <img
+          src={heroImageUrl}
           alt="Report Header Hero"
-          className="w-full h-full object-cover"
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
         />
-        {/* OVERLAPPING KPI RIBBON */}
-        <div className="absolute -bottom-10 left-0 w-full px-12 z-10">
-          <div className="grid grid-cols-3 gap-6">
-            <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-sm flex flex-col items-center text-center">
-              <span className="text-[10px] font-bold text-blue-900 uppercase tracking-widest mb-1">Attendance Compliance</span>
-              <span className="text-4xl font-extrabold text-blue-900">{metrics?.compliance || '0.0%'}</span>
-            </div>
-            <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-sm flex flex-col items-center text-center">
-              <span className="text-[10px] font-bold text-blue-900 uppercase tracking-widest mb-1">Leave Utilization</span>
-              <span className="text-4xl font-extrabold text-blue-900">{metrics?.utilization || '0.0%'}</span>
-            </div>
-            <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-sm flex flex-col items-center text-center">
-              <span className="text-[10px] font-bold text-blue-900 uppercase tracking-widest mb-1">Total New Joiners</span>
-              <span className="text-4xl font-extrabold text-blue-900">{metrics?.joiners || '0'}</span>
-            </div>
+
+        {/* ── KPI RIBBON — overlaps hero bottom edge ──────────────────────── */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '-40px',
+            left: 0,
+            width: '100%',
+            padding: '0 48px',
+            zIndex: 10,
+            boxSizing: 'border-box',
+          }}
+        >
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '24px' }}>
+            {[
+              { label: 'Attendance Compliance', value: metrics?.compliance || '—' },
+              { label: 'Leave Utilization',     value: metrics?.utilization || '—' },
+              { label: 'Total New Joiners',     value: metrics?.joiners    || '—' },
+            ].map(({ label, value }) => (
+              <div
+                key={label}
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  padding: '20px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  textAlign: 'center',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    color: '#1e3a8a',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    marginBottom: '6px',
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {label}
+                </span>
+                <span style={{ fontSize: '36px', fontWeight: 800, color: '#1e3a8a', lineHeight: 1 }}>
+                  {value}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* CONTENT AREA */}
-      <div className="flex-1 mt-16 px-12 pb-10 flex flex-col justify-between overflow-hidden">
-        
-        {/* SECTION 1: DEPARTMENT-WISE ATTENDANCE */}
-        <div className="flex flex-col space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="bg-blue-900 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-black shrink-0">1</div>
-            <h2 className="text-sm font-black uppercase tracking-wide text-blue-900">DEPARTMENT-WISE ATTENDANCE %</h2>
+      {/* ── CONTENT AREA ────────────────────────────────────────────────────── */}
+      <div
+        style={{
+          flex: 1,
+          marginTop: '64px',
+          padding: '0 48px 32px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          overflow: 'hidden',
+        }}
+      >
+        {/* ── SECTION 1: DEPARTMENT-WISE ATTENDANCE % ───────────────────── */}
+        <div>
+          {/* Section header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <div
+              style={{
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                background: '#1e3a8a',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '11px',
+                fontWeight: 900,
+                flexShrink: 0,
+              }}
+            >
+              1
+            </div>
+            <h2
+              style={{
+                fontSize: '11px',
+                fontWeight: 900,
+                textTransform: 'uppercase',
+                letterSpacing: '0.12em',
+                color: '#1e3a8a',
+                margin: 0,
+              }}
+            >
+              Department-Wise Attendance %
+            </h2>
           </div>
 
-          <div className="w-[698px] h-[280px] flex items-center justify-center">
+          {/* Bar chart — hardcoded dimensions, no ResponsiveContainer, no animations */}
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
             <BarChart
+              width={668}
+              height={220}
               layout="vertical"
-              width={698}
-              height={280}
               data={departmentData}
-              margin={{ top: 10, right: 40, left: 10, bottom: 10 }}
+              margin={{ top: 4, right: 48, left: 0, bottom: 4 }}
             >
-              <XAxis type="number" hide />
-              <YAxis 
-                dataKey="name" 
-                type="category" 
-                axisLine={false} 
-                tickLine={false}
-                tick={{ fontSize: 12, fontWeight: 600, fill: '#1e3a8a' }}
-                width={110}
+              {/* No CartesianGrid — fully stripped */}
+              <XAxis
+                type="number"
+                hide
               />
-              <Bar 
-                dataKey="value" 
-                fill="#a78bfa"
-                radius={[0, 4, 4, 0]} 
-                barSize={18}
+              <YAxis
+                dataKey="name"
+                type="category"
+                axisLine={false}
+                tickLine={false}
+                tick={AXIS_TICK}
+                width={120}
+              />
+              <Bar
+                dataKey="value"
+                fill="#1e3a8a"
+                radius={[0, 3, 3, 0]}
+                barSize={14}
+                isAnimationActive={false}
               >
-                <LabelList 
-                  dataKey="value" 
-                  position="right" 
+                <LabelList
+                  dataKey="value"
+                  position="right"
                   formatter={(val: any) => `${val}%`}
-                  style={{ fontSize: '12px', fontWeight: 600, fill: '#1e3a8a' }} 
+                  style={{ fontSize: '10px', fontWeight: 600, fill: '#6b7280' }}
                 />
               </Bar>
             </BarChart>
           </div>
         </div>
 
-        {/* SECTION 2: HEADCOUNT MOVEMENT TREND */}
-        <div className="flex flex-col space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="bg-blue-900 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-black shrink-0">2</div>
-            <h2 className="text-sm font-black uppercase tracking-wide text-blue-900">HEADCOUNT MOVEMENT TREND</h2>
+        {/* ── SECTION 2: HEADCOUNT MOVEMENT TREND ───────────────────────── */}
+        <div>
+          {/* Section header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <div
+              style={{
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                background: '#1e3a8a',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '11px',
+                fontWeight: 900,
+                flexShrink: 0,
+              }}
+            >
+              2
+            </div>
+            <h2
+              style={{
+                fontSize: '11px',
+                fontWeight: 900,
+                textTransform: 'uppercase',
+                letterSpacing: '0.12em',
+                color: '#1e3a8a',
+                margin: 0,
+              }}
+            >
+              Headcount Movement Trend
+            </h2>
           </div>
 
-          <div className="w-[698px] h-[280px] flex flex-col items-center justify-center">
-            <LineChart 
-              width={698} 
-              height={240} 
-              data={headcountData} 
-              margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
+          {/* Line chart — hardcoded dimensions, no ResponsiveContainer, no animations */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <LineChart
+              width={668}
+              height={210}
+              data={headcountData}
+              margin={{ top: 12, right: 30, left: 0, bottom: 4 }}
             >
-              <XAxis 
-                dataKey="month" 
+              {/* No CartesianGrid — fully stripped */}
+              <XAxis
+                dataKey="month"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 12, fontWeight: 600, fill: '#1e3a8a' }}
+                tick={AXIS_TICK}
               />
-              <YAxis 
+              <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 12, fontWeight: 600, fill: '#1e3a8a' }}
+                tick={AXIS_TICK}
+                width={32}
               />
-              <Line 
-                type="monotone" 
-                dataKey="joiners" 
-                stroke="#4b5563" 
-                strokeWidth={3} 
-                dot={{ r: 5, fill: '#a78bfa', strokeWidth: 0 }} 
-                activeDot={{ r: 7, fill: '#a78bfa', strokeWidth: 0 }}
+              {/* Joiners — dark gray line, purple dots */}
+              <Line
+                type="monotone"
+                dataKey="joiners"
+                stroke="#1e3a8a"
+                strokeWidth={2.5}
+                dot={{ r: 4, fill: '#a78bfa', strokeWidth: 0 }}
+                activeDot={false}
+                isAnimationActive={false}
               />
-              <Line 
-                type="monotone" 
-                dataKey="leavers" 
-                stroke="#9ca3af" 
-                strokeWidth={2} 
-                strokeDasharray="5 5"
+              {/* Leavers — muted dashed line */}
+              <Line
+                type="monotone"
+                dataKey="leavers"
+                stroke="#d1d5db"
+                strokeWidth={1.5}
+                strokeDasharray="4 4"
                 dot={false}
                 activeDot={false}
+                isAnimationActive={false}
               />
             </LineChart>
 
-            {/* CUSTOM LEGEND MATCHING PDF STYLE */}
-            <div className="flex justify-center gap-12 pt-2 w-full border-t border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#4b5563]" />
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">New Joiners</span>
+            {/* Custom print legend */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '40px',
+                paddingTop: '8px',
+                width: '100%',
+                borderTop: '1px solid #f1f5f9',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '28px', height: '2px', background: '#1e3a8a', borderRadius: '1px' }} />
+                <span style={{ fontSize: '9px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  New Joiners
+                </span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5 border-t-2 border-dashed border-slate-400" />
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Leavers</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '28px', height: '0', borderTop: '2px dashed #d1d5db' }} />
+                <span style={{ fontSize: '9px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Leavers
+                </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* FOOTER METADATA */}
-        <footer className="mt-auto pt-6 border-t border-slate-100 flex justify-between items-center text-blue-900/40 shrink-0">
-          <p className="text-[8px] font-black uppercase tracking-[0.4em]">Corporate Intelligence Report // Confidential</p>
-          <p className="text-[8px] font-black uppercase tracking-[0.4em]">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+        {/* ── FOOTER ─────────────────────────────────────────────────────── */}
+        <footer
+          style={{
+            borderTop: '1px solid #f1f5f9',
+            paddingTop: '16px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <p style={{ fontSize: '8px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#1e3a8a', opacity: 0.3, margin: 0 }}>
+            Corporate Intelligence Report // Confidential
+          </p>
+          <p style={{ fontSize: '8px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#1e3a8a', opacity: 0.3, margin: 0 }}>
+            {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          </p>
         </footer>
       </div>
     </div>
