@@ -364,19 +364,25 @@ export const MagazineEditor: React.FC = () => {
     if (!liveCanvasRef.current) return;
     
     setExporting(true);
+    const element = liveCanvasRef.current;
+    const originalTransform = element.style.transform;
     try {
-      const element = liveCanvasRef.current;
+      element.style.transform = 'none';
       
       const canvas = await html2canvas(element, {
         scale: 2, 
         useCORS: true, 
         logging: false, 
         backgroundColor: '#ffffff', 
-        scrollY: 0, 
-        windowWidth: 794,
+        width: 794,
+        height: 1123,
+        scrollX: 0,
+        scrollY: 0,
         // @ts-ignore
         letterRendering: true
       });
+
+      element.style.transform = originalTransform;
 
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
       const pdf = new jsPDF({ 
@@ -389,6 +395,7 @@ export const MagazineEditor: React.FC = () => {
       pdf.save(`${editorData.title}.pdf`);
       showNotification('success', 'A4 Architecture Exported');
     } catch (err: any) {
+      element.style.transform = originalTransform;
       console.error('PDF Export Error:', err);
       showNotification('error', 'Failed to generate high-fidelity PDF');
     } finally {
