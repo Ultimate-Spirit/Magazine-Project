@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { PrintTemplate } from './PrintTemplate';
+import { AttendancePageTemplate } from './templates/AttendancePageTemplate';
 import type { Page, Company } from '../types';
 // @ts-ignore
 import html2canvas from 'html2canvas';
@@ -486,7 +487,10 @@ export const MagazineEditor: React.FC = () => {
                   style={{ transform: `scale(${zoom})` }}
                   onClick={(e) => e.target === e.currentTarget && setActiveBlockId(null)}
                 >
-                  {editorData.blocks && Array.isArray(editorData.blocks) ? (
+                  {/* DATA-DRIVEN ROUTING LAYER */}
+                  {editorData.layout_style === 'attendance_dashboard' ? (
+                    <AttendancePageTemplate payload={editorData} />
+                  ) : editorData.blocks && Array.isArray(editorData.blocks) ? (
                     <div className="flex-1 flex flex-col">{renderDynamicBlocks()}</div>
                   ) : (
                     /* FALLBACK: LEGACY KPI DASHBOARD */
