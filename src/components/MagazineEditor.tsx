@@ -285,6 +285,11 @@ export const MagazineEditor: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const liveCanvasRef = useRef<HTMLDivElement>(null); // Ref for Live Preview capture
 
+  // ── ATTENDANCE DETECTION: deep-search the serialised payload so no nesting
+  // depth or key-order variation can cause a false-negative. This is the
+  // single source of truth used by BOTH the render block and handleDownloadPDF.
+  const isAttendance = JSON.stringify(editorData).includes('attendance_dashboard');
+
   const canEdit = permissions?.can_edit_all_publications || (permissions?.can_edit_own_publications && (page?.created_by === profile?.id || pageId === 'new'));
 
   useEffect(() => {
@@ -313,7 +318,13 @@ export const MagazineEditor: React.FC = () => {
         if (pageErr) throw pageErr;
         if (pageData) {
           setPage(pageData);
-          setEditorData({ ...editorData, title: pageData.title, ...pageData.data });
+          // Deep-merge: pageData.data may itself contain a nested .data key from older saves.
+          // Flatten all levels so layout_style is always reachable at the top of editorData.
+          const rawPayload = pageData.data ?? {};
+          const flatPayload = rawPayload.data ? { ...rawPayload, ...rawPayload.data } : rawPayload;
+          console.debug('[MagazineEditor] raw pageData.data =>', rawPayload);
+          console.debug('[MagazineEditor] flatPayload =>', flatPayload);
+          setEditorData((prev: any) => ({ ...prev, title: pageData.title, ...flatPayload }));
         }
       }
     } catch (err: any) {
@@ -365,8 +376,8 @@ export const MagazineEditor: React.FC = () => {
   const handleDownloadPDF = async () => {
     setExporting(true);
     try {
-      // ── NATIVE PDF ENGINE for attendance dashboard ──────────────────────
-      if (editorData.layout_style === 'attendance_dashboard') {
+      // ── NATIVE PDF ENGINE: uses the same isAttendance flag as the render ──
+      if (isAttendance) {
         const blob = await pdf(
           <AttendanceReportPDF
             heroImageUrl={editorData.hero?.imageUrl}
@@ -508,20 +519,37 @@ export const MagazineEditor: React.FC = () => {
               </div>
             )}
 
-            {/* ── NATIVE PDF VIEWER: Attendance Dashboard ─────────────────── */}
-            {editorData.layout_style === 'attendance_dashboard' ? (
-              <div className="w-full h-full flex flex-col items-center justify-start p-8 gap-4">
-                <div className="flex items-center gap-3 self-start">
-                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+            {/* ── ATTENDANCE FORCE-RENDER: isAttendance is the single gating flag ── */}
+            {isAttendance ? (
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  padding: '32px',
+                  gap: '16px',
+                  boxSizing: 'border-box',
+                }}
+              >
+                {/* Status pill */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', alignSelf: 'flex-start' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4ade80', animation: 'pulse 2s infinite' }} />
+                  <span style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#6b7280' }}>
                     Live PDF Preview · Vector Engine Active
                   </span>
+                  <span style={{ fontSize: '9px', fontWeight: 600, color: '#a78bfa', background: '#f3e8ff', borderRadius: '999px', padding: '2px 8px' }}>
+                    layout: {editorData.layout_style ?? 'detected via deep-search'}
+                  </span>
                 </div>
+                {/* The ONLY element when isAttendance is true — no HTML fallback anywhere below */}
                 <PDFViewer
-                  width="794"
-                  height="1123"
-                  className="shadow-2xl rounded-sm border border-border/20"
-                  showToolbar={false}
+                  width="100%"
+                  height="800px"
+                  showToolbar={true}
+                  style={{ border: 'none', borderRadius: '4px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}
                 >
                   <AttendanceReportPDF
                     heroImageUrl={editorData.hero?.imageUrl}
