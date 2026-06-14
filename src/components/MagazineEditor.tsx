@@ -27,10 +27,6 @@ import { AttendancePageTemplate } from './templates/AttendancePageTemplate';
 import type { Page, Company } from '../types';
 // @ts-ignore
 import html2canvas from 'html2canvas';
-// @ts-ignore
-import jsPDF from 'jspdf';
-import { PDFViewer, pdf } from '@react-pdf/renderer';
-import { AttendanceReportPDF } from './pdf/AttendanceReportPDF';
 
 import { useAuth } from '../contexts/AuthContext';
 import { logActivity } from '../lib/activityLogger';
@@ -285,9 +281,8 @@ export const MagazineEditor: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const liveCanvasRef = useRef<HTMLDivElement>(null); // Ref for Live Preview capture
 
-  // ── ATTENDANCE DETECTION: deep-search the serialised payload so no nesting
-  // depth or key-order variation can cause a false-negative. This is the
-  // single source of truth used by BOTH the render block and handleDownloadPDF.
+  // Deep-search for attendance_dashboard in the serialised payload.
+  // Used only for handleDownloadPDF routing — the visual canvas always renders HTML.
   const isAttendance = JSON.stringify(editorData).includes('attendance_dashboard');
 
   const canEdit = permissions?.can_edit_all_publications || (permissions?.can_edit_own_publications && (page?.created_by === profile?.id || pageId === 'new'));
@@ -374,56 +369,72 @@ export const MagazineEditor: React.FC = () => {
   };
 
   const handleDownloadPDF = async () => {
+    if (!liveCanvasRef.current) return;
     setExporting(true);
     try {
-      // ── NATIVE PDF ENGINE: uses the same isAttendance flag as the render ──
-      if (isAttendance) {
-        const blob = await pdf(
-          <AttendanceReportPDF
-            heroImageUrl={editorData.hero?.imageUrl}
-            metrics={editorData.metrics}
-            departmentData={editorData.departmentData}
-            headcountData={editorData.headcountData}
-          />
-        ).toBlob();
-        const url = URL.createObjectURL(blob);
-        const a   = document.createElement('a');
-        a.href     = url;
-        a.download = `${editorData.title || 'Attendance-Report'}.pdf`;
-        a.click();
-        URL.revokeObjectURL(url);
-        showNotification('success', 'Native Vector PDF Exported');
-        return;
-      }
-
-      // ── LEGACY html2canvas path for other templates ─────────────────────
-      if (!liveCanvasRef.current) return;
-      const element        = liveCanvasRef.current;
+      const element = liveCanvasRef.current;
       const originalTransform = element.style.transform;
+
+      // ── Temporarily reset zoom so we capture at 1:1 DOM scale ──────────
       element.style.transform = 'none';
 
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        width: 794,
-        height: 1123,
-        scrollX: 0,
-        scrollY: 0,
-        // @ts-ignore
-        letterRendering: true,
+      // ── Build a self-contained HTML document from the live canvas ───────
+      // Grab all <style> and <link rel=stylesheet> tags from the document head
+      // so Tailwind classes, fonts, and custom CSS are all inlined.
+      const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+        .map(el => el.outerHTML)
+        .join('\n');
+
+      const canvasHTML = element.outerHTML;
+
+      const fullHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+${styles}
+<style>
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  @page { size: A4; margin: 0; }
+  html, body { margin: 0; padding: 0; background: #ffffff; }
+  .page-break { page-break-after: always; }
+</style>
+</head>
+<body style="margin:0;padding:0;">
+${canvasHTML}
+</body>
+</html>`;
+
+      // Restore zoom transform
+      element.style.transform = originalTransform;
+
+      // ── POST to the serverless Chromium PDF endpoint ─────────────────────
+      const response = await fetch('/api/generate-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html: fullHTML }),
       });
 
-      element.style.transform = originalTransform;
-      const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      const legacyPdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [794, 1123] });
-      legacyPdf.addImage(imgData, 'JPEG', 0, 0, 794, 1123);
-      legacyPdf.save(`${editorData.title}.pdf`);
-      showNotification('success', 'A4 Architecture Exported');
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => ({ error: response.statusText }));
+        throw new Error(errBody.error ?? `Server error ${response.status}`);
+      }
+
+      // ── Receive blob and trigger native download ─────────────────────────
+      const blob = await response.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `${editorData.title || 'Report'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showNotification('success', 'High-Definition PDF Exported');
     } catch (err: any) {
-      console.error('PDF Export Error:', err);
-      showNotification('error', 'Failed to generate PDF');
+      console.error('[handleDownloadPDF] Error:', err);
+      showNotification('error', `PDF export failed: ${err.message}`);
     } finally {
       setExporting(false);
     }
@@ -519,47 +530,8 @@ export const MagazineEditor: React.FC = () => {
               </div>
             )}
 
-            {/* ── ATTENDANCE FORCE-RENDER: isAttendance is the single gating flag ── */}
-            {isAttendance ? (
-              <div
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'flex-start',
-                  padding: '32px',
-                  gap: '16px',
-                  boxSizing: 'border-box',
-                }}
-              >
-                {/* Status pill */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', alignSelf: 'flex-start' }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4ade80', animation: 'pulse 2s infinite' }} />
-                  <span style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#6b7280' }}>
-                    Live PDF Preview · Vector Engine Active
-                  </span>
-                  <span style={{ fontSize: '9px', fontWeight: 600, color: '#a78bfa', background: '#f3e8ff', borderRadius: '999px', padding: '2px 8px' }}>
-                    layout: {editorData.layout_style ?? 'detected via deep-search'}
-                  </span>
-                </div>
-                {/* The ONLY element when isAttendance is true — no HTML fallback anywhere below */}
-                <PDFViewer
-                  width="100%"
-                  height="800px"
-                  showToolbar={true}
-                  style={{ border: 'none', borderRadius: '4px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}
-                >
-                  <AttendanceReportPDF
-                    heroImageUrl={editorData.hero?.imageUrl}
-                    metrics={editorData.metrics}
-                    departmentData={editorData.departmentData}
-                    headcountData={editorData.headcountData}
-                  />
-                </PDFViewer>
-              </div>
-            ) : (
+            {/* ── WYSIWYG CANVAS — standard A4 HTML preview ─────────────── */}
+            {/* ── WYSIWYG CANVAS — standard A4 HTML preview ─────────────── */}
             <div className="min-w-max p-4 lg:p-12 min-h-full flex items-start justify-center">
               {/* Visual Scaling Wrapper: Fits the A4 canvas into the screen without altering its DOM dimensions */}
               <div 
@@ -574,15 +546,17 @@ export const MagazineEditor: React.FC = () => {
                   ref={liveCanvasRef}
                   style={{ 
                     width: '794px', 
-                    height: '1123px', 
+                    minHeight: '1123px', 
                     transform: `scale(${zoom})`,
                     transformOrigin: 'top left'
                   }}
-                  className="bg-white relative overflow-hidden shadow-2xl transition-transform"
+                  className="bg-white relative overflow-hidden shadow-2xl transition-transform print:w-[794px] print:h-[1123px] print:shadow-none print:break-after-page"
                   onClick={(e) => e.target === e.currentTarget && setActiveBlockId(null)}
                 >
                   {/* DATA-DRIVEN ROUTING LAYER */}
-                  {editorData.blocks && Array.isArray(editorData.blocks) ? (
+                  {isAttendance ? (
+                    <AttendancePageTemplate payload={editorData} />
+                  ) : editorData.blocks && Array.isArray(editorData.blocks) ? (
                     <div className="flex-1 flex flex-col">{renderDynamicBlocks()}</div>
                   ) : (
                     /* FALLBACK: LEGACY KPI DASHBOARD */
@@ -625,7 +599,6 @@ export const MagazineEditor: React.FC = () => {
                 </div>
               </div>
             </div>
-            )} {/* end attendance_dashboard ternary */}
           </main>
 
           <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-t border-border p-4 pb-safe flex flex-col gap-3">
