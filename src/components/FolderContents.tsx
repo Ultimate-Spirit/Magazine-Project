@@ -41,6 +41,7 @@ export function FolderContents() {
   
   const [pages, setPages] = useState<Page[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [globalTemplates, setGlobalTemplates] = useState<Template[]>([]);
   const [folder, setFolder] = useState<Folder | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,6 +51,10 @@ export function FolderContents() {
   const [pageToDelete, setPageToDelete] = useState<Page | null>(null);
   const [pageToReset, setPageToReset] = useState<{ page: Page, template: Template } | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
+
+  // Global Bookend Selection
+  const [selectedCoverId, setSelectedCoverId] = useState<string>('');
+  const [selectedLastPageId, setSelectedLastPageId] = useState<string>('');
 
   // Hydration & Mounting Stability
   const [isMounted, setIsMounted] = useState(false);
@@ -84,19 +89,30 @@ export function FolderContents() {
       setFolder(folderData);
       setCompany(folderData?.companies || null);
 
-      // 2. Fetch all templates for this bundle, sorted by weight
+      // 2. Fetch bundle-specific content templates
       if (folderData.bundle_id) {
         const { data: templatesData, error: templatesErr } = await supabase
           .from('templates')
           .select('*')
           .eq('bundle_id', folderData.bundle_id)
+          .in('category', ['Content', 'Newsletter'])
           .order('weight', { ascending: true });
         
         if (templatesErr) throw templatesErr;
         setTemplates(templatesData || []);
       }
 
-      // 3. Fetch all pages in this folder
+      // 3. Fetch global templates (Cover & Last Page)
+      const { data: globData, error: globErr } = await supabase
+        .from('templates')
+        .select('*')
+        .eq('is_global', true)
+        .order('weight', { ascending: true });
+        
+      if (globErr) throw globErr;
+      setGlobalTemplates(globData || []);
+
+      // 4. Fetch all pages in this folder
       const { data: pagesData, error: pagesErr } = await supabase
         .from('pages')
         .select('*, templates(*)')
@@ -105,6 +121,15 @@ export function FolderContents() {
 
       if (pagesErr) throw pagesErr;
       setPages(pagesData || []);
+
+      // Initial state mapping for Global Bookend drop-downs
+      if (pagesData) {
+        const coverPage = pagesData.find(p => p.templates?.category === 'Cover');
+        if (coverPage) setSelectedCoverId(coverPage.template_id || '');
+
+        const lastPage = pagesData.find(p => p.templates?.category === 'Last Page');
+        if (lastPage) setSelectedLastPageId(lastPage.template_id || '');
+      }
 
     } catch (err: any) {
       console.error('Fetch Error:', err);
@@ -129,7 +154,6 @@ export function FolderContents() {
 
     setIsActionLoading(true);
     try {
-      // Explicitly spread the master blueprint payload into the new page's data column
       const masterPayload = template.payload || {};
       
       const { data, error } = await supabase
@@ -285,8 +309,27 @@ export function FolderContents() {
     navigate(`/company/${company?.id || 'none'}/folders`, { replace: true });
   };
 
-  // Logic to separate "Custom/Legacy" pages that aren't part of the current bundle's template slots
-  const legacyPages = pages.filter(p => !templates.some(t => t.id === p.template_id));
+  // Build the combined array of active templates (Local Bundle + Global Selections)
+  const activeTemplates = [...templates];
+  
+  if (selectedCoverId) {
+    const activeCover = globalTemplates.find(t => t.id === selectedCoverId);
+    if (activeCover && !activeTemplates.some(t => t.id === activeCover.id)) {
+      activeTemplates.push(activeCover);
+    }
+  }
+
+  if (selectedLastPageId) {
+    const activeLastPage = globalTemplates.find(t => t.id === selectedLastPageId);
+    if (activeLastPage && !activeTemplates.some(t => t.id === activeLastPage.id)) {
+      activeTemplates.push(activeLastPage);
+    }
+  }
+
+  activeTemplates.sort((a, b) => (a.weight || 0) - (b.weight || 0));
+
+  // Logic to separate "Custom/Legacy" pages that aren't part of the active slots
+  const legacyPages = pages.filter(p => !activeTemplates.some(t => t.id === p.template_id));
 
   return (
     <WorkspaceLayout company={company || { id: 'none', name: 'Workspace' }}>
@@ -342,16 +385,55 @@ export function FolderContents() {
           </div>
         </header>
 
-        {/* Blueprint Checklist Grid */}
+        {/* Global Bookends & Blueprint Checklist Grid */}
         <div className="space-y-12">
+          
           <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <Sparkles className="w-5 h-5 text-primary" />
-              <h2 className="text-sm font-black uppercase tracking-[0.3em] text-muted-foreground/60">Blueprint Checklist Slots</h2>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <h2 className="text-sm font-black uppercase tracking-[0.3em] text-muted-foreground/60">Blueprint Checklist Slots</h2>
+              </div>
+            </div>
+
+            {/* Mix & Match Global Bookends */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 lg:p-8 micro-surface border border-border/10 rounded-[2rem]">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                  <Layout className="w-3.5 h-3.5" /> Global Cover Master
+                </label>
+                <select 
+                  value={selectedCoverId}
+                  onChange={(e) => setSelectedCoverId(e.target.value)}
+                  disabled={pages.some(p => p.templates?.category === 'Cover')}
+                  className="w-full bg-background border border-border/10 rounded-xl px-4 py-3 text-sm font-bold text-foreground focus:ring-2 focus:ring-primary outline-none appearance-none disabled:opacity-50 transition-all cursor-pointer"
+                >
+                  <option value="" disabled>Choose a Cover Template...</option>
+                  {globalTemplates.filter(t => t.category === 'Cover').map(t => (
+                    <option key={t.id} value={t.id}>{t.template_name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                  <Layout className="w-3.5 h-3.5" /> Global Back Cover Master
+                </label>
+                <select 
+                  value={selectedLastPageId}
+                  onChange={(e) => setSelectedLastPageId(e.target.value)}
+                  disabled={pages.some(p => p.templates?.category === 'Last Page')}
+                  className="w-full bg-background border border-border/10 rounded-xl px-4 py-3 text-sm font-bold text-foreground focus:ring-2 focus:ring-primary outline-none appearance-none disabled:opacity-50 transition-all cursor-pointer"
+                >
+                  <option value="" disabled>Choose a Last Page Template...</option>
+                  {globalTemplates.filter(t => t.category === 'Last Page').map(t => (
+                    <option key={t.id} value={t.id}>{t.template_name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {templates.map((template) => {
+              {activeTemplates.map((template) => {
                 const existingPage = pages.find(p => p.template_id === template.id);
                 const isCompleted = !!existingPage;
 
@@ -365,15 +447,16 @@ export function FolderContents() {
                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors duration-500 ${isCompleted ? 'bg-emerald-500/10 text-emerald-500' : 'bg-secondary text-muted-foreground/30'}`}>
                           {isCompleted ? <CheckCircle2 className="w-6 h-6" /> : <Layout className="w-6 h-6" />}
                         </div>
-                        <span className="px-2 py-0.5 rounded bg-muted/30 text-[8px] font-black uppercase tracking-widest text-muted-foreground border border-border/5">
+                        <span className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-muted/30 text-[8px] font-black uppercase tracking-widest text-muted-foreground border border-border/5">
                           {template.category}
                         </span>
                       </div>
                       <h3 className="text-xl font-black text-foreground tracking-tight leading-tight line-clamp-2">
                         {template.template_name}
                       </h3>
-                      <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest mt-2">
+                      <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest mt-2 flex items-center gap-2">
                         {template.department_tag || 'General'}
+                        {template.is_global && <span className="text-primary font-black ml-auto bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">GLOBAL</span>}
                       </p>
                     </div>
 
@@ -409,9 +492,9 @@ export function FolderContents() {
                 );
               })}
               
-              {templates.length === 0 && (
+              {activeTemplates.length === 0 && (
                  <div className="col-span-full py-20 text-center micro-surface border border-dashed border-border/20 rounded-[2.5rem]">
-                    <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px]">No blueprint slots defined for this bundle.</p>
+                    <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px]">No blueprint slots active. Select global masters above to begin.</p>
                  </div>
               )}
             </div>

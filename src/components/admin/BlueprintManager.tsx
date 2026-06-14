@@ -39,7 +39,8 @@ export const BlueprintManager: React.FC = () => {
     category: 'Content' as any,
     department_tag: '',
     weight: 10,
-    payload: '{}'
+    payload: '{}',
+    is_global: false
   });
 
   const [error, setError] = useState<string | null>(null);
@@ -173,7 +174,8 @@ export const BlueprintManager: React.FC = () => {
         category: templateForm.category,
         department_tag: templateForm.department_tag,
         weight: templateForm.weight,
-        payload: parsedPayload
+        payload: parsedPayload,
+        is_global: templateForm.is_global
       };
 
       if (editingTemplate) {
@@ -202,7 +204,8 @@ export const BlueprintManager: React.FC = () => {
         category: 'Content',
         department_tag: '',
         weight: 10,
-        payload: '{}'
+        payload: '{}',
+        is_global: false
       });
     } catch (err: any) {
       setError(err.message);
@@ -237,7 +240,8 @@ export const BlueprintManager: React.FC = () => {
       category: template.category,
       department_tag: template.department_tag || '',
       weight: template.weight,
-      payload: JSON.stringify(template.payload, null, 2)
+      payload: JSON.stringify(template.payload, null, 2),
+      is_global: template.is_global || false
     });
     setShowCreateTemplate(true);
   };
@@ -383,7 +387,8 @@ export const BlueprintManager: React.FC = () => {
                   category: 'Content',
                   department_tag: '',
                   weight: 10,
-                  payload: '{}'
+                  payload: '{}',
+                  is_global: false
                 });
                 setShowCreateTemplate(true);
               }}
@@ -412,7 +417,14 @@ export const BlueprintManager: React.FC = () => {
                   <select 
                     className="w-full bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none"
                     value={templateForm.category}
-                    onChange={(e) => setTemplateForm({ ...templateForm, category: e.target.value as any })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setTemplateForm({ 
+                        ...templateForm, 
+                        category: val as any,
+                        is_global: (val === 'Cover' || val === 'Last Page') ? templateForm.is_global : false
+                      });
+                    }}
                   >
                     <option value="Cover">Cover</option>
                     <option value="Content">Content</option>
@@ -440,6 +452,22 @@ export const BlueprintManager: React.FC = () => {
                   />
                   <p className="text-[10px] text-muted-foreground mt-1">0 for Cover, 10 for Content, 1000 for Last Page</p>
                 </div>
+                
+                {(templateForm.category === 'Cover' || templateForm.category === 'Last Page') && (
+                  <div className="space-y-2 flex flex-col justify-center mt-2 col-span-full md:col-span-1 p-4 bg-primary/5 border border-primary/20 rounded-xl">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="w-5 h-5 rounded border-border/20 text-primary bg-background focus:ring-primary/20 accent-primary"
+                        checked={templateForm.is_global}
+                        onChange={(e) => setTemplateForm({ ...templateForm, is_global: e.target.checked })}
+                      />
+                      <span className="text-sm font-black text-primary uppercase tracking-widest">Global Asset</span>
+                    </label>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-8">Make this template mixable across all directories.</p>
+                  </div>
+                )}
+
                 <div className="col-span-full space-y-2">
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Initial Payload (JSON)</label>
                   <textarea 
@@ -485,7 +513,7 @@ export const BlueprintManager: React.FC = () => {
                     <tr key={template.id} className="hover:bg-muted/10 transition-colors group">
                       <td className="px-6 py-4 text-sm font-mono text-muted-foreground">{template?.weight ?? '-'}</td>
                       <td className="px-6 py-4 text-sm font-bold text-foreground">{template?.template_name || 'Unnamed'}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 flex items-center gap-2">
                         <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${
                           template?.category === 'Cover' ? 'bg-purple-500/10 text-purple-500' :
                           template?.category === 'Last Page' ? 'bg-orange-500/10 text-orange-500' :
@@ -493,6 +521,9 @@ export const BlueprintManager: React.FC = () => {
                         }`}>
                           {template?.category || 'Content'}
                         </span>
+                        {template?.is_global && (
+                          <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-[8px] font-black uppercase tracking-widest border border-primary/20">Global</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-muted-foreground">
                         {template?.department_tag || '-'}

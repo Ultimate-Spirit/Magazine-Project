@@ -57,6 +57,7 @@ export interface Template {
   department_tag: string;
   weight: number;
   payload: any;
+  is_global?: boolean;
   created_at: string;
 }
 
