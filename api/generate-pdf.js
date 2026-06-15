@@ -8,11 +8,11 @@
 // Returns: application/pdf binary buffer
 // ─────────────────────────────────────────────────────────────────────────────
 
-module.exports.config = {
+export const config = {
   maxDuration: 60,
 };
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed. Use POST.' });
     return;
