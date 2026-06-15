@@ -36,19 +36,7 @@ export const AttendancePageTemplate: React.FC<AttendancePageProps> = ({ payload 
   const headcountData = Array.isArray(payload?.headcountData) ? payload.headcountData : [];
 
   return (
-    <div
-      className="bg-white font-sans"
-      style={{
-        width: '794px',
-        height: '1123px',
-        minHeight: '1123px',
-        maxHeight: '1123px',
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-      }}
-    >
+    <div className="w-[794px] min-h-[1123px] relative bg-white flex flex-col overflow-hidden font-sans">
       {/* ── HERO IMAGE ─────────────────────────────────────────────────────── */}
       <div style={{ position: 'relative', width: '100%', height: '256px', flexShrink: 0, background: '#e2e8f0' }}>
         <img

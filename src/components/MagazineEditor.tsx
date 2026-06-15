@@ -368,47 +368,26 @@ export const MagazineEditor: React.FC = () => {
     }
   };
 
-  const handleDownloadPDF = async () => {
+  const handleExportPDF = async () => {
     if (!liveCanvasRef.current) return;
     setExporting(true);
     try {
-      const element = liveCanvasRef.current;
-      const originalTransform = element.style.transform;
-
-      // ── Temporarily reset zoom so we capture at 1:1 DOM scale ──────────
-      element.style.transform = 'none';
-
-      // ── Build a self-contained HTML document from the live canvas ───────
-      // Grab all <style> and <link rel=stylesheet> tags from the document head
-      // so Tailwind classes, fonts, and custom CSS are all inlined.
-      const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-        .map(el => el.outerHTML)
-        .join('\n');
-
-      const canvasHTML = element.outerHTML;
+      const targetHtml = document.getElementById('report-canvas')?.outerHTML || '';
 
       const fullHTML = `<!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-${styles}
-<style>
-  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  @page { size: A4; margin: 0; }
-  html, body { margin: 0; padding: 0; background: #ffffff; }
-  .page-break { page-break-after: always; }
-</style>
+  <meta charset="UTF-8">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @page { margin: 0; size: A4; }
+  </style>
 </head>
-<body style="margin:0;padding:0;">
-${canvasHTML}
+<body>
+${targetHtml}
 </body>
 </html>`;
 
-      // Restore zoom transform
-      element.style.transform = originalTransform;
-
-      // ── POST to the serverless Chromium PDF endpoint ─────────────────────
       const response = await fetch('/api/generate-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -416,16 +395,14 @@ ${canvasHTML}
       });
 
       if (!response.ok) {
-        const errBody = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(errBody.error ?? `Server error ${response.status}`);
+        throw new Error(`Server error ${response.status}`);
       }
 
-      // ── Receive blob and trigger native download ─────────────────────────
       const blob = await response.blob();
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
       a.href     = url;
-      a.download = `${editorData.title || 'Report'}.pdf`;
+      a.download = 'SDPL_Corporate_Intelligence.pdf';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -433,7 +410,7 @@ ${canvasHTML}
 
       showNotification('success', 'High-Definition PDF Exported');
     } catch (err: any) {
-      console.error('[handleDownloadPDF] Error:', err);
+      console.error('[handleExportPDF] Error:', err);
       showNotification('error', `PDF export failed: ${err.message}`);
     } finally {
       setExporting(false);
@@ -499,7 +476,7 @@ ${canvasHTML}
               Save Progress
             </button>
             <button 
-              onClick={handleDownloadPDF}
+              onClick={handleExportPDF}
               disabled={exporting}
               className="flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50 text-sm"
             >
@@ -543,14 +520,13 @@ ${canvasHTML}
                 className="relative shrink-0 mb-12 origin-top"
               >
                 <div 
+                  id="report-canvas"
                   ref={liveCanvasRef}
                   style={{ 
-                    width: '794px', 
-                    minHeight: '1123px', 
                     transform: `scale(${zoom})`,
                     transformOrigin: 'top left'
                   }}
-                  className="bg-white relative overflow-hidden shadow-2xl transition-transform print:w-[794px] print:h-[1123px] print:shadow-none print:break-after-page"
+                  className="w-[794px] min-h-[1123px] relative bg-white overflow-hidden shadow-2xl transition-transform print:w-[794px] print:h-[1123px] print:shadow-none print:break-after-page"
                   onClick={(e) => e.target === e.currentTarget && setActiveBlockId(null)}
                 >
                   {/* DATA-DRIVEN ROUTING LAYER */}
@@ -610,7 +586,7 @@ ${canvasHTML}
               </div>
               <div className="flex items-center gap-2 flex-1 justify-end">
                 <button onClick={handleSave} disabled={saving} className="flex items-center justify-center p-3 bg-secondary rounded-xl">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}</button>
-                <button onClick={handleDownloadPDF} disabled={exporting} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest">{exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} PDF</button>
+                <button onClick={handleExportPDF} disabled={exporting} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest">{exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} PDF</button>
               </div>
             </div>
           </div>
