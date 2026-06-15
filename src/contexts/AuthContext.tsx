@@ -87,15 +87,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchProfile = async (user: User) => {
     try {
       console.log('Fetching profile for:', user.id);
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('profiles')
         .select('*, roles(*)')
         .eq('id', user.id)
         .single();
 
-      if (error) {
+      if (error && error.code !== 'PGRST116') {
         console.error('Error fetching profile detail:', error.message, error.details);
         throw error;
+      }
+
+      if (!data) {
+        console.warn('No profile found, creating failsafe profile for:', user.email);
+        const { data: newData, error: insertError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: user.id,
+              email: user.email,
+              full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'New User',
+              role: 'viewer',
+              is_active: true
+            }
+          ])
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Failed to create failsafe profile:', insertError.message);
+          // Even if insert fails, we allow session to persist if user is authenticated
+          setIsAuthorized(true);
+          setIsAdmin(false);
+          return;
+        }
+        data = newData;
       }
 
       if (data) {

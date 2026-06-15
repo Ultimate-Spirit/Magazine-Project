@@ -117,16 +117,24 @@ export const UserManagement: React.FC = () => {
       if (existingUser) {
         showNotification('error', `A user with email ${newUserEmail} already exists.`);
       } else {
-        const { data: edgeData, error: edgeError } = await supabase.functions.invoke('create-user', {
-          body: { 
+        const { data: { session } } = await supabase.auth.getSession();
+        const response = await fetch('/_/backend/create-user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`
+          },
+          body: JSON.stringify({ 
             email: newUserEmail, 
             password: newUserPassword,
-            full_name: newUserName
-          }
+            full_name: newUserName,
+            role: 'viewer' // Default unassigned global role
+          })
         });
 
-        if (edgeError) throw new Error(edgeError.message || 'Failed to create user account.');
-        if (edgeData?.error) throw new Error(edgeData.error);
+        const edgeData = await response.json();
+
+        if (!response.ok) throw new Error(edgeData.detail || 'Failed to create user account.');
         
         // Ensure the profile is populated in case the database trigger lags or fails.
         // We attempt to call our robust RPC if the edge function returned the new user's ID.
@@ -173,6 +181,26 @@ export const UserManagement: React.FC = () => {
     setActionLoading(true);
 
     try {
+      // 1. If email changed, call the backend to update auth.users
+      if (editEmail !== userToEdit.email) {
+        const { data: { session } } = await supabase.auth.getSession();
+        const response = await fetch('/_/backend/update-user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`
+          },
+          body: JSON.stringify({
+            target_user_id: userToEdit.id,
+            email: editEmail
+          })
+        });
+
+        const edgeData = await response.json();
+
+        if (!response.ok) throw new Error(edgeData.detail || 'Failed to update email.');
+      }
+
       // Check if selected role is system admin
       const selectedRoleObj = roles.find(r => r.id === editRoleId);
       const isSysAdmin = selectedRoleObj?.is_system_admin === true;
