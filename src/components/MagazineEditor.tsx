@@ -8,7 +8,7 @@ export const MagazineEditor: React.FC = () => {
   const { folderId } = useParams<{ folderId: string }>();
   const navigate = useNavigate();
 
-  const [reportData, setReportData] = useState({
+  const initialReportData = {
     heroImageUrl: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=1000&q=80',
     complianceScore: '94%',
     leaveUtilization: '12%',
@@ -27,7 +27,10 @@ export const MagazineEditor: React.FC = () => {
       { month: 'Apr', joiners: 20, leavers: 8 },
       { month: 'May', joiners: 12, leavers: 3 },
     ]
-  });
+  };
+
+  const [pages, setPages] = useState([{ id: Date.now(), data: initialReportData }]);
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
 
   const [exporting, setExporting] = useState(false);
 
@@ -83,46 +86,82 @@ ${targetHtml}
     }
   };
 
+  const updateCurrentPageData = (updater: (prevData: typeof initialReportData) => typeof initialReportData) => {
+    setPages(prev => prev.map((p, i) => i === currentPageIndex ? { ...p, data: updater(p.data) } : p));
+  };
+
   const handleDepartmentChange = (index: number, field: string, value: string | number) => {
-    const newData = [...reportData.departmentData];
-    newData[index] = { ...newData[index], [field]: value };
-    setReportData({ ...reportData, departmentData: newData });
+    updateCurrentPageData(data => {
+      const newData = [...data.departmentData];
+      newData[index] = { ...newData[index], [field]: value };
+      return { ...data, departmentData: newData };
+    });
   };
 
   const handleHeadcountChange = (index: number, field: string, value: string | number) => {
-    const newData = [...reportData.headcountData];
-    newData[index] = { ...newData[index], [field]: value };
-    setReportData({ ...reportData, headcountData: newData });
+    updateCurrentPageData(data => {
+      const newData = [...data.headcountData];
+      newData[index] = { ...newData[index], [field]: value };
+      return { ...data, headcountData: newData };
+    });
   };
+
+  const addNewPage = () => {
+    setPages(prev => [...prev, { id: Date.now(), data: initialReportData }]);
+    setCurrentPageIndex(pages.length);
+  };
+
+  const reportData = pages[currentPageIndex].data;
 
   return (
     <WorkspaceLayout company={{ id: 'none', name: 'Magazine Builder' } as any}>
       <div className="flex h-[calc(100vh-4rem)] lg:h-[calc(100vh-5rem)] bg-background w-full">
         
         {/* Left Column (The Canvas) */}
-        <div className="flex-1 bg-slate-200 overflow-auto flex items-start justify-center p-12">
-          {/* Visual Scaling Wrapper (optional, but good for fitting) */}
-          <div className="transform scale-[0.7] xl:scale-90 origin-top">
-            <AttendanceTemplate data={reportData} />
+        <div className="flex-1 bg-slate-200 overflow-auto flex flex-col items-center p-12">
+          {/* Visual Scaling Wrapper */}
+          <div className="transform scale-[0.7] xl:scale-90 origin-top flex flex-col items-center">
+            <div id="report-canvas">
+              {pages.map((page, index) => (
+                <div 
+                  key={page.id} 
+                  onClick={() => setCurrentPageIndex(index)}
+                  className={`relative w-[794px] min-h-[1123px] bg-white shadow-xl mb-8 break-after-page print:mb-0 print:shadow-none transition-all cursor-pointer ${currentPageIndex === index ? 'ring-4 ring-blue-500' : 'hover:ring-2 hover:ring-slate-400'}`}
+                >
+                  <AttendanceTemplate data={page.data} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Right Column (The Sidebar) */}
         <div className="w-96 bg-slate-50 border-l border-slate-200 p-6 flex flex-col overflow-y-auto shrink-0">
           <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-200">
-            <h2 className="text-lg font-black text-slate-900">Report Editor</h2>
-            <button 
-              onClick={handleExportPDF}
-              disabled={exporting}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-all text-sm disabled:opacity-50"
-            >
-              {exporting ? 'Exporting...' : (
-                <>
-                  <Download className="w-4 h-4" />
-                  Export to PDF
-                </>
-              )}
-            </button>
+            <div>
+              <h2 className="text-lg font-black text-slate-900">Report Editor</h2>
+              <p className="text-xs text-slate-500 font-semibold mt-1">Page {currentPageIndex + 1} of {pages.length}</p>
+            </div>
+            <div className="flex gap-2">
+              <button 
+                onClick={addNewPage}
+                className="px-3 py-2 bg-blue-100 text-blue-700 font-bold rounded-lg hover:bg-blue-200 transition-all text-sm"
+              >
+                + Page
+              </button>
+              <button 
+                onClick={handleExportPDF}
+                disabled={exporting}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-all text-sm disabled:opacity-50"
+              >
+                {exporting ? 'Exporting...' : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    Export to PDF
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -134,7 +173,7 @@ ${targetHtml}
                 <input 
                   type="text" 
                   value={reportData.heroImageUrl}
-                  onChange={(e) => setReportData({ ...reportData, heroImageUrl: e.target.value })}
+                  onChange={(e) => updateCurrentPageData(d => ({ ...d, heroImageUrl: e.target.value }))}
                   className="w-full text-sm border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2 border"
                 />
               </div>
@@ -148,7 +187,7 @@ ${targetHtml}
                 <input 
                   type="text" 
                   value={reportData.complianceScore}
-                  onChange={(e) => setReportData({ ...reportData, complianceScore: e.target.value })}
+                  onChange={(e) => updateCurrentPageData(d => ({ ...d, complianceScore: e.target.value }))}
                   className="w-full text-sm border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2 border"
                 />
               </div>
@@ -157,7 +196,7 @@ ${targetHtml}
                 <input 
                   type="text" 
                   value={reportData.leaveUtilization}
-                  onChange={(e) => setReportData({ ...reportData, leaveUtilization: e.target.value })}
+                  onChange={(e) => updateCurrentPageData(d => ({ ...d, leaveUtilization: e.target.value }))}
                   className="w-full text-sm border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2 border"
                 />
               </div>
@@ -166,7 +205,7 @@ ${targetHtml}
                 <input 
                   type="text" 
                   value={reportData.totalJoiners}
-                  onChange={(e) => setReportData({ ...reportData, totalJoiners: e.target.value })}
+                  onChange={(e) => updateCurrentPageData(d => ({ ...d, totalJoiners: e.target.value }))}
                   className="w-full text-sm border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2 border"
                 />
               </div>
