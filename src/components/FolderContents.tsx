@@ -288,10 +288,10 @@ ${targetHtml}
       });
 
       if (!response.ok) {
-        let errMsg = \`Server error \${response.status}\`;
+        let errMsg = `Server error ${response.status}`;
         try {
           const errData = await response.json();
-          if (errData.error) errMsg += \`: \${errData.error}\`;
+          if (errData.error) errMsg += `: ${errData.error}`;
         } catch(e) {}
         throw new Error(errMsg);
       }
@@ -310,7 +310,7 @@ ${targetHtml}
       setIsCompilerOpen(false);
     } catch (err: any) {
       console.error(err);
-      showNotification('error', \`Compilation failed: \${err.message}\`);
+      showNotification('error', `Compilation failed: ${err.message}`);
     } finally {
       setIsCompiling(false);
     }
