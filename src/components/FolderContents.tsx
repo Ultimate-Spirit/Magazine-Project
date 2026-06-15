@@ -27,11 +27,10 @@ import { ConfirmModal } from './common/ConfirmModal';
 import { logActivity } from '../lib/activityLogger';
 import type { Page, Folder, Company, Template } from '../types';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-// @ts-ignore
-import html2canvas from 'html2canvas';
-// @ts-ignore
-import jsPDF from 'jspdf';
 import { PrintTemplate } from './PrintTemplate';
+import { CoverTemplate } from './templates/CoverTemplate';
+import { ExecutiveSummaryTemplate } from './templates/ExecutiveSummaryTemplate';
+import { AttendanceTemplate } from './templates/AttendanceTemplate';
 import React from 'react';
 
 export function FolderContents() {
@@ -265,33 +264,53 @@ export function FolderContents() {
   };
 
   const generatePDF = async () => {
-    if (!printRef.current) return;
     if (!compilerPages || compilerPages.length === 0) return;
     setIsCompiling(true);
     try {
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const container = printRef.current;
-      const pagesToRender = Array.from(container.children) as HTMLElement[];
-      for (let i = 0; i < pagesToRender.length; i++) {
-        const pageElement = pagesToRender[i];
-        const originalDisplay = pageElement.style.display;
-        pageElement.style.display = 'block';
-        const canvas = await html2canvas(pageElement, {
-          scale: 3, useCORS: true, logging: false, backgroundColor: '#ffffff', scrollY: 0, windowWidth: 850
-        });
-        const imgData = canvas.toDataURL('image/jpeg', 1.0);
-        if (i > 0) pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-        pageElement.style.display = originalDisplay;
+      const targetHtml = document.getElementById('spooler-canvas')?.outerHTML || '';
+
+      const fullHTML = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>@page { size: A4; margin: 0; } body { margin: 0; -webkit-print-color-adjust: exact; }</style>
+</head>
+<body>
+${targetHtml}
+</body>
+</html>`;
+
+      const response = await fetch('/api/generate-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html: fullHTML }),
+      });
+
+      if (!response.ok) {
+        let errMsg = \`Server error \${response.status}\`;
+        try {
+          const errData = await response.json();
+          if (errData.error) errMsg += \`: \${errData.error}\`;
+        } catch(e) {}
+        throw new Error(errMsg);
       }
-      pdf.save(`${folder?.name || 'Magazine_Export'}.pdf`);
+
+      const blob = await response.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = 'Corporate_Bundle.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
       showNotification('success', 'PDF compiled and downloaded');
       setIsCompilerOpen(false);
     } catch (err: any) {
       console.error(err);
-      showNotification('error', 'Compilation failed. Please try again.');
+      showNotification('error', \`Compilation failed: \${err.message}\`);
     } finally {
       setIsCompiling(false);
     }
@@ -627,12 +646,19 @@ export function FolderContents() {
           </div>
         )}
 
-        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }} ref={printRef}>
-           {(compilerPages || []).map(page => (
-             <div key={page.id} style={{ display: 'none', width: '850px', height: '1100px', backgroundColor: 'white' }}>
-               <PrintTemplate data={page.data || {}} />
-             </div>
-           ))}
+        <div id="spooler-canvas" className="absolute -left-[9999px]" ref={printRef}>
+           {(compilerPages || []).map(page => {
+             const cat = page.templates?.category;
+             const name = page.templates?.template_name;
+             return (
+               <div key={page.id} className="relative w-[794px] min-h-[1123px] bg-white break-after-page print:break-after-page">
+                 {cat === 'Cover' ? <CoverTemplate data={page.data || {}} /> : 
+                  cat === 'Executive Summary' ? <ExecutiveSummaryTemplate data={page.data || {}} /> :
+                  name === 'Attendance Report' ? <AttendanceTemplate data={page.data || {}} /> :
+                  <PrintTemplate data={page.data || {}} />}
+               </div>
+             );
+           })}
         </div>
 
       </div>
