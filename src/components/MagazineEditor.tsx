@@ -58,7 +58,12 @@ ${targetHtml}
       });
 
       if (!response.ok) {
-        throw new Error(`Server error ${response.status}`);
+        let errMsg = `Server error ${response.status}`;
+        try {
+          const errData = await response.json();
+          if (errData.error) errMsg += `: ${errData.error}`;
+        } catch(e) {}
+        throw new Error(errMsg);
       }
 
       const blob = await response.blob();

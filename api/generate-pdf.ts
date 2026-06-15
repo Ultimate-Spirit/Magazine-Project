@@ -4,10 +4,8 @@ export const config = {
 
 export async function POST(request: Request) {
   try {
-    const token = process.env.BROWSERLESS_TOKEN;
+    const token = process.env.BROWSERLESS_TOKEN || '2Ui5G7Wh2tHASwS00b5802fc5d89f8c13d2c0d233a2dc1c60';
     if (!token) {
-      // Using standard Web Response which is the native equivalent of NextResponse
-      // for Vercel Edge Functions outside of a Next.js app context
       return new Response(JSON.stringify({ error: 'Missing BROWSERLESS_TOKEN environment variable' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
