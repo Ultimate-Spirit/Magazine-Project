@@ -29,8 +29,53 @@ export const MagazineEditor: React.FC = () => {
     ]
   });
 
-  const handleExportPDF = () => {
-    console.log(document.getElementById('report-canvas')?.outerHTML);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportPDF = async () => {
+    setExporting(true);
+    try {
+      const targetHtml = document.getElementById('report-canvas')?.outerHTML || '';
+
+      const fullHTML = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @page { size: A4; margin: 0; }
+    body { margin: 0; -webkit-print-color-adjust: exact; }
+  </style>
+</head>
+<body>
+${targetHtml}
+</body>
+</html>`;
+
+      const response = await fetch('/api/generate-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html: fullHTML }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = 'SDPL_Corporate_Intelligence.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error('[handleExportPDF] Error:', err);
+      alert(`PDF export failed: ${err.message}`);
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleDepartmentChange = (index: number, field: string, value: string | number) => {
@@ -63,10 +108,15 @@ export const MagazineEditor: React.FC = () => {
             <h2 className="text-lg font-black text-slate-900">Report Editor</h2>
             <button 
               onClick={handleExportPDF}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-all text-sm"
+              disabled={exporting}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-all text-sm disabled:opacity-50"
             >
-              <Download className="w-4 h-4" />
-              Export to PDF
+              {exporting ? 'Exporting...' : (
+                <>
+                  <Download className="w-4 h-4" />
+                  Export to PDF
+                </>
+              )}
             </button>
           </div>
 

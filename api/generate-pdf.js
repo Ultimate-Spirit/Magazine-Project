@@ -26,7 +26,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const BROWSERLESS_API_KEY = process.env.BROWSERLESS_API_KEY || 'YOUR_BROWSERLESS_API_KEY';
+    const BROWSERLESS_API_KEY = process.env.BROWSERLESS_API_KEY || '2Ui5G7Wh2tHASwS00b5802fc5d89f8c13d2c0d233a2dc1c60';
     const response = await fetch(`https://chrome.browserless.io/pdf?token=${BROWSERLESS_API_KEY}`, {
       method: 'POST',
       headers: {
