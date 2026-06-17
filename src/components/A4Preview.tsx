@@ -10,16 +10,14 @@ export const A4Preview: React.FC<A4PreviewProps> = ({ htmlContent }) => {
 
   useEffect(() => {
     if (!containerRef.current) return;
-    
+
     const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const width = entry.contentRect.width;
-        setScale(width / 794);
-      }
+      const newWidth = entries[0]?.contentRect?.width;
+      if (newWidth) setScale(newWidth / 794);
     });
-    
+
     observer.observe(containerRef.current);
-    
+
     return () => observer.disconnect();
   }, []);
 

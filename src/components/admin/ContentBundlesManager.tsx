@@ -10,10 +10,8 @@ import {
   Edit2, 
   Trash2, 
   Archive, 
-  MoreVertical,
   ChevronRight,
-  CheckCircle2,
-  X
+  CheckCircle2
 } from 'lucide-react';
 import type { TemplateBundle, Template } from '../../types';
 import { ConfirmModal } from '../common/ConfirmModal';
