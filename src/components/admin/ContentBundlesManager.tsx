@@ -17,6 +17,16 @@ import type { TemplateBundle, Template } from '../../types';
 import { ConfirmModal } from '../common/ConfirmModal';
 import { A4Preview } from '../A4Preview';
 
+const getPreviewHtml = (rawHtml: string) => {
+  return rawHtml.replace(/\{\{([^}]+)\}\}/g, (match, varName) => {
+    const lowerVar = varName.toLowerCase();
+    if (lowerVar.includes('image') || lowerVar.includes('url') || lowerVar.includes('pic') || lowerVar.includes('cover')) {
+      return 'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?auto=format&fit=crop&w=800&q=80';
+    }
+    return varName.replace(/_/g, ' ').toUpperCase();
+  });
+};
+
 export const ContentBundlesManager: React.FC = () => {
   const [bundles, setBundles] = useState<TemplateBundle[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -495,7 +505,7 @@ export const ContentBundlesManager: React.FC = () => {
                   <div className="col-span-full space-y-3">
                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Live Template Preview</label>
                     <div className="w-full max-w-2xl mx-auto">
-                      <A4Preview htmlContent={rawHtmlInput} />
+                      <A4Preview htmlContent={getPreviewHtml(rawHtmlInput)} />
                     </div>
                   </div>
                 )}
