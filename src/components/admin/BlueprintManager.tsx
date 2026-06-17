@@ -513,33 +513,35 @@ export const BlueprintManager: React.FC = () => {
 <head>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #f3f4f6; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #f3f4f6; }
+    #scroll-area { width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden; padding-top: 20px; box-sizing: border-box; }
+    #a4-board { width: 794px; min-height: 1123px; background-color: white; transform-origin: top left; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body>
-  <div id="scroll-area" style="width: 100%; height: 100%; overflow-y: auto; display: flex; justify-content: center; padding: 20px 0; box-sizing: border-box;">
-    <div id="a4-board" style="width: 794px; min-height: 1123px; background-color: white; transform-origin: top center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
+  <div id="scroll-area">
+    <div id="a4-board">
       ${rawHtmlInput}
     </div>
   </div>
   <script>
-    function updateScale() {
-      const scrollArea = document.getElementById('scroll-area');
-      const board = document.getElementById('a4-board');
-      if (!scrollArea || !board) return;
+    function scaleBoard() {
+      var container = document.getElementById('scroll-area');
+      var board = document.getElementById('a4-board');
+      if (!container || !board) return;
       
-      const availableWidth = scrollArea.clientWidth - 40;
-      let scale = availableWidth / 794;
-      if (scale > 1) scale = 1;
+      var targetWidth = container.clientWidth - 40;
+      var scale = targetWidth < 794 ? targetWidth / 794 : 1;
+      var scaledWidth = 794 * scale;
+      var leftMargin = (container.clientWidth - scaledWidth) / 2;
       
       board.style.transform = 'scale(' + scale + ')';
-      
-      const excessSpace = 1123 - (1123 * scale);
-      board.style.marginBottom = '-' + excessSpace + 'px';
+      board.style.marginLeft = leftMargin + 'px';
+      board.style.marginBottom = '-' + (1123 - (1123 * scale) - 40) + 'px';
     }
     
-    updateScale();
-    window.addEventListener('resize', updateScale);
+    scaleBoard();
+    window.addEventListener('resize', scaleBoard);
   </script>
 </body>
 </html>`}
