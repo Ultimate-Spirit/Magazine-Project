@@ -505,7 +505,7 @@ export const BlueprintManager: React.FC = () => {
                 {rawHtmlInput && (
                   <div className="col-span-full space-y-3">
                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Live Template Preview</label>
-                    <div className="relative w-full h-[800px] border-2 border-gray-300 rounded bg-gray-100 overflow-hidden">
+                    <div className="relative w-full max-w-2xl mx-auto aspect-[1/1.414] border border-gray-300 shadow-xl overflow-hidden bg-white">
                       <iframe 
                         className="w-full h-full border-0"
                         srcDoc={`<!DOCTYPE html>
@@ -513,33 +513,21 @@ export const BlueprintManager: React.FC = () => {
 <head>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #f3f4f6; }
-    #scroll-area { width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden; padding-top: 20px; box-sizing: border-box; }
-    #a4-board { width: 794px; min-height: 1123px; background-color: white; transform-origin: top left; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: white; }
+    #a4-board { width: 794px; height: 1123px; transform-origin: top left; background-color: white; overflow: hidden; }
   </style>
 </head>
 <body>
-  <div id="scroll-area">
-    <div id="a4-board">
-      ${rawHtmlInput}
-    </div>
+  <div id="a4-board">
+    ${rawHtmlInput}
   </div>
   <script>
     function scaleBoard() {
-      var container = document.getElementById('scroll-area');
       var board = document.getElementById('a4-board');
-      if (!container || !board) return;
-      
-      var targetWidth = container.clientWidth - 40;
-      var scale = targetWidth < 794 ? targetWidth / 794 : 1;
-      var scaledWidth = 794 * scale;
-      var leftMargin = (container.clientWidth - scaledWidth) / 2;
-      
+      if (!board) return;
+      var scale = window.innerWidth / 794;
       board.style.transform = 'scale(' + scale + ')';
-      board.style.marginLeft = leftMargin + 'px';
-      board.style.marginBottom = '-' + (1123 - (1123 * scale) - 40) + 'px';
     }
-    
     scaleBoard();
     window.addEventListener('resize', scaleBoard);
   </script>
