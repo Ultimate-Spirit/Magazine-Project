@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Shield, Users, Building2, LayoutDashboard, Settings, LogOut, Moon, Sun, Menu, X, LayoutTemplate } from 'lucide-react';
+import { Shield, Users, Building2, LayoutDashboard, Settings, LogOut, Moon, Sun, Menu, X, LayoutTemplate, Layers } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
