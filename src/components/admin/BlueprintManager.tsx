@@ -505,10 +505,44 @@ export const BlueprintManager: React.FC = () => {
                 {rawHtmlInput && (
                   <div className="col-span-full space-y-3">
                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Live Template Preview</label>
-                    <div className="relative w-full max-w-lg mx-auto aspect-[1/1.414] border border-gray-400 shadow-lg bg-gray-100 overflow-hidden flex-shrink-0 block">
+                    <div className="relative w-full h-[800px] border-2 border-gray-300 rounded bg-gray-100 overflow-hidden">
                       <iframe 
-                        className="absolute inset-0 w-full h-full border-0 pointer-events-none"
-                        srcDoc={`<!DOCTYPE html><html><head><script src="https://cdn.tailwindcss.com"></script><style>html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; } .a4-board { width: 794px; height: 1123px; transform: scale(calc(100vw / 794)); transform-origin: top left; background-color: white; }</style></head><body><div class="a4-board">${rawHtmlInput}</div></body></html>`}
+                        className="w-full h-full border-0"
+                        srcDoc={`<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #f3f4f6; }
+  </style>
+</head>
+<body>
+  <div id="scroll-area" style="width: 100%; height: 100%; overflow-y: auto; display: flex; justify-content: center; padding: 20px 0; box-sizing: border-box;">
+    <div id="a4-board" style="width: 794px; min-height: 1123px; background-color: white; transform-origin: top center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
+      ${rawHtmlInput}
+    </div>
+  </div>
+  <script>
+    function updateScale() {
+      const scrollArea = document.getElementById('scroll-area');
+      const board = document.getElementById('a4-board');
+      if (!scrollArea || !board) return;
+      
+      const availableWidth = scrollArea.clientWidth - 40;
+      let scale = availableWidth / 794;
+      if (scale > 1) scale = 1;
+      
+      board.style.transform = 'scale(' + scale + ')';
+      
+      const excessSpace = 1123 - (1123 * scale);
+      board.style.marginBottom = '-' + excessSpace + 'px';
+    }
+    
+    updateScale();
+    window.addEventListener('resize', updateScale);
+  </script>
+</body>
+</html>`}
                         title="Live Template Preview"
                       />
                     </div>
