@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { 
   Loader2, 
@@ -44,21 +44,6 @@ export const BlueprintManager: React.FC = () => {
 
   const [rawHtmlInput, setRawHtmlInput] = useState('');
   const [parsedVariables, setParsedVariables] = useState<string[]>([]);
-
-  const previewOuterRef = useRef<HTMLDivElement>(null);
-  const [previewScale, setPreviewScale] = useState(1);
-
-  useEffect(() => {
-    if (!previewOuterRef.current) return;
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const width = entry.contentRect.width;
-        setPreviewScale(width / 794);
-      }
-    });
-    observer.observe(previewOuterRef.current);
-    return () => observer.disconnect();
-  }, [showCreateTemplate, rawHtmlInput]);
 
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -521,12 +506,11 @@ export const BlueprintManager: React.FC = () => {
                   <div className="col-span-full space-y-3">
                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Live Template Preview</label>
                     <div 
-                      ref={previewOuterRef}
-                      className="relative w-full aspect-[1/1.414] overflow-hidden border-2 border-gray-300 shadow-xl bg-gray-200 mt-4 mx-auto max-w-2xl"
+                      className="w-full relative overflow-hidden bg-gray-200 border-2 border-gray-300 shadow-xl aspect-[1/1.414] [container-type:inline-size] mx-auto"
                     >
                       <div 
                         className="absolute top-0 left-0 w-[794px] min-h-[1123px] bg-white origin-top-left"
-                        style={{ transform: `scale(${previewScale})` }}
+                        style={{ transform: 'scale(calc(100cqi / 794))' }}
                       >
                         <div dangerouslySetInnerHTML={{ __html: rawHtmlInput }} />
                       </div>
