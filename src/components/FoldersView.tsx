@@ -19,7 +19,7 @@ import { WorkspaceLayout } from './WorkspaceLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { ConfirmModal } from './common/ConfirmModal';
 import { logActivity } from '../lib/activityLogger';
-import type { Folder, Company, TemplateBundle } from '../types';
+import type { Folder, Company, TemplateBundle, Template } from '../types';
 
 interface Props {
   onSelectCompany: (company: Company) => void;
@@ -33,6 +33,8 @@ export function FoldersView({ onSelectCompany }: Props) {
   const targetCid = (companyId || '').toLowerCase();
   const [folders, setFolders] = useState<Folder[]>([]);
   const [activeBundles, setActiveBundles] = useState<TemplateBundle[]>([]);
+  const [coverTemplates, setCoverTemplates] = useState<Template[]>([]);
+  const [lastPageTemplates, setLastPageTemplates] = useState<Template[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,6 +46,8 @@ export function FoldersView({ onSelectCompany }: Props) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [folderNameInput, setFolderNameInput] = useState('');
   const [selectedBundleId, setSelectedBundleId] = useState<string>('');
+  const [selectedCoverPageId, setSelectedCoverPageId] = useState<string>('');
+  const [selectedLastPageId, setSelectedLastPageId] = useState<string>('');
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
@@ -58,11 +62,13 @@ export function FoldersView({ onSelectCompany }: Props) {
     else setRefreshing(true);
     
     try {
-      const [compData, folderData, membersData, bundlesData] = await Promise.all([
+      const [compData, folderData, membersData, bundlesData, coverData, lastPageData] = await Promise.all([
         supabase.from('companies').select('*').eq('id', targetCid).single(),
         supabase.from('folders').select('*, template_bundles(*)').eq('company_id', targetCid).order('updated_at', { ascending: false }),
         supabase.from('user_companies').select('user_id').eq('company_id', targetCid),
-        supabase.from('template_bundles').select('*').eq('status', 'active')
+        supabase.from('template_bundles').select('*').eq('status', 'active'),
+        supabase.from('templates').select('*').eq('category', 'Cover').order('template_name'),
+        supabase.from('templates').select('*').eq('category', 'Last Page').order('template_name')
       ]);
 
       if (compData.data) {
@@ -76,6 +82,9 @@ export function FoldersView({ onSelectCompany }: Props) {
       if (bundlesData.data) {
         setActiveBundles(bundlesData.data);
       }
+
+      if (coverData.data) setCoverTemplates(coverData.data);
+      if (lastPageData.data) setLastPageTemplates(lastPageData.data);
 
       const authorizedMemberIds = (membersData.data || []).map(m => m.user_id);
       setStats({ collaborators: authorizedMemberIds.length || 0, publications: 0 });
@@ -113,11 +122,11 @@ export function FoldersView({ onSelectCompany }: Props) {
 
   const handleCreateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!folderNameInput.trim() || !selectedBundleId) return;
+    if (!folderNameInput.trim() || !selectedBundleId || !selectedCoverPageId || !selectedLastPageId) return;
     
     setIsActionLoading(true);
     try {
-      const { error } = await supabase
+      const { data: folderData, error } = await supabase
         .from('folders')
         .insert([{ 
           name: folderNameInput.trim(), 
@@ -125,17 +134,50 @@ export function FoldersView({ onSelectCompany }: Props) {
           created_by: profile?.id,
           bundle_id: selectedBundleId,
           owner_id: profile?.id
-        }]);
+        }])
+        .select()
+        .single();
       if (error) throw error;
+
+      const newFolder = folderData;
+
+      const { data: bundleTemplates } = await supabase
+        .from('templates')
+        .select('*')
+        .eq('bundle_id', selectedBundleId)
+        .order('weight', { ascending: true });
+
+      const coverTemplate = coverTemplates.find(t => t.id === selectedCoverPageId);
+      const lastPageTemplate = lastPageTemplates.find(t => t.id === selectedLastPageId);
+
+      const allTemplatesToInsert = [];
+      if (coverTemplate) allTemplatesToInsert.push(coverTemplate);
+      if (bundleTemplates) allTemplatesToInsert.push(...bundleTemplates);
+      if (lastPageTemplate) allTemplatesToInsert.push(lastPageTemplate);
+
+      const pagesToInsert = allTemplatesToInsert.map(template => ({
+        folder_id: newFolder.id,
+        title: template.template_name,
+        data: template.payload,
+        template_id: template.id,
+        created_by: profile?.id
+      }));
+
+      if (pagesToInsert.length > 0) {
+        const { error: pagesError } = await supabase.from('pages').insert(pagesToInsert);
+        if (pagesError) throw pagesError;
+      }
+
       await logActivity('created', 'folder', folderNameInput.trim(), targetCid, profile?.id || '');
       showNotification('success', 'Directory initialized');
       setFolderNameInput('');
       setSelectedBundleId('');
+      setSelectedCoverPageId('');
+      setSelectedLastPageId('');
       setIsCreateModalOpen(false);
-      await fetchData();
+      navigate(`/folder/${newFolder.id}`);
     } catch (err: any) {
       showNotification('error', err.message);
-    } finally {
       setIsActionLoading(false);
     }
   };
@@ -266,6 +308,8 @@ export function FoldersView({ onSelectCompany }: Props) {
                   onClick={() => {
                     setFolderNameInput('');
                     setSelectedBundleId('');
+                    setSelectedCoverPageId('');
+                    setSelectedLastPageId('');
                     setIsCreateModalOpen(true);
                   }}
                   className="flex-1 md:flex-none flex items-center justify-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-black rounded-2xl hover:opacity-90 transition-all uppercase tracking-widest text-[10px] shadow-lg shadow-primary/10"
@@ -426,6 +470,8 @@ export function FoldersView({ onSelectCompany }: Props) {
             setEditingFolder(null);
             setFolderNameInput('');
             setSelectedBundleId('');
+            setSelectedCoverPageId('');
+            setSelectedLastPageId('');
           }}
           variant="info"
         >
@@ -442,25 +488,57 @@ export function FoldersView({ onSelectCompany }: Props) {
             </div>
             
             {!editingFolder && (
-              <div className="space-y-2 text-left">
-                <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Blueprint Template</label>
-                <select
-                  className="w-full px-6 py-4 micro-surface border border-border/10 rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight appearance-none cursor-pointer"
-                  value={selectedBundleId}
-                  onChange={(e) => setSelectedBundleId(e.target.value)}
-                  required
-                >
-                  <option value="" disabled>Select a Blueprint Bundle...</option>
-                  {(activeBundles || []).map(bundle => (
-                    <option key={bundle.id} value={bundle.id}>{bundle?.bundle_name || 'Unnamed Bundle'}</option>
-                  ))}
-                </select>
-              </div>
+              <>
+                <div className="space-y-2 text-left">
+                  <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Blueprint Template (Core Content)</label>
+                  <select
+                    className="w-full px-6 py-4 micro-surface border border-border/10 rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight appearance-none cursor-pointer"
+                    value={selectedBundleId}
+                    onChange={(e) => setSelectedBundleId(e.target.value)}
+                    required
+                  >
+                    <option value="" disabled>Select a Blueprint Bundle...</option>
+                    {(activeBundles || []).map(bundle => (
+                      <option key={bundle.id} value={bundle.id}>{bundle?.bundle_name || 'Unnamed Bundle'}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2 text-left mt-4">
+                  <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Cover Page Template</label>
+                  <select
+                    className="w-full px-6 py-4 micro-surface border border-border/10 rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight appearance-none cursor-pointer"
+                    value={selectedCoverPageId}
+                    onChange={(e) => setSelectedCoverPageId(e.target.value)}
+                    required
+                  >
+                    <option value="" disabled>Select a Cover Page...</option>
+                    {(coverTemplates || []).map(template => (
+                      <option key={template.id} value={template.id}>{template?.template_name || 'Unnamed Template'}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2 text-left mt-4">
+                  <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Last Page Template</label>
+                  <select
+                    className="w-full px-6 py-4 micro-surface border border-border/10 rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight appearance-none cursor-pointer"
+                    value={selectedLastPageId}
+                    onChange={(e) => setSelectedLastPageId(e.target.value)}
+                    required
+                  >
+                    <option value="" disabled>Select a Last Page...</option>
+                    {(lastPageTemplates || []).map(template => (
+                      <option key={template.id} value={template.id}>{template?.template_name || 'Unnamed Template'}</option>
+                    ))}
+                  </select>
+                </div>
+              </>
             )}
 
             <button
               type="submit"
-              disabled={isActionLoading || !folderNameInput.trim() || (!editingFolder && !selectedBundleId)}
+              disabled={isActionLoading || !folderNameInput.trim() || (!editingFolder && (!selectedBundleId || !selectedCoverPageId || !selectedLastPageId))}
               className="w-full py-5 bg-primary text-primary-foreground font-black rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-[11px] uppercase tracking-[0.2em]"
             >
               {isActionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (editingFolder ? "Apply Changes" : "Initialize Directory")}
