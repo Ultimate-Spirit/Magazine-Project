@@ -505,10 +505,10 @@ export const BlueprintManager: React.FC = () => {
                 {rawHtmlInput && (
                   <div className="col-span-full space-y-3">
                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Live Template Preview</label>
-                    <div className="relative w-full max-w-2xl aspect-[1/1.414] border-2 border-gray-300 mx-auto overflow-hidden bg-white">
+                    <div className="relative w-full max-w-lg mx-auto aspect-[1/1.414] border border-gray-400 shadow-lg bg-gray-100 overflow-hidden flex-shrink-0 block">
                       <iframe 
-                        className="w-full h-full border-0 pointer-events-none"
-                        srcDoc={`<!DOCTYPE html><html><head><script src="https://cdn.tailwindcss.com"></script><style>body { margin: 0; width: 794px; height: 1123px; transform: scale(calc(100vw / 794)); transform-origin: top left; overflow: hidden; }</style></head><body>${rawHtmlInput}</body></html>`}
+                        className="absolute inset-0 w-full h-full border-0 pointer-events-none"
+                        srcDoc={`<!DOCTYPE html><html><head><script src="https://cdn.tailwindcss.com"></script><style>html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; } .a4-board { width: 794px; height: 1123px; transform: scale(calc(100vw / 794)); transform-origin: top left; background-color: white; }</style></head><body><div class="a4-board">${rawHtmlInput}</div></body></html>`}
                         title="Live Template Preview"
                       />
                     </div>
