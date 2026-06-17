@@ -39,9 +39,11 @@ export const BlueprintManager: React.FC = () => {
     category: 'Content' as any,
     department_tag: '',
     weight: 10,
-    payload: '{}',
     is_global: false
   });
+
+  const [rawHtmlInput, setRawHtmlInput] = useState('');
+  const [parsedVariables, setParsedVariables] = useState<string[]>([]);
 
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -161,20 +163,16 @@ export const BlueprintManager: React.FC = () => {
     if (!selectedBundle || !templateForm.template_name.trim()) return;
     setActionLoading(true);
     try {
-      let parsedPayload = {};
-      try {
-        parsedPayload = typeof templateForm.payload === 'string' ? JSON.parse(templateForm.payload) : templateForm.payload;
-      } catch (e) {
-        throw new Error("Invalid JSON in payload");
-      }
-
       const templateData = {
         bundle_id: selectedBundle.id,
         template_name: templateForm.template_name,
         category: templateForm.category,
         department_tag: templateForm.department_tag,
         weight: templateForm.weight,
-        payload: parsedPayload,
+        payload: {
+          rawHtml: rawHtmlInput,
+          variables: parsedVariables
+        },
         is_global: templateForm.is_global
       };
 
@@ -204,9 +202,10 @@ export const BlueprintManager: React.FC = () => {
         category: 'Content',
         department_tag: '',
         weight: 10,
-        payload: '{}',
         is_global: false
       });
+      setRawHtmlInput('');
+      setParsedVariables([]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -240,9 +239,10 @@ export const BlueprintManager: React.FC = () => {
       category: template.category,
       department_tag: template.department_tag || '',
       weight: template.weight,
-      payload: JSON.stringify(template.payload, null, 2),
       is_global: template.is_global || false
     });
+    setRawHtmlInput(template.payload?.rawHtml || '');
+    setParsedVariables(template.payload?.variables || []);
     setShowCreateTemplate(true);
   };
 
@@ -387,9 +387,10 @@ export const BlueprintManager: React.FC = () => {
                   category: 'Content',
                   department_tag: '',
                   weight: 10,
-                  payload: '{}',
                   is_global: false
                 });
+                setRawHtmlInput('');
+                setParsedVariables([]);
                 setShowCreateTemplate(true);
               }}
               className="flex items-center gap-2 px-6 py-3 bg-card border border-border text-foreground rounded-xl font-bold hover:bg-secondary transition-all"
@@ -469,15 +470,50 @@ export const BlueprintManager: React.FC = () => {
                 )}
 
                 <div className="col-span-full space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Initial Payload (JSON)</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Template Code (HTML/Tailwind)</label>
                   <textarea 
-                    className="w-full h-48 bg-background border border-border rounded-xl px-4 py-3 text-sm font-mono text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-y"
-                    value={templateForm.payload}
-                    onChange={(e) => setTemplateForm({ ...templateForm, payload: e.target.value })}
+                    className="w-full h-64 bg-background border border-border rounded-xl px-4 py-3 text-sm font-mono text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-y"
+                    value={rawHtmlInput}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setRawHtmlInput(val);
+                      const regex = /\{\{([^}]+)\}\}/g;
+                      const vars = new Set<string>();
+                      let match;
+                      while ((match = regex.exec(val)) !== null) {
+                        vars.add(match[1].trim());
+                      }
+                      setParsedVariables(Array.from(vars));
+                    }}
+                    placeholder="Paste your raw HTML here using {{variable}} syntax..."
                   />
                 </div>
+
+                {parsedVariables.length > 0 && (
+                  <div className="col-span-full space-y-3">
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Detected Variables</label>
+                    <div className="flex flex-wrap gap-2">
+                      {parsedVariables.map(v => (
+                        <span key={v} className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-xs font-black uppercase tracking-widest">
+                          {v}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {rawHtmlInput && (
+                  <div className="col-span-full space-y-3">
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Live Template Preview</label>
+                    <div className="overflow-hidden rounded-xl border border-border/20 bg-slate-200 flex items-center justify-center py-8">
+                      <div className="transform scale-[0.4] md:scale-[0.5] origin-top bg-white shadow-xl min-w-[794px] min-h-[1123px]">
+                        <div dangerouslySetInnerHTML={{ __html: rawHtmlInput }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="flex justify-end gap-3 pt-4 border-t border-border/10">
+              <div className="flex justify-end gap-3 pt-4 border-t border-border/10 mt-6">
                 <button 
                   onClick={() => { setShowCreateTemplate(false); setEditingTemplate(null); }}
                   className="px-6 py-2.5 rounded-xl font-bold text-muted-foreground hover:bg-secondary transition-colors text-sm"
