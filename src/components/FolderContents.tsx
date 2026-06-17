@@ -28,9 +28,7 @@ import { logActivity } from '../lib/activityLogger';
 import type { Page, Folder, Company, Template } from '../types';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { PrintTemplate } from './PrintTemplate';
-import { CoverTemplate } from './templates/CoverTemplate';
-import { ExecutiveSummaryTemplate } from './templates/ExecutiveSummaryTemplate';
-import { AttendanceTemplate } from './templates/AttendanceTemplate';
+
 import React from 'react';
 
 export function FolderContents() {
@@ -652,10 +650,7 @@ ${targetHtml}
              const name = page.templates?.template_name;
              return (
                <div key={page.id} className="relative w-[794px] min-h-[1123px] bg-white break-after-page print:break-after-page">
-                 {cat === 'Cover' ? <CoverTemplate data={page.data || {}} /> : 
-                  cat === 'Executive Summary' ? <ExecutiveSummaryTemplate data={page.data || {}} /> :
-                  name === 'Attendance Report' ? <AttendanceTemplate data={page.data || {}} /> :
-                  <PrintTemplate data={page.data || {}} />}
+                 <PrintTemplate data={page.data || {}} />
                </div>
              );
            })}
