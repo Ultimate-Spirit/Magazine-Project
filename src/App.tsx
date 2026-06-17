@@ -13,7 +13,8 @@ import { AdminDashboard } from './components/admin/AdminDashboard';
 import { UserManagement } from './components/admin/UserManagement';
 import { CompanyManagement } from './components/admin/CompanyManagement';
 import { RoleManagement } from './components/admin/RoleManagement';
-import { BlueprintManager } from './components/admin/BlueprintManager';
+import { ContentBundlesManager } from './components/admin/ContentBundlesManager';
+import { StandaloneTemplateManager } from './components/admin/StandaloneTemplateManager';
 import { UpdatePassword } from './components/UpdatePassword';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import type { Company } from './types';
@@ -62,7 +63,9 @@ function App() {
                   <Route path="users" element={<UserManagement />} />
                   <Route path="companies" element={<CompanyManagement />} />
                   <Route path="roles" element={<RoleManagement />} />
-                  <Route path="blueprints" element={<BlueprintManager />} />
+                  <Route path="bundles" element={<ContentBundlesManager />} />
+                  <Route path="covers" element={<StandaloneTemplateManager category="Cover" />} />
+                  <Route path="last-pages" element={<StandaloneTemplateManager category="Last Page" />} />
                   <Route path="*" element={<Navigate to="/admin" replace />} />
                 </Route>
               </Routes>

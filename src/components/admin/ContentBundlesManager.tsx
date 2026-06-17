@@ -19,7 +19,7 @@ import type { TemplateBundle, Template } from '../../types';
 import { ConfirmModal } from '../common/ConfirmModal';
 import { A4Preview } from '../A4Preview';
 
-export const BlueprintManager: React.FC = () => {
+export const ContentBundlesManager: React.FC = () => {
   const [bundles, setBundles] = useState<TemplateBundle[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,6 +80,7 @@ export const BlueprintManager: React.FC = () => {
         .from('templates')
         .select('*')
         .eq('bundle_id', bundleId)
+        .eq('category', 'Content')
         .order('weight', { ascending: true });
       
       if (fetchErr) throw fetchErr;
@@ -416,23 +417,12 @@ export const BlueprintManager: React.FC = () => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Category</label>
-                  <select 
-                    className="w-full bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none"
-                    value={templateForm.category}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setTemplateForm({ 
-                        ...templateForm, 
-                        category: val as any,
-                        is_global: (val === 'Cover' || val === 'Last Page') ? templateForm.is_global : false
-                      });
-                    }}
-                  >
-                    <option value="Cover">Cover</option>
-                    <option value="Content">Content</option>
-                    <option value="Newsletter">Newsletter</option>
-                    <option value="Last Page">Last Page</option>
-                  </select>
+                  <input 
+                    type="text" 
+                    className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-base text-muted-foreground cursor-not-allowed"
+                    value="Content"
+                    disabled
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Department Tag</label>
