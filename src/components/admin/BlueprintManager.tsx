@@ -505,15 +505,12 @@ export const BlueprintManager: React.FC = () => {
                 {rawHtmlInput && (
                   <div className="col-span-full space-y-3">
                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Live Template Preview</label>
-                    <div 
-                      className="w-full relative overflow-hidden bg-gray-200 border-2 border-gray-300 shadow-xl aspect-[1/1.414] [container-type:inline-size] mx-auto"
-                    >
-                      <div 
-                        className="absolute top-0 left-0 w-[794px] min-h-[1123px] bg-white origin-top-left"
-                        style={{ transform: 'scale(calc(100cqi / 794))' }}
-                      >
-                        <div dangerouslySetInnerHTML={{ __html: rawHtmlInput }} />
-                      </div>
+                    <div className="relative w-full max-w-2xl aspect-[1/1.414] border-2 border-gray-300 mx-auto overflow-hidden bg-white">
+                      <iframe 
+                        className="w-full h-full border-0 pointer-events-none"
+                        srcDoc={`<!DOCTYPE html><html><head><script src="https://cdn.tailwindcss.com"></script><style>body { margin: 0; width: 794px; height: 1123px; transform: scale(calc(100vw / 794)); transform-origin: top left; overflow: hidden; }</style></head><body>${rawHtmlInput}</body></html>`}
+                        title="Live Template Preview"
+                      />
                     </div>
                   </div>
                 )}
