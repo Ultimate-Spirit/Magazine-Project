@@ -6,6 +6,13 @@ import { A4Preview } from './A4Preview';
 import { Save, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import type { Company } from '../types';
 
+const formatPlaceholder = (name: string) => {
+  return name
+    .split(/[\s_]+/)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+};
+
 export const MagazineEditor: React.FC = () => {
   const { folderId, pageId } = useParams<{ folderId: string; pageId: string }>();
   const navigate = useNavigate();
@@ -75,7 +82,7 @@ export const MagazineEditor: React.FC = () => {
     fetchEditorData();
   }, [folderId, pageId]);
 
-  // Dynamic client-side variable extraction on rawHtml load & dummy data injection
+  // Dynamic client-side variable extraction on rawHtml load & dynamic placeholder injection
   useEffect(() => {
     if (!rawHtml) return;
     
@@ -95,12 +102,12 @@ export const MagazineEditor: React.FC = () => {
       vars.forEach((v: string) => {
         if (initialForm[v] === undefined || initialForm[v] === '') {
           if (isDbEmpty) {
-            // Database data is empty, inject dynamic initial dummy data
+            // Database data is empty, construct initial placeholder state
             const lower = v.toLowerCase();
             if (lower.includes('image') || lower.includes('url') || lower.includes('pic') || lower.includes('cover')) {
               initialForm[v] = 'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?auto=format&fit=crop&w=800&q=80';
             } else {
-              initialForm[v] = v.replace(/_/g, ' ').toUpperCase();
+              initialForm[v] = formatPlaceholder(v);
             }
           } else {
             initialForm[v] = '';
@@ -116,7 +123,7 @@ export const MagazineEditor: React.FC = () => {
     setFormData(prev => ({ ...prev, [variable]: value }));
   };
 
-  // Asynchronous Supabase storage image uploader
+  // Asynchronous Supabase storage image uploader with strict catch for bucket not found
   const handleImageUpload = async (variable: string, file: File) => {
     if (!file) return;
     setUploadingVars(prev => ({ ...prev, [variable]: true }));
@@ -134,7 +141,12 @@ export const MagazineEditor: React.FC = () => {
           upsert: true
         });
 
-      if (uploadErr) throw uploadErr;
+      if (uploadErr) {
+        // Explicitly catch storage errors (e.g. Bucket not found)
+        console.error('Storage Upload Error:', uploadErr);
+        alert("Storage Error: Please ensure a public bucket named 'magazine_assets' exists in your Supabase dashboard");
+        return;
+      }
 
       // Get public URL
       const { data } = supabase.storage
@@ -146,7 +158,7 @@ export const MagazineEditor: React.FC = () => {
       // Silently update variable state with publicUrl to trigger reactive preview update
       setFormData(prev => ({ ...prev, [variable]: data.publicUrl }));
     } catch (err: any) {
-      console.error('Upload error:', err);
+      console.error('General upload handler error:', err);
       setError(err.message || 'Image upload failed. Please try again.');
     } finally {
       setUploadingVars(prev => ({ ...prev, [variable]: false }));
@@ -215,30 +227,28 @@ export const MagazineEditor: React.FC = () => {
 
   return (
     <WorkspaceLayout company={company || ({ id: 'none', name: 'Magazine Builder' } as any)}>
-      {/* Aggressively rigid split-screen architecture layout */}
-      <div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-background">
+      {/* Canva-style workspace layout container */}
+      <div className="flex h-[calc(100vh-4rem)] w-full bg-[#e5e7eb] overflow-hidden">
         
-        {/* Left preview area: flex-1 min-w-0 bg-[#ECECEC] flex items-center justify-center p-8 overflow-hidden */}
-        <div className="flex-1 min-w-0 bg-[#ECECEC] flex items-center justify-center p-8 overflow-hidden relative">
+        {/* Left preview area centered flawlessly with shadow and ring to pop */}
+        <div className="flex-1 flex justify-center items-center p-12 overflow-y-auto relative">
           <div className="absolute top-6 left-6 z-10">
             <button 
               onClick={() => navigate(`/folder/${folderId}`)}
-              className="flex items-center gap-2 text-xs font-black text-slate-700 hover:text-black transition-all uppercase tracking-wider bg-white/80 hover:bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200/50"
+              className="flex items-center gap-2 text-xs font-black text-slate-700 hover:text-black transition-all uppercase tracking-wider bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200/50"
             >
               <ArrowLeft className="w-4 h-4" />
               Back
             </button>
           </div>
 
-          <div className="w-full max-w-xl bg-white border border-slate-300 rounded-2xl p-4 shadow-xl overflow-hidden max-h-full flex items-center justify-center">
-            <div className="w-full h-full flex items-center justify-center">
-              <A4Preview htmlContent={processedHtml} />
-            </div>
+          <div className="max-w-xl w-full flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.3)] ring-1 ring-gray-900/5 rounded-md overflow-hidden bg-white">
+            <A4Preview htmlContent={processedHtml} />
           </div>
         </div>
 
-        {/* Right data-entry sidebar: w-[450px] flex-shrink-0 bg-white border-l border-gray-300 p-6 overflow-y-auto */}
-        <div className="w-[450px] flex-shrink-0 bg-white border-l border-gray-300 p-6 flex flex-col justify-between overflow-y-auto h-full">
+        {/* Right control sidebar panel */}
+        <div className="w-[400px] flex-shrink-0 bg-white border-l border-gray-200 shadow-[-10px_0_20px_-5px_rgba(0,0,0,0.1)] p-6 z-10 flex flex-col justify-between overflow-y-auto h-full">
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-black text-slate-900">Content Editor</h2>
@@ -253,7 +263,7 @@ export const MagazineEditor: React.FC = () => {
             )}
 
             {templateVariables.length === 0 ? (
-              <div className="text-center py-10 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
+              <div className="text-center py-10 border border-slate-200 rounded-2xl bg-slate-50">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">No variables detected</p>
                 <p className="text-[10px] text-slate-400/80 mt-1">This template has no dynamic fields to edit.</p>
               </div>
@@ -265,7 +275,7 @@ export const MagazineEditor: React.FC = () => {
                     {isImageVar(variable) ? (
                       <div className="space-y-3">
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">
-                          {variable.replace(/_/g, ' ')}
+                          {formatPlaceholder(variable)}
                         </label>
                         <div className="flex items-center gap-4 p-4 border border-slate-200 rounded-xl bg-slate-50">
                           {formData[variable] ? (
@@ -305,14 +315,14 @@ export const MagazineEditor: React.FC = () => {
                     ) : (
                       <div className="space-y-2">
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">
-                          {variable.replace(/_/g, ' ')}
+                          {formatPlaceholder(variable)}
                         </label>
                         <input 
                           type="text" 
                           value={formData[variable] || ''}
                           onChange={(e) => handleInputChange(variable, e.target.value)}
                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
-                          placeholder={`Enter ${variable.replace(/_/g, ' ').toLowerCase()}`}
+                          placeholder={`Enter ${formatPlaceholder(variable).toLowerCase()}`}
                         />
                       </div>
                     )}
