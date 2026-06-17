@@ -506,7 +506,7 @@ export const BlueprintManager: React.FC = () => {
                   <div className="col-span-full space-y-3">
                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Live Template Preview</label>
                     <div className="overflow-hidden rounded-xl border border-border/20 bg-slate-200 flex items-center justify-center py-8">
-                      <div className="transform scale-[0.4] md:scale-[0.5] origin-top bg-white shadow-xl min-w-[794px] min-h-[1123px]">
+                      <div className="w-full max-w-2xl aspect-[1/1.414] bg-white border-2 border-gray-300 shadow-xl overflow-y-auto mx-auto mt-4">
                         <div dangerouslySetInnerHTML={{ __html: rawHtmlInput }} />
                       </div>
                     </div>
