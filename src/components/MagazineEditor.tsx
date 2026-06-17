@@ -50,18 +50,11 @@ export const MagazineEditor: React.FC = () => {
 
         const template = pageData.templates;
         if (template) {
-          const html = template.payload?.rawHtml || '';
-          const vars = template.payload?.variables || [];
+          const html = template.raw_html || template.payload?.rawHtml || '';
           setRawHtml(html);
-          setTemplateVariables(vars);
-
-          // Initialize form data with saved values or empty strings
-          const savedData = pageData.data || {};
-          const initialForm: Record<string, string> = {};
-          vars.forEach((v: string) => {
-            initialForm[v] = savedData[v] !== undefined ? String(savedData[v]) : '';
-          });
-          setFormData(initialForm);
+          
+          // Pre-populate with saved data state
+          setFormData(pageData.data || {});
         } else {
           setError('No template associated with this page.');
         }
@@ -75,6 +68,32 @@ export const MagazineEditor: React.FC = () => {
 
     fetchEditorData();
   }, [folderId, pageId]);
+
+  // Dynamic client-side variable extraction on rawHtml load
+  useEffect(() => {
+    if (!rawHtml) return;
+    
+    // Exact match logic requested:
+    // runs Array.from(new Set([...(template.raw_html.match(/\{\{([^}]+)\}\}/g) || [])].map(v => v.slice(2, -2))))
+    const matches = rawHtml.match(/\{\{([^}]+)\}\}/g) || [];
+    const vars = Array.from(
+      new Set(
+        matches.map(v => v.slice(2, -2).trim())
+      )
+    );
+    
+    setTemplateVariables(vars);
+
+    setFormData(prev => {
+      const initialForm = { ...prev };
+      vars.forEach((v: string) => {
+        if (initialForm[v] === undefined) {
+          initialForm[v] = '';
+        }
+      });
+      return initialForm;
+    });
+  }, [rawHtml]);
 
   const handleInputChange = (variable: string, value: string) => {
     setFormData(prev => ({ ...prev, [variable]: value }));
@@ -128,10 +147,11 @@ export const MagazineEditor: React.FC = () => {
 
   return (
     <WorkspaceLayout company={company || ({ id: 'none', name: 'Magazine Builder' } as any)}>
-      <div className="flex h-[calc(100vh-4rem)] lg:h-[calc(100vh-5rem)] bg-background w-full overflow-hidden">
+      {/* Strict outermost wrapper: flex h-[calc(100vh-4rem)] overflow-hidden */}
+      <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-background w-full">
         
-        {/* Left Column (Wide, scrollable canvas preview) */}
-        <div className="flex-1 bg-slate-100 dark:bg-slate-900/50 overflow-y-auto p-8 lg:p-12 flex flex-col items-center justify-start">
+        {/* Left Column strictly flex-1 min-w-0 bg-gray-100 p-8 overflow-y-auto */}
+        <div className="flex-1 min-w-0 bg-gray-100 p-8 overflow-y-auto flex flex-col items-center justify-start">
           <div className="w-full max-w-2xl flex items-center justify-between mb-6">
             <button 
               onClick={() => navigate(`/folder/${folderId}`)}
@@ -148,12 +168,12 @@ export const MagazineEditor: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column (Fixed sidebar for data entry) */}
-        <div className="w-96 bg-card border-l border-border p-6 flex flex-col justify-between overflow-y-auto shrink-0 h-full">
+        {/* Right Column strictly w-[400px] flex-shrink-0 bg-white border-l border-gray-300 p-6 overflow-y-auto */}
+        <div className="w-[400px] flex-shrink-0 bg-white border-l border-gray-300 p-6 flex flex-col justify-between overflow-y-auto h-full">
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-black text-foreground">Content Editor</h2>
-              <p className="text-xs text-muted-foreground font-semibold mt-1">Fill in fields for this template slot</p>
+              <h2 className="text-xl font-black text-slate-900">Content Editor</h2>
+              <p className="text-xs text-slate-500 font-semibold mt-1">Fill in fields for this template slot</p>
             </div>
 
             {error && (
@@ -164,23 +184,23 @@ export const MagazineEditor: React.FC = () => {
             )}
 
             {templateVariables.length === 0 ? (
-              <div className="text-center py-10 border-2 border-dashed border-border/50 rounded-2xl">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">No variables detected</p>
-                <p className="text-[10px] text-muted-foreground/60 mt-1">This template has no dynamic fields to edit.</p>
+              <div className="text-center py-10 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">No variables detected</p>
+                <p className="text-[10px] text-slate-400/80 mt-1">This template has no dynamic fields to edit.</p>
               </div>
             ) : (
               <div className="space-y-5">
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest border-b border-border pb-2">Fields</h3>
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">Fields</h3>
                 {templateVariables.map((variable) => (
                   <div key={variable} className="space-y-2">
-                    <label className="block text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">
                       {variable}
                     </label>
                     <input 
                       type="text" 
                       value={formData[variable] || ''}
                       onChange={(e) => handleInputChange(variable, e.target.value)}
-                      className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
                       placeholder={`Enter value for ${variable}`}
                     />
                   </div>
@@ -189,7 +209,7 @@ export const MagazineEditor: React.FC = () => {
             )}
           </div>
 
-          <div className="pt-6 border-t border-border mt-8">
+          <div className="pt-6 border-t border-slate-100 mt-8">
             <button
               onClick={handleSave}
               disabled={saving}

@@ -57,12 +57,14 @@ export const StandaloneTemplateManager: React.FC<StandaloneTemplateManagerProps>
     }
   };
 
-  const handleHtmlChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const html = e.target.value;
-    setRawHtmlInput(html);
+  useEffect(() => {
     const regex = /\{\{([^}]+)\}\}/g;
-    const matches = Array.from(html.matchAll(regex), m => m[1].trim());
+    const matches = Array.from(rawHtmlInput.matchAll(regex), m => m[1].trim());
     setParsedVariables([...new Set(matches)]);
+  }, [rawHtmlInput]);
+
+  const handleHtmlChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setRawHtmlInput(e.target.value);
   };
 
   const handleSaveTemplate = async () => {
