@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import type { TemplateBundle, Template } from '../../types';
 import { ConfirmModal } from '../common/ConfirmModal';
+import { A4Preview } from '../A4Preview';
 
 export const BlueprintManager: React.FC = () => {
   const [bundles, setBundles] = useState<TemplateBundle[]>([]);
@@ -505,36 +506,8 @@ export const BlueprintManager: React.FC = () => {
                 {rawHtmlInput && (
                   <div className="col-span-full space-y-3">
                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Live Template Preview</label>
-                    <div className="relative w-full max-w-2xl mx-auto aspect-[1/1.414] border border-gray-300 shadow-xl overflow-hidden bg-white">
-                      <iframe 
-                        className="w-full h-full border-0"
-                        srcDoc={`<!DOCTYPE html>
-<html>
-<head>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: white; }
-    #a4-board { width: 794px; height: 1123px; transform-origin: top left; background-color: white; overflow: hidden; }
-  </style>
-</head>
-<body>
-  <div id="a4-board">
-    ${rawHtmlInput}
-  </div>
-  <script>
-    function scaleBoard() {
-      var board = document.getElementById('a4-board');
-      if (!board) return;
-      var scale = window.innerWidth / 794;
-      board.style.transform = 'scale(' + scale + ')';
-    }
-    scaleBoard();
-    window.addEventListener('resize', scaleBoard);
-  </script>
-</body>
-</html>`}
-                        title="Live Template Preview"
-                      />
+                    <div className="w-full max-w-2xl mx-auto">
+                      <A4Preview htmlContent={rawHtmlInput} />
                     </div>
                   </div>
                 )}
