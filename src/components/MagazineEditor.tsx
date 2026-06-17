@@ -1,358 +1,379 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { WorkspaceLayout } from './WorkspaceLayout';
 import { supabase } from '../lib/supabaseClient';
 import { A4Preview } from './A4Preview';
-import { Save, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, AlertCircle, ImageIcon, Upload } from 'lucide-react';
 import type { Company } from '../types';
 
-const formatPlaceholder = (name: string) => {
-  return name
+/* ─── Helpers ─────────────────────────────────────────────────── */
+const toTitleCase = (name: string) =>
+  name
     .split(/[\s_]+/)
     .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(' ');
+
+const isImageVar = (name: string) => {
+  const l = name.toLowerCase();
+  return l.includes('image') || l.includes('url') || l.includes('pic') || l.includes('cover');
 };
 
+const UNSPLASH_PLACEHOLDER =
+  'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?auto=format&fit=crop&w=800&q=80';
+
+const buildDummyState = (vars: string[]): Record<string, string> => {
+  const state: Record<string, string> = {};
+  vars.forEach(v => {
+    state[v] = isImageVar(v) ? UNSPLASH_PLACEHOLDER : toTitleCase(v);
+  });
+  return state;
+};
+
+const extractVars = (html: string): string[] =>
+  Array.from(new Set((html.match(/\{\{([^}]+)\}\}/g) || []).map(v => v.slice(2, -2).trim())));
+
+/* ─── Toast ────────────────────────────────────────────────────── */
+const Toast: React.FC<{ message: string; type: 'error' | 'success'; onClose: () => void }> = ({
+  message,
+  type,
+  onClose,
+}) => (
+  <div
+    className={`fixed bottom-6 right-6 z-50 flex items-start gap-3 px-5 py-4 rounded-2xl shadow-2xl max-w-sm animate-in slide-in-from-bottom-4 fade-in ${
+      type === 'error' ? 'bg-red-900/90 border border-red-500/30' : 'bg-emerald-900/90 border border-emerald-500/30'
+    }`}
+  >
+    <AlertCircle className={`w-5 h-5 shrink-0 mt-0.5 ${type === 'error' ? 'text-red-400' : 'text-emerald-400'}`} />
+    <p className="text-sm font-medium text-gray-100 leading-snug">{message}</p>
+    <button onClick={onClose} className="ml-2 text-gray-400 hover:text-white text-lg leading-none">×</button>
+  </div>
+);
+
+/* ─── Image Upload Zone ───────────────────────────────────────── */
+const ImageUploadZone: React.FC<{
+  variable: string;
+  value: string;
+  uploading: boolean;
+  onChange: (file: File) => void;
+}> = ({ variable, value, uploading, onChange }) => {
+  const [dragging, setDragging] = useState(false);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragging(false);
+      const file = e.dataTransfer.files?.[0];
+      if (file && file.type.startsWith('image/')) onChange(file);
+    },
+    [onChange],
+  );
+
+  return (
+    <label
+      className={`relative flex flex-col items-center justify-center w-full h-36 rounded-xl border-2 border-dashed cursor-pointer transition-all overflow-hidden ${
+        dragging
+          ? 'border-blue-400 bg-blue-500/10'
+          : 'border-[#444] hover:border-[#666] bg-[#1a1a1a]'
+      }`}
+      onDragOver={e => { e.preventDefault(); setDragging(true); }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={handleDrop}
+    >
+      {/* Background thumbnail */}
+      {value && (
+        <img
+          src={value}
+          alt={variable}
+          className="absolute inset-0 w-full h-full object-cover opacity-30"
+        />
+      )}
+
+      <div className="relative z-10 flex flex-col items-center gap-2 pointer-events-none">
+        {uploading ? (
+          <>
+            <Loader2 className="w-6 h-6 animate-spin text-blue-400" />
+            <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Uploading…</span>
+          </>
+        ) : (
+          <>
+            {value ? (
+              <ImageIcon className="w-6 h-6 text-white/60" />
+            ) : (
+              <Upload className="w-6 h-6 text-gray-500" />
+            )}
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+              {value ? 'Replace Image' : 'Drop or Click to Upload'}
+            </span>
+          </>
+        )}
+      </div>
+
+      <input
+        type="file"
+        accept="image/*"
+        className="hidden"
+        disabled={uploading}
+        onChange={e => {
+          const file = e.target.files?.[0];
+          if (file) onChange(file);
+        }}
+      />
+    </label>
+  );
+};
+
+/* ─── Main Component ──────────────────────────────────────────── */
 export const MagazineEditor: React.FC = () => {
   const { folderId, pageId } = useParams<{ folderId: string; pageId: string }>();
   const navigate = useNavigate();
 
-  const [company, setCompany] = useState<Company | null>(null);
-  const [pageTitle, setPageTitle] = useState<string>('');
-  const [rawHtml, setRawHtml] = useState<string>('');
+  const [_company, setCompany] = useState<Company | null>(null);
+  const [pageTitle, setPageTitle] = useState('');
+  const [rawHtml, setRawHtml] = useState('');
   const [templateVariables, setTemplateVariables] = useState<string[]>([]);
-  
-  // Real-time input values state
   const [formData, setFormData] = useState<Record<string, string>>({});
-  // Debounced/Buffered preview state to prevent layout jitter
   const [previewData, setPreviewData] = useState<Record<string, string>>({});
-  
   const [uploadingVars, setUploadingVars] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
 
+  const showToast = (message: string, type: 'error' | 'success' = 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 6000);
+  };
+
+  /* Fetch page + template */
   useEffect(() => {
-    const fetchEditorData = async () => {
+    const fetch = async () => {
       if (!pageId || !folderId) return;
       try {
         setLoading(true);
-        // 1. Fetch folder & company info
-        const { data: folderData, error: folderErr } = await supabase
+        const { data: folderData } = await supabase
           .from('folders')
           .select('*, companies(*)')
           .eq('id', folderId)
           .single();
+        if (folderData?.companies) setCompany(folderData.companies);
 
-        if (folderErr) throw folderErr;
-        if (folderData?.companies) {
-          setCompany(folderData.companies);
-        }
-
-        // 2. Fetch page and its template details
         const { data: pageData, error: pageErr } = await supabase
           .from('pages')
           .select('*, templates(*)')
           .eq('id', pageId)
           .single();
-
         if (pageErr) throw pageErr;
         if (!pageData) throw new Error('Page not found');
 
-        setPageTitle(pageData.title || 'Untitled Page');
+        setPageTitle(pageData.title || 'Untitled');
 
-        const template = pageData.templates;
-        if (template) {
-          const html = template.raw_html || template.payload?.rawHtml || '';
+        const tpl = pageData.templates;
+        if (tpl) {
+          const html = tpl.raw_html || tpl.payload?.rawHtml || '';
           setRawHtml(html);
-          
-          // Pre-populate with saved database data state
           setFormData(pageData.data || {});
         } else {
-          setError('No template associated with this page.');
+          showToast('No template is linked to this page.', 'error');
         }
       } catch (err: any) {
-        console.error('Fetch Editor Data Error:', err);
-        setError(err.message || 'An error occurred while loading page editor.');
+        showToast(err.message || 'Failed to load editor data.', 'error');
       } finally {
         setLoading(false);
       }
     };
-
-    fetchEditorData();
+    fetch();
   }, [folderId, pageId]);
 
-  // Dynamic client-side variable extraction on rawHtml load & dynamic placeholder injection
+  /* Extract variables & inject dummy state if DB is empty */
   useEffect(() => {
     if (!rawHtml) return;
-    
-    const matches = rawHtml.match(/\{\{([^}]+)\}\}/g) || [];
-    const vars = Array.from(
-      new Set(
-        matches.map(v => v.slice(2, -2).trim())
-      )
-    );
-    
+    const vars = extractVars(rawHtml);
     setTemplateVariables(vars);
-
     setFormData(prev => {
-      const isDbEmpty = Object.keys(prev).length === 0;
-      const initialForm = { ...prev };
-      
-      vars.forEach((v: string) => {
-        if (initialForm[v] === undefined || initialForm[v] === '') {
-          if (isDbEmpty) {
-            // Database data is empty, construct initial placeholder state
-            const lower = v.toLowerCase();
-            if (lower.includes('image') || lower.includes('url') || lower.includes('pic') || lower.includes('cover')) {
-              initialForm[v] = 'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?auto=format&fit=crop&w=800&q=80';
-            } else {
-              initialForm[v] = formatPlaceholder(v);
-            }
-          } else {
-            initialForm[v] = '';
-          }
-        }
-      });
-      return initialForm;
+      const isEmpty = Object.keys(prev).length === 0;
+      const base = isEmpty ? buildDummyState(vars) : { ...prev };
+      vars.forEach(v => { if (base[v] === undefined) base[v] = ''; });
+      return base;
     });
   }, [rawHtml]);
 
-  // Snappy real-time text input handler
-  const handleInputChange = (variable: string, value: string) => {
+  /* Debounce form → preview (250ms) to prevent iframe jitter */
+  useEffect(() => {
+    const id = setTimeout(() => setPreviewData(formData), 250);
+    return () => clearTimeout(id);
+  }, [formData]);
+
+  /* Text input handler */
+  const handleInputChange = (variable: string, value: string) =>
     setFormData(prev => ({ ...prev, [variable]: value }));
-  };
 
-  // Asynchronous Supabase storage image uploader with strict catch for bucket not found
+  /* Supabase Storage image upload */
   const handleImageUpload = async (variable: string, file: File) => {
-    if (!file) return;
     setUploadingVars(prev => ({ ...prev, [variable]: true }));
-    setError(null);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${pageId}-${variable}-${Date.now()}.${fileExt}`;
-      const filePath = `${folderId}/${fileName}`;
+      const ext = file.name.split('.').pop();
+      const path = `${folderId}/${pageId}-${variable}-${Date.now()}.${ext}`;
 
-      // Upload file to Supabase Storage bucket 'magazine_assets'
       const { error: uploadErr } = await supabase.storage
         .from('magazine_assets')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
+        .upload(path, file, { upsert: true });
 
       if (uploadErr) {
-        // Explicitly catch storage errors (e.g. Bucket not found)
-        console.error('Storage Upload Error:', uploadErr);
-        alert("Storage Error: Please ensure a public bucket named 'magazine_assets' exists in your Supabase dashboard");
+        showToast(
+          uploadErr.message.includes('not found')
+            ? "Storage Error: Please create a public bucket named 'magazine_assets' in your Supabase dashboard."
+            : `Upload failed: ${uploadErr.message}`,
+          'error',
+        );
         return;
       }
 
-      // Get public URL
-      const { data } = supabase.storage
-        .from('magazine_assets')
-        .getPublicUrl(filePath);
+      const { data } = supabase.storage.from('magazine_assets').getPublicUrl(path);
+      if (!data?.publicUrl) throw new Error('Could not retrieve public URL.');
 
-      if (!data?.publicUrl) throw new Error('Failed to retrieve public URL');
-
-      // Silently update variable state with publicUrl to trigger reactive preview update
       setFormData(prev => ({ ...prev, [variable]: data.publicUrl }));
+      showToast('Image uploaded successfully!', 'success');
     } catch (err: any) {
-      console.error('General upload handler error:', err);
-      setError(err.message || 'Image upload failed. Please try again.');
+      showToast(err.message || 'Unexpected upload error.', 'error');
     } finally {
       setUploadingVars(prev => ({ ...prev, [variable]: false }));
     }
   };
 
-  // Debounce formData to previewData to avoid iframe reloading jitter while typing
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setPreviewData(formData);
-    }, 250);
+  /* Processed HTML for preview */
+  const processedHtml = useMemo(() => {
+    if (!rawHtml) return '';
+    return templateVariables.reduce((html, variable) => {
+      const val = previewData[variable] || '';
+      const esc = variable.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      return html.replace(new RegExp(`\\{\\{\\s*${esc}\\s*\\}\\}`, 'g'), val);
+    }, rawHtml);
+  }, [rawHtml, templateVariables, previewData]);
 
-    return () => clearTimeout(handler);
-  }, [formData]);
-
+  /* Save page */
   const handleSave = async () => {
     if (!pageId) return;
     setSaving(true);
-    setError(null);
     try {
-      const { error: saveErr } = await supabase
+      const { error } = await supabase
         .from('pages')
-        .update({
-          data: formData,
-          updated_at: new Date().toISOString()
-        })
+        .update({ data: formData, updated_at: new Date().toISOString() })
         .eq('id', pageId);
-
-      if (saveErr) throw saveErr;
-      navigate(`/folder/${folderId}`);
+      if (error) throw error;
+      showToast('Page saved!', 'success');
+      setTimeout(() => navigate(`/folder/${folderId}`), 800);
     } catch (err: any) {
-      console.error('Save Page Error:', err);
-      setError(err.message || 'Failed to save page data.');
+      showToast(err.message || 'Failed to save.', 'error');
     } finally {
       setSaving(false);
     }
   };
 
-  const processedHtml = useMemo(() => {
-    if (!rawHtml) return '';
-    let html = rawHtml;
-    templateVariables.forEach(variable => {
-      const value = previewData[variable] || '';
-      const escapedVar = variable.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-      const regex = new RegExp(`\\{\\{\\s*${escapedVar}\\s*\\}\\}`, 'g');
-      html = html.replace(regex, value);
-    });
-    return html;
-  }, [rawHtml, templateVariables, previewData]);
-
-  const isImageVar = (name: string) => {
-    const lower = name.toLowerCase();
-    return lower.includes('image') || lower.includes('url') || lower.includes('pic') || lower.includes('cover');
-  };
-
+  /* ─── Loading State ─────────────────────────────────────────── */
   if (loading) {
     return (
-      <WorkspaceLayout company={company || ({ id: 'none', name: 'Magazine Builder' } as any)}>
-        <div className="flex-1 flex flex-col items-center justify-center min-h-[calc(100vh-5rem)]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
-          <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground animate-pulse">Loading Workspace Editor</p>
-        </div>
-      </WorkspaceLayout>
+      <div className="flex h-screen w-full bg-[#1e1e1e] items-center justify-center flex-col gap-4">
+        <Loader2 className="w-10 h-10 animate-spin text-blue-400" />
+        <p className="text-xs font-black uppercase tracking-[0.4em] text-gray-500 animate-pulse">
+          Loading Editor
+        </p>
+      </div>
     );
   }
 
+  /* ─── Editor UI ─────────────────────────────────────────────── */
   return (
-    <WorkspaceLayout company={company || ({ id: 'none', name: 'Magazine Builder' } as any)}>
-      {/* Canva-style workspace layout container */}
-      <div className="flex h-[calc(100vh-4rem)] w-full bg-[#e5e7eb] overflow-hidden">
-        
-        {/* Left preview area centered flawlessly with shadow and ring to pop */}
-        <div className="flex-1 flex justify-center items-center p-12 overflow-y-auto relative">
-          <div className="absolute top-6 left-6 z-10">
-            <button 
-              onClick={() => navigate(`/folder/${folderId}`)}
-              className="flex items-center gap-2 text-xs font-black text-slate-700 hover:text-black transition-all uppercase tracking-wider bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200/50"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </button>
-          </div>
+    <div className="flex h-screen w-full overflow-hidden bg-[#1e1e1e] font-sans text-gray-100">
+      {/* Toast notification */}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-          <div className="max-w-xl w-full flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.3)] ring-1 ring-gray-900/5 rounded-md overflow-hidden bg-white">
-            <A4Preview htmlContent={processedHtml} />
-          </div>
+      {/* ── Left: Dark canvas workspace ── */}
+      <div className="flex-1 bg-[#0f0f0f] flex justify-center items-center p-12 overflow-y-auto relative">
+        {/* Back button */}
+        <button
+          onClick={() => navigate(`/folder/${folderId}`)}
+          className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-black uppercase tracking-wider text-gray-400 hover:text-white transition-all"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </button>
+
+        {/* Page title */}
+        <div className="absolute top-6 left-1/2 -translate-x-1/2">
+          <span className="text-xs font-black uppercase tracking-[0.3em] text-gray-600">
+            {pageTitle}
+          </span>
         </div>
 
-        {/* Right control sidebar panel */}
-        <div className="w-[400px] flex-shrink-0 bg-white border-l border-gray-200 shadow-[-10px_0_20px_-5px_rgba(0,0,0,0.1)] p-6 z-10 flex flex-col justify-between overflow-y-auto h-full">
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-black text-slate-900">Content Editor</h2>
-              <p className="text-xs text-slate-500 font-semibold mt-1">Fill in fields for this template slot</p>
-            </div>
-
-            {error && (
-              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-red-500 font-medium">{error}</p>
-              </div>
-            )}
-
-            {templateVariables.length === 0 ? (
-              <div className="text-center py-10 border border-slate-200 rounded-2xl bg-slate-50">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">No variables detected</p>
-                <p className="text-[10px] text-slate-400/80 mt-1">This template has no dynamic fields to edit.</p>
-              </div>
-            ) : (
-              <div className="space-y-5">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">Fields</h3>
-                {templateVariables.map((variable) => (
-                  <div key={variable} className="space-y-2">
-                    {isImageVar(variable) ? (
-                      <div className="space-y-3">
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">
-                          {formatPlaceholder(variable)}
-                        </label>
-                        <div className="flex items-center gap-4 p-4 border border-slate-200 rounded-xl bg-slate-50">
-                          {formData[variable] ? (
-                            <img 
-                              src={formData[variable]} 
-                              alt={variable} 
-                              className="w-12 h-12 object-cover rounded-lg border border-slate-200 shadow-sm" 
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-lg bg-slate-200 border border-slate-300 flex items-center justify-center text-[10px] text-slate-400 font-bold uppercase">
-                              No Pic
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            {uploadingVars[variable] ? (
-                              <div className="flex items-center gap-2 text-xs text-slate-500 font-bold">
-                                <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                                Uploading...
-                              </div>
-                            ) : (
-                              <label className="inline-block px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-black rounded-lg cursor-pointer hover:bg-slate-50 transition-all text-center">
-                                Upload Image
-                                <input 
-                                  type="file" 
-                                  accept="image/*" 
-                                  className="hidden" 
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) handleImageUpload(variable, file);
-                                  }}
-                                />
-                              </label>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">
-                          {formatPlaceholder(variable)}
-                        </label>
-                        <input 
-                          type="text" 
-                          value={formData[variable] || ''}
-                          onChange={(e) => handleInputChange(variable, e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
-                          placeholder={`Enter ${formatPlaceholder(variable).toLowerCase()}`}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="pt-6 border-t border-slate-200 mt-8 bg-white sticky bottom-0">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-primary text-primary-foreground font-black rounded-xl hover:bg-primary/90 transition-all text-sm shadow-lg shadow-primary/20 disabled:opacity-50"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Saving Changes...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  Save Page
-                </>
-              )}
-            </button>
-          </div>
+        {/* A4 Canvas — pops violently off dark background */}
+        <div className="max-w-xl w-full overflow-hidden shadow-[0_0_80px_rgba(0,0,0,0.6)] ring-1 ring-white/10 rounded-sm">
+          <A4Preview htmlContent={processedHtml} />
         </div>
       </div>
-    </WorkspaceLayout>
+
+      {/* ── Right: Dark properties panel ── */}
+      <div className="w-[420px] flex-shrink-0 bg-[#252627] border-l border-[#3a3a3a] p-8 overflow-y-auto flex flex-col gap-6 h-full">
+        {/* Panel header */}
+        <div className="space-y-1">
+          <h2 className="text-base font-black text-white tracking-tight">Properties</h2>
+          <p className="text-xs text-gray-500 font-medium">Edit template fields below</p>
+        </div>
+
+        {/* Fields */}
+        {templateVariables.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center border border-dashed border-[#3a3a3a] rounded-2xl py-16 gap-3">
+            <span className="text-2xl">📄</span>
+            <p className="text-xs font-black uppercase tracking-widest text-gray-600">No Fields Found</p>
+            <p className="text-[10px] text-gray-700 text-center max-w-[18ch]">This template has no dynamic variables.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-5">
+            {templateVariables.map(variable => (
+              <div key={variable} className="flex flex-col gap-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-500">
+                  {toTitleCase(variable)}
+                </label>
+
+                {isImageVar(variable) ? (
+                  <ImageUploadZone
+                    variable={variable}
+                    value={formData[variable] || ''}
+                    uploading={!!uploadingVars[variable]}
+                    onChange={file => handleImageUpload(variable, file)}
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    value={formData[variable] || ''}
+                    onChange={e => handleInputChange(variable, e.target.value)}
+                    placeholder={`Enter ${toTitleCase(variable).toLowerCase()}`}
+                    className="w-full bg-[#1a1a1a] border border-[#333] focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-gray-100 placeholder:text-gray-600 outline-none transition-all"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Save button — sticky at bottom */}
+        <div className="mt-auto pt-6 border-t border-[#3a3a3a]">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full flex items-center justify-center gap-2 py-4 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-black rounded-xl transition-all text-sm shadow-lg shadow-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Saving…
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                Save Page
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
