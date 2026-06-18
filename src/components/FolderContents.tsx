@@ -160,12 +160,22 @@ export function FolderContents() {
       setGlobalTemplates(globData || []);
 
       // 4. Fetch all pages in this folder
-      const { data: pagesData, error: pagesErr } = await supabase
+      let { data: pagesData, error: pagesErr } = await supabase
         .from('pages')
         .select('*, templates(*)')
         .eq('folder_id', folderId)
         .order('order_index', { ascending: true, nullsFirst: false })
         .order('updated_at', { ascending: false });
+
+      if (pagesErr && pagesErr.code === '42703') {
+        const fallback = await supabase
+          .from('pages')
+          .select('*, templates(*)')
+          .eq('folder_id', folderId)
+          .order('updated_at', { ascending: false });
+        pagesData = fallback.data;
+        pagesErr = fallback.error;
+      }
 
       if (pagesErr) throw pagesErr;
       setPages(pagesData || []);
@@ -328,10 +338,17 @@ export function FolderContents() {
       }));
 
       for (const update of updates) {
-        await supabase.from('pages').update({ order_index: update.order_index }).eq('id', update.id);
+        const { error } = await supabase.from('pages').update({ order_index: update.order_index }).eq('id', update.id);
+        if (error) {
+          if (error.code === '42703') {
+            throw new Error('Database schema missing order_index column. Please run the SQL migration in Supabase.');
+          }
+          throw error;
+        }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to persist order', err);
+      showNotification('error', err.message || 'Failed to persist new order. Changes are temporary.');
     }
   };
 
