@@ -148,12 +148,13 @@ export const MagazineEditor: React.FC = () => {
     }
   };
 
-  const processedHtml = useMemo(() => {
+  const liveHtml = useMemo(() => {
     let html = rawHtml;
-    Object.entries(formData).forEach(([key, value]) => {
-      // Need to escape the key just in case it has special chars, though typical keys don't
-      const esc = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-      html = html.replace(new RegExp(`\\{\\{\\s*${esc}\\s*\\}\\}`, 'g'), value || '');
+    if (!html) return '';
+    const vars = Object.keys(formData);
+    vars.forEach(key => {
+      const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
+      html = html.replace(regex, formData[key] || '');
     });
     return html;
   }, [rawHtml, formData]);
@@ -192,7 +193,9 @@ export const MagazineEditor: React.FC = () => {
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Left Canvas Workspace */}
-      <div className="flex-1 bg-white flex justify-center items-center overflow-hidden">
+      <div className="flex-1 w-full h-full bg-white relative">
+        <A4Preview htmlContent={liveHtml} />
+        
         <button
           onClick={() => navigate(`/folder/${folderId}`)}
           className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:text-gray-900 shadow-sm transition-all z-20"
@@ -205,13 +208,6 @@ export const MagazineEditor: React.FC = () => {
           <span className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-500">
             {pageTitle}
           </span>
-        </div>
-
-        <div 
-          style={{ transform: 'scale(calc(min(0.85, (100vh - 64px) / 1123)))', transformOrigin: 'center center' }} 
-          className="flex-shrink-0 border-none shadow-none bg-transparent"
-        >
-          <A4Preview htmlContent={processedHtml} />
         </div>
       </div>
 
@@ -274,7 +270,7 @@ export const MagazineEditor: React.FC = () => {
                   <input
                     type="text"
                     value={formData[variable] || ''}
-                    onChange={e => handleInputChange(variable, e.target.value)}
+                    onChange={(e) => setFormData({ ...formData, [variable]: e.target.value })}
                     placeholder={`Enter ${toTitleCase(variable).toLowerCase()}`}
                     className="bg-white border border-gray-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all w-full"
                   />
