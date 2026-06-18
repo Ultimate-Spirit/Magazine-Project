@@ -20,9 +20,9 @@ export async function POST(request: Request) {
         await page.setContent(context.html, { waitUntil: 'networkidle0' });
         await page.waitForTimeout(2000);
         const pdf = await page.pdf({
-          preferCSSPageSize: true,
+          format: 'A4',
           printBackground: true,
-          margin: { top: 0, right: 0, bottom: 0, left: 0 }
+          margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' }
         });
         return pdf;
       }
