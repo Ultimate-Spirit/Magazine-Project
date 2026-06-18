@@ -162,19 +162,43 @@ export const MagazineEditor: React.FC = () => {
   const handleDownloadPdf = async () => {
     try {
       showToast('Generating PDF, please wait...', 'success');
-      const html2pdf = (await import('html2pdf.js')).default;
       
-      const hiddenDiv = document.createElement('div');
-      hiddenDiv.innerHTML = liveHtml;
-      document.body.appendChild(hiddenDiv);
+      const fullHTML = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>@page { size: A4; margin: 0; } body { margin: 0; -webkit-print-color-adjust: exact; background-color: #ffffff !important; }</style>
+</head>
+<body>
+${liveHtml}
+</body>
+</html>`;
 
-      await html2pdf().set({
-        margin: 0,
-        filename: 'page-export.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      }).from(hiddenDiv).save().then(() => hiddenDiv.remove());
+      const response = await fetch('/api/generate-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html: fullHTML }),
+      });
+
+      if (!response.ok) {
+        let errMsg = `Server error ${response.status}`;
+        try {
+          const errData = await response.json();
+          if (errData.error) errMsg += `: ${errData.error}`;
+        } catch(e) {}
+        throw new Error(errMsg);
+      }
+
+      const blob = await response.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = 'document.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
 
       showToast('PDF downloaded successfully!', 'success');
     } catch (err: any) {
