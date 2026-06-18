@@ -15,6 +15,7 @@ export const A4Preview: React.FC<A4PreviewProps> = ({ htmlContent }) => {
 </head>
 <body>
 ${htmlContent}
+<style> html, body { background-color: #ffffff !important; background: none !important; } </style>
 </body>
 </html>`;
 

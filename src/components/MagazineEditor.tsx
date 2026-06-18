@@ -177,7 +177,7 @@ export const MagazineEditor: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full bg-gray-50 items-center justify-center flex-col gap-4 text-gray-900">
+      <div className="flex h-screen w-full bg-white items-center justify-center flex-col gap-4 text-gray-900">
         <Loader2 className="w-10 h-10 animate-spin text-gray-900" />
         <p className="text-xs font-bold uppercase tracking-[0.4em] text-gray-500 animate-pulse">
           Loading Editor
@@ -187,11 +187,11 @@ export const MagazineEditor: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen w-full bg-gray-50 text-gray-900 overflow-hidden">
+    <div className="flex h-screen w-full bg-white text-gray-900 overflow-hidden">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Left Canvas Workspace */}
-      <div className="flex-1 bg-[#F8F9FA] flex justify-center items-center relative overflow-hidden">
+      <div className="flex-1 bg-white flex justify-center items-center relative overflow-hidden">
         <button
           onClick={() => navigate(`/folder/${folderId}`)}
           className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:text-gray-900 shadow-sm transition-all z-20"
@@ -236,7 +236,7 @@ export const MagazineEditor: React.FC = () => {
                 </label>
 
                 {isImageVar(variable) ? (
-                  <div className="relative flex flex-col items-center justify-center w-full h-32 rounded-lg border border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 transition-colors overflow-hidden group">
+                  <div className="relative flex flex-col items-center justify-center w-full h-32 rounded-lg border border-dashed border-gray-300 bg-white hover:bg-gray-50 transition-colors overflow-hidden group">
                     <input 
                       type="file" 
                       accept=".jpg,.jpeg,.png" 
