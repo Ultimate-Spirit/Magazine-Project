@@ -167,25 +167,21 @@ export function FolderContents() {
       setGlobalTemplates(globData || []);
 
       // 4. Fetch all pages in this folder
-      let { data: pagesData, error: pagesErr } = await supabase
+      const { data: pagesData, error: pagesErr } = await supabase
         .from('pages')
         .select('*, templates(*)')
-        .eq('folder_id', folderId)
-        .order('order_index', { ascending: true, nullsFirst: false })
-        .order('updated_at', { ascending: false });
-
-      if (pagesErr && pagesErr.code === '42703') {
-        const fallback = await supabase
-          .from('pages')
-          .select('*, templates(*)')
-          .eq('folder_id', folderId)
-          .order('updated_at', { ascending: false });
-        pagesData = fallback.data;
-        pagesErr = fallback.error;
-      }
+        .eq('folder_id', folderId);
 
       if (pagesErr) throw pagesErr;
-      setPages(pagesData || []);
+
+      // Client-side sorting using the _order_index injected in the JSONB data
+      const sortedPages = (pagesData || []).sort((a, b) => {
+        const orderA = a.data?._order_index ?? a.templates?.weight ?? 10;
+        const orderB = b.data?._order_index ?? b.templates?.weight ?? 10;
+        return orderA - orderB;
+      });
+
+      setPages(sortedPages);
 
       // Initial state mapping for Global Bookend drop-downs
       if (pagesData) {
@@ -295,8 +291,10 @@ export function FolderContents() {
 
   const openCompiler = () => {
     const sorted = [...(pages || [])].sort((a, b) => {
-      if (a.order_index !== undefined && a.order_index !== null && b.order_index !== undefined && b.order_index !== null) {
-        return a.order_index - b.order_index;
+      const orderA = a.data?._order_index;
+      const orderB = b.data?._order_index;
+      if (orderA !== undefined && orderB !== undefined) {
+        return orderA - orderB;
       }
       const weightA = a.templates?.weight ?? 10;
       const weightB = b.templates?.weight ?? 10;
@@ -341,17 +339,12 @@ export function FolderContents() {
     try {
       const updates = items.map((p, idx) => ({
         id: p.id,
-        order_index: idx
+        data: { ...(p.data || {}), _order_index: idx }
       }));
 
       for (const update of updates) {
-        const { error } = await supabase.from('pages').update({ order_index: update.order_index }).eq('id', update.id);
-        if (error) {
-          if (error.code === '42703') {
-            throw new Error('Database schema missing order_index column. Please run the SQL migration in Supabase.');
-          }
-          throw error;
-        }
+        const { error } = await supabase.from('pages').update({ data: update.data }).eq('id', update.id);
+        if (error) throw error;
       }
     } catch (err: any) {
       console.error('Failed to persist order', err);

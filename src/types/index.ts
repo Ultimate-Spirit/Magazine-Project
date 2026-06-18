@@ -82,5 +82,4 @@ export interface Page {
   updated_at: string;
   template_id?: string;
   templates?: Template;
-  order_index?: number;
 }

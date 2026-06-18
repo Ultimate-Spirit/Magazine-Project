@@ -14,34 +14,31 @@ export async function POST(request: Request) {
 
     const requestBody = await request.json();
 
-    const browserlessScript = `
-      export default async function({ page, context }) {
-        await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 2 });
-        await page.setContent(context.html, { waitUntil: 'networkidle0' });
-        await page.waitForTimeout(2000);
-        const pdf = await page.pdf({
-          format: 'A4',
-          printBackground: true
-        });
-        return pdf;
-      }
-    `;
-
-    const response = await fetch(`https://production-sfo.browserless.io/function?token=${token}`, {
+    const response = await fetch(`https://production-sfo.browserless.io/pdf?token=${token}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        code: browserlessScript,
-        context: {
-          html: requestBody.html
+        html: requestBody.html,
+        options: {
+          format: 'A4',
+          printBackground: true
+        },
+        viewport: {
+          width: 794,
+          height: 1123,
+          deviceScaleFactor: 2
+        },
+        gotoOptions: {
+          waitUntil: 'networkidle0'
         }
       })
     });
 
     if (!response.ok) {
-      throw new Error(`Browserless error: ${response.statusText}`);
+      const errText = await response.text();
+      throw new Error(`Browserless error ${response.status}: ${errText}`);
     }
 
     const arrayBuffer = await response.arrayBuffer();
