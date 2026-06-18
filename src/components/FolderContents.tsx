@@ -110,6 +110,13 @@ export function FolderContents() {
   const [isCompiling, setIsCompiling] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -670,7 +677,7 @@ export function FolderContents() {
 
               <div className="flex-1 overflow-y-auto p-4 lg:p-8 invisible-scrollbar bg-slate-50/50 dark:bg-slate-900/10">
                 <DndContext 
-                  sensors={useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }))} 
+                  sensors={sensors} 
                   collisionDetection={closestCenter} 
                   onDragEnd={handleDragEnd}
                 >
