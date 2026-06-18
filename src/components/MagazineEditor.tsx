@@ -149,13 +149,14 @@ export const MagazineEditor: React.FC = () => {
   };
 
   const processedHtml = useMemo(() => {
-    if (!rawHtml) return '';
-    return templateVariables.reduce((html, variable) => {
-      const val = formData[variable] || '';
-      const esc = variable.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-      return html.replace(new RegExp(`\\{\\{\\s*${esc}\\s*\\}\\}`, 'g'), val);
-    }, rawHtml);
-  }, [rawHtml, templateVariables, formData]);
+    let html = rawHtml;
+    Object.entries(formData).forEach(([key, value]) => {
+      // Need to escape the key just in case it has special chars, though typical keys don't
+      const esc = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      html = html.replace(new RegExp(`\\{\\{\\s*${esc}\\s*\\}\\}`, 'g'), value || '');
+    });
+    return html;
+  }, [rawHtml, formData]);
 
   const handleSave = async () => {
     if (!pageId) return;
@@ -191,7 +192,7 @@ export const MagazineEditor: React.FC = () => {
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Left Canvas Workspace */}
-      <div className="flex-1 bg-white flex justify-center items-center relative overflow-hidden">
+      <div className="flex-1 bg-white flex justify-center items-center overflow-hidden">
         <button
           onClick={() => navigate(`/folder/${folderId}`)}
           className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:text-gray-900 shadow-sm transition-all z-20"
@@ -208,7 +209,7 @@ export const MagazineEditor: React.FC = () => {
 
         <div 
           style={{ transform: 'scale(calc(min(0.85, (100vh - 64px) / 1123)))', transformOrigin: 'center center' }} 
-          className="flex-shrink-0 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.3)] bg-white"
+          className="flex-shrink-0 border-none shadow-none bg-transparent"
         >
           <A4Preview htmlContent={processedHtml} />
         </div>
