@@ -1,26 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 
 interface A4PreviewProps {
   htmlContent: string;
 }
 
 export const A4Preview: React.FC<A4PreviewProps> = ({ htmlContent }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const observer = new ResizeObserver((entries) => {
-      const newWidth = entries[0]?.contentRect?.width;
-      if (newWidth) setScale(newWidth / 794);
-    });
-
-    observer.observe(containerRef.current);
-
-    return () => observer.disconnect();
-  }, []);
-
   const srcDoc = `<!DOCTYPE html>
 <html>
 <head>
@@ -35,26 +19,8 @@ ${htmlContent}
 </html>`;
 
   return (
-    <div 
-      ref={containerRef} 
-      className="w-full relative overflow-hidden border border-gray-300 shadow-md bg-gray-200 rounded-md" 
-      style={{ height: `${1123 * scale}px` }}
-    >
-      <iframe 
-        style={{ 
-          width: '794px', 
-          height: '1123px', 
-          transform: `scale(${scale})`, 
-          transformOrigin: 'top left', 
-          border: 'none', 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          backgroundColor: 'white' 
-        }} 
-        srcDoc={srcDoc}
-        title="A4 Live Preview"
-      />
+    <div style={{ width: '794px', height: '1123px' }} className="relative bg-white overflow-hidden flex-shrink-0">
+      <iframe style={{ width: '100%', height: '100%', border: 'none' }} srcDoc={srcDoc} title="A4 Live Preview" />
     </div>
   );
 };

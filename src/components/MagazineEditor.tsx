@@ -293,25 +293,28 @@ export const MagazineEditor: React.FC = () => {
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* ── Left: Canvas workspace ── */}
-      <div className="flex-1 relative flex justify-center items-start pt-12 pb-12 bg-[#E5E7EB] overflow-y-auto">
+      <div className="flex-1 bg-[#E5E7EB] flex justify-center items-center overflow-hidden relative">
         {/* Back button */}
         <button
           onClick={() => navigate(`/folder/${folderId}`)}
-          className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:text-gray-900 shadow-sm transition-all"
+          className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:text-gray-900 shadow-sm transition-all z-20"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
 
         {/* Page title */}
-        <div className="absolute top-6 left-1/2 -translate-x-1/2">
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20">
           <span className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-500">
             {pageTitle}
           </span>
         </div>
 
-        {/* A4 Canvas block wrapper to safely isolate DOM layout scaling */}
-        <div className="w-[794px] bg-white shadow-2xl ring-1 ring-black/5 mx-auto origin-top flex-shrink-0">
+        {/* A4 Canvas block wrapper with strict scaling zoom */}
+        <div 
+          style={{ transform: 'scale(calc(min(0.8, (100vh - 120px) / 1123)))', transformOrigin: 'center center' }} 
+          className="shadow-[0_20px_50px_rgba(0,0,0,0.2)] ring-1 ring-black/5 flex-shrink-0"
+        >
           <A4Preview htmlContent={processedHtml} />
         </div>
       </div>
