@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { A4Preview } from './A4Preview';
-import { ArrowLeft, Loader2, AlertCircle, UploadCloud } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertCircle, UploadCloud, Download } from 'lucide-react';
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
 const toTitleCase = (name: string) =>
@@ -159,6 +159,29 @@ export const MagazineEditor: React.FC = () => {
     return html;
   }, [rawHtml, formData]);
 
+  const handleDownloadPdf = async () => {
+    try {
+      showToast('Generating PDF, please wait...', 'success');
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      const hiddenDiv = document.createElement('div');
+      hiddenDiv.innerHTML = liveHtml;
+      document.body.appendChild(hiddenDiv);
+
+      await html2pdf().set({
+        margin: 0,
+        filename: 'page-export.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }).from(hiddenDiv).save().then(() => hiddenDiv.remove());
+
+      showToast('PDF downloaded successfully!', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to generate PDF.', 'error');
+    }
+  };
+
   const handleSave = async () => {
     if (!pageId) return;
     setSaving(true);
@@ -280,7 +303,15 @@ export const MagazineEditor: React.FC = () => {
           </div>
         )}
 
-        <div className="mt-auto pt-6 border-t border-gray-100">
+        <div className="mt-auto pt-6 border-t border-gray-100 flex flex-col gap-3">
+          <button
+            onClick={handleDownloadPdf}
+            disabled={saving}
+            className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-md transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4" />
+            Download PDF
+          </button>
           <button
             onClick={handleSave}
             disabled={saving}

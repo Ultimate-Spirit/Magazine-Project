@@ -265,46 +265,43 @@ export function FolderContents() {
     if (!compilerPages || compilerPages.length === 0) return;
     setIsCompiling(true);
     try {
-      const targetHtml = document.getElementById('spooler-canvas')?.outerHTML || '';
-
-      const fullHTML = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>@page { size: A4; margin: 0; } body { margin: 0; -webkit-print-color-adjust: exact; }</style>
-</head>
-<body>
-${targetHtml}
-</body>
-</html>`;
-
-      const response = await fetch('/api/generate-pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html: fullHTML }),
-      });
-
-      if (!response.ok) {
-        let errMsg = `Server error ${response.status}`;
-        try {
-          const errData = await response.json();
-          if (errData.error) errMsg += `: ${errData.error}`;
-        } catch(e) {}
-        throw new Error(errMsg);
-      }
-
-      const blob = await response.blob();
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href     = url;
-      a.download = 'Corporate_Bundle.pdf';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      showNotification('success', 'Building Master PDF, please wait...');
       
-      showNotification('success', 'PDF compiled and downloaded');
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      let fullHtmlStr = '';
+      
+      compilerPages.forEach((page, index) => {
+        let html = page.templates?.raw_html || page.templates?.payload?.rawHtml || '';
+        const formData = page.data || {};
+        const vars = Object.keys(formData);
+        vars.forEach(key => {
+          const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
+          html = html.replace(regex, formData[key] || '');
+        });
+        
+        fullHtmlStr += html;
+        if (index < compilerPages.length - 1) {
+          fullHtmlStr += '<div style="page-break-after: always;"></div>';
+        }
+      });
+      
+      const hiddenDiv = document.createElement('div');
+      hiddenDiv.innerHTML = fullHtmlStr;
+      document.body.appendChild(hiddenDiv);
+      
+      // Mandatory 1500ms asynchronous timeout after injecting the HTML string
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      await html2pdf().set({
+        margin: 0,
+        filename: 'Corporate_Bundle.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }).from(hiddenDiv).save().then(() => hiddenDiv.remove());
+      
+      showNotification('success', 'Master PDF compiled and downloaded');
       setIsCompilerOpen(false);
     } catch (err: any) {
       console.error(err);
@@ -644,17 +641,7 @@ ${targetHtml}
           </div>
         )}
 
-        <div id="spooler-canvas" className="absolute -left-[9999px]" ref={printRef}>
-           {(compilerPages || []).map(page => {
-             const cat = page.templates?.category;
-             const name = page.templates?.template_name;
-             return (
-               <div key={page.id} className="relative w-[794px] min-h-[1123px] bg-white break-after-page print:break-after-page">
-                 <PrintTemplate data={page.data || {}} />
-               </div>
-             );
-           })}
-        </div>
+
 
       </div>
 
