@@ -288,12 +288,12 @@ export const MagazineEditor: React.FC = () => {
 
   /* ─── Editor UI ─────────────────────────────────────────────── */
   return (
-    <div className="flex h-[calc(100vh-4rem)] w-full bg-gray-50 overflow-hidden text-gray-900">
+    <div className="flex h-screen w-full bg-white overflow-hidden text-gray-900">
       {/* Toast notification */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* ── Left: Canvas workspace ── */}
-      <div className="flex-1 bg-[#F8F9FA] flex justify-center items-center overflow-hidden relative">
+      <div className="flex-1 bg-white flex justify-center items-center overflow-hidden relative">
         {/* Back button */}
         <button
           onClick={() => navigate(`/folder/${folderId}`)}
@@ -312,7 +312,7 @@ export const MagazineEditor: React.FC = () => {
 
         {/* Unboxed Canva-like Scaled Wrapper */}
         <div 
-          style={{ transform: 'scale(calc(min(0.85, (100vh - 64px) / 1123)))', transformOrigin: 'center center' }} 
+          style={{ transform: 'scale(calc(min(0.85, 100vh / 1123)))', transformOrigin: 'center center' }} 
           className="flex-shrink-0"
         >
           <A4Preview htmlContent={processedHtml} />
