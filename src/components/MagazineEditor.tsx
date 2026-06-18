@@ -293,7 +293,7 @@ export const MagazineEditor: React.FC = () => {
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* ── Left: Canvas workspace ── */}
-      <div className="flex-1 bg-[#E5E7EB] flex justify-center items-center overflow-hidden relative">
+      <div className="flex-1 bg-[#FAFAFA] flex justify-center items-center overflow-hidden relative">
         {/* Back button */}
         <button
           onClick={() => navigate(`/folder/${folderId}`)}
@@ -310,12 +310,22 @@ export const MagazineEditor: React.FC = () => {
           </span>
         </div>
 
-        {/* A4 Canvas block wrapper with strict scaling zoom */}
+        {/* Scaled Presentation Wrapper with Corporate Matte Header */}
         <div 
-          style={{ transform: 'scale(calc(min(0.8, (100vh - 120px) / 1123)))', transformOrigin: 'center center' }} 
-          className="shadow-[0_20px_50px_rgba(0,0,0,0.2)] ring-1 ring-black/5 flex-shrink-0"
+          style={{ transform: 'scale(calc(min(0.8, (100vh - 160px) / 1123)))', transformOrigin: 'center center' }} 
+          className="p-6 bg-white rounded-[24px] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.12)] ring-1 ring-gray-900/5 flex-shrink-0 flex flex-col gap-4"
         >
-          <A4Preview htmlContent={processedHtml} />
+          <div className="w-full flex justify-between items-center px-2">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-green-400"></div>
+            </div>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Live Document Preview</span>
+          </div>
+          <div className="shadow-sm border border-gray-200 overflow-hidden rounded-md bg-white">
+            <A4Preview htmlContent={processedHtml} />
+          </div>
         </div>
       </div>
 

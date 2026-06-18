@@ -20,7 +20,7 @@ ${htmlContent}
 
   return (
     <div style={{ width: '794px', height: '1123px' }} className="relative bg-white overflow-hidden flex-shrink-0">
-      <iframe style={{ width: '100%', height: '100%', border: 'none' }} srcDoc={srcDoc} title="A4 Live Preview" />
+      <iframe style={{ width: '100%', height: '100%', border: 'none', display: 'block', verticalAlign: 'bottom', margin: 0, padding: 0 }} srcDoc={srcDoc} title="A4 Live Preview" />
     </div>
   );
 };
