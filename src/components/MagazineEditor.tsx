@@ -38,13 +38,20 @@ const Toast: React.FC<{ message: string; type: 'error' | 'success'; onClose: () 
   onClose,
 }) => (
   <div
-    className={`fixed bottom-6 right-6 z-50 flex items-start gap-3 px-5 py-4 rounded-2xl shadow-2xl max-w-sm animate-in slide-in-from-bottom-4 fade-in ${
-      type === 'error' ? 'bg-red-900/90 border border-red-500/30' : 'bg-emerald-900/90 border border-emerald-500/30'
+    className={`fixed bottom-6 right-6 z-50 flex items-start gap-3 px-5 py-4 rounded-xl shadow-xl max-w-sm border animate-in slide-in-from-bottom-4 fade-in ${
+      type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
     }`}
   >
-    <AlertCircle className={`w-5 h-5 shrink-0 mt-0.5 ${type === 'error' ? 'text-red-400' : 'text-emerald-400'}`} />
-    <p className="text-sm font-medium text-gray-100 leading-snug">{message}</p>
-    <button onClick={onClose} className="ml-2 text-gray-400 hover:text-white text-lg leading-none">×</button>
+    <AlertCircle className={`w-5 h-5 shrink-0 mt-0.5 ${type === 'error' ? 'text-red-500' : 'text-emerald-500'}`} />
+    <p className="text-sm font-semibold leading-snug">{message}</p>
+    <button
+      onClick={onClose}
+      className={`ml-auto font-bold text-lg leading-none ${
+        type === 'error' ? 'text-red-400 hover:text-red-600' : 'text-emerald-400 hover:text-emerald-600'
+      }`}
+    >
+      ×
+    </button>
   </div>
 );
 
@@ -71,8 +78,8 @@ const ImageUploadZone: React.FC<{
     <label
       className={`relative flex flex-col items-center justify-center w-full h-36 rounded-xl border-2 border-dashed cursor-pointer transition-all overflow-hidden ${
         dragging
-          ? 'border-blue-400 bg-blue-500/10'
-          : 'border-[#444] hover:border-[#666] bg-[#1a1a1a]'
+          ? 'border-blue-500 bg-blue-50'
+          : 'border-gray-300 hover:border-gray-400 bg-gray-50 hover:bg-gray-100/80'
       }`}
       onDragOver={e => { e.preventDefault(); setDragging(true); }}
       onDragLeave={() => setDragging(false)}
@@ -83,24 +90,24 @@ const ImageUploadZone: React.FC<{
         <img
           src={value}
           alt={variable}
-          className="absolute inset-0 w-full h-full object-cover opacity-30"
+          className="absolute inset-0 w-full h-full object-cover opacity-10"
         />
       )}
 
       <div className="relative z-10 flex flex-col items-center gap-2 pointer-events-none">
         {uploading ? (
           <>
-            <Loader2 className="w-6 h-6 animate-spin text-blue-400" />
-            <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Uploading…</span>
+            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+            <span className="text-xs font-semibold text-blue-600 uppercase tracking-widest">Uploading…</span>
           </>
         ) : (
           <>
             {value ? (
-              <ImageIcon className="w-6 h-6 text-white/60" />
+              <ImageIcon className="w-6 h-6 text-gray-500" />
             ) : (
-              <Upload className="w-6 h-6 text-gray-500" />
+              <Upload className="w-6 h-6 text-gray-400" />
             )}
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
               {value ? 'Replace Image' : 'Drop or Click to Upload'}
             </span>
           </>
@@ -270,9 +277,9 @@ export const MagazineEditor: React.FC = () => {
   /* ─── Loading State ─────────────────────────────────────────── */
   if (loading) {
     return (
-      <div className="flex h-screen w-full bg-[#1e1e1e] items-center justify-center flex-col gap-4">
-        <Loader2 className="w-10 h-10 animate-spin text-blue-400" />
-        <p className="text-xs font-black uppercase tracking-[0.4em] text-gray-500 animate-pulse">
+      <div className="flex h-[calc(100vh-4rem)] w-full bg-gray-50 items-center justify-center flex-col gap-4 text-gray-900">
+        <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+        <p className="text-xs font-bold uppercase tracking-[0.4em] text-gray-400 animate-pulse">
           Loading Editor
         </p>
       </div>
@@ -281,16 +288,16 @@ export const MagazineEditor: React.FC = () => {
 
   /* ─── Editor UI ─────────────────────────────────────────────── */
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#1e1e1e] font-sans text-gray-100">
+    <div className="flex h-[calc(100vh-4rem)] w-full bg-gray-50 overflow-hidden text-gray-900">
       {/* Toast notification */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      {/* ── Left: Dark canvas workspace ── */}
-      <div className="flex-1 bg-[#0f0f0f] flex justify-center items-center p-12 overflow-y-auto relative">
+      {/* ── Left: Canvas workspace ── */}
+      <div className="flex-1 relative flex justify-center items-start pt-12 pb-12 bg-[#E5E7EB] overflow-y-auto">
         {/* Back button */}
         <button
           onClick={() => navigate(`/folder/${folderId}`)}
-          className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-black uppercase tracking-wider text-gray-400 hover:text-white transition-all"
+          className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:text-gray-900 shadow-sm transition-all"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
@@ -298,37 +305,37 @@ export const MagazineEditor: React.FC = () => {
 
         {/* Page title */}
         <div className="absolute top-6 left-1/2 -translate-x-1/2">
-          <span className="text-xs font-black uppercase tracking-[0.3em] text-gray-600">
+          <span className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-500">
             {pageTitle}
           </span>
         </div>
 
-        {/* A4 Canvas — pops violently off dark background */}
-        <div className="max-w-xl w-full overflow-hidden shadow-[0_0_80px_rgba(0,0,0,0.6)] ring-1 ring-white/10 rounded-sm">
+        {/* A4 Canvas block wrapper to safely isolate DOM layout scaling */}
+        <div className="w-[794px] bg-white shadow-2xl ring-1 ring-black/5 mx-auto origin-top flex-shrink-0">
           <A4Preview htmlContent={processedHtml} />
         </div>
       </div>
 
-      {/* ── Right: Dark properties panel ── */}
-      <div className="w-[420px] flex-shrink-0 bg-[#252627] border-l border-[#3a3a3a] p-8 overflow-y-auto flex flex-col gap-6 h-full">
+      {/* ── Right: Properties panel sidebar ── */}
+      <div className="w-[400px] flex-shrink-0 bg-white border-l border-gray-200 p-6 overflow-y-auto z-10 flex flex-col gap-5">
         {/* Panel header */}
         <div className="space-y-1">
-          <h2 className="text-base font-black text-white tracking-tight">Properties</h2>
+          <h2 className="text-base font-bold text-gray-900 tracking-tight">Properties</h2>
           <p className="text-xs text-gray-500 font-medium">Edit template fields below</p>
         </div>
 
         {/* Fields */}
         {templateVariables.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center border border-dashed border-[#3a3a3a] rounded-2xl py-16 gap-3">
+          <div className="flex-1 flex flex-col items-center justify-center border border-dashed border-gray-200 rounded-2xl py-16 gap-3">
             <span className="text-2xl">📄</span>
-            <p className="text-xs font-black uppercase tracking-widest text-gray-600">No Fields Found</p>
-            <p className="text-[10px] text-gray-700 text-center max-w-[18ch]">This template has no dynamic variables.</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">No Fields Found</p>
+            <p className="text-[10px] text-gray-400 text-center max-w-[18ch]">This template has no dynamic variables.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-5">
             {templateVariables.map(variable => (
               <div key={variable} className="flex flex-col gap-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-500">
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-500">
                   {toTitleCase(variable)}
                 </label>
 
@@ -345,7 +352,7 @@ export const MagazineEditor: React.FC = () => {
                     value={formData[variable] || ''}
                     onChange={e => handleInputChange(variable, e.target.value)}
                     placeholder={`Enter ${toTitleCase(variable).toLowerCase()}`}
-                    className="w-full bg-[#1a1a1a] border border-[#333] focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-gray-100 placeholder:text-gray-600 outline-none transition-all"
+                    className="bg-white border border-gray-300 rounded-md p-2.5 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full outline-none transition-all"
                   />
                 )}
               </div>
@@ -354,11 +361,11 @@ export const MagazineEditor: React.FC = () => {
         )}
 
         {/* Save button — sticky at bottom */}
-        <div className="mt-auto pt-6 border-t border-[#3a3a3a]">
+        <div className="mt-auto pt-6 border-t border-gray-200">
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full flex items-center justify-center gap-2 py-4 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-black rounded-xl transition-all text-sm shadow-lg shadow-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold rounded-md transition-all text-sm shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {saving ? (
               <>
