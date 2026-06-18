@@ -30,10 +30,13 @@ ${htmlContent}
   }, [htmlContent]);
 
   return (
-    <iframe 
-      ref={iframeRef} 
-      className="w-full h-full border-none outline-none bg-white block" 
-      title="A4 Live Preview" 
-    />
+    <div style={{ transform: 'scale(calc(min(1, (100vh - 64px) / 1123)))', transformOrigin: 'top center' }} className="flex-shrink-0">
+      <iframe 
+        ref={iframeRef} 
+        style={{ width: '794px', height: '1123px', border: 'none', background: 'transparent' }}
+        className="block" 
+        title="A4 Live Preview" 
+      />
+    </div>
   );
 };

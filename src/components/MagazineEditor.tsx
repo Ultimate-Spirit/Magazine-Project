@@ -163,15 +163,17 @@ export const MagazineEditor: React.FC = () => {
     try {
       showToast('Generating PDF, please wait...', 'success');
       
+      const wrappedHtml = `<div style="width: 210mm; height: 297mm; position: relative; overflow: hidden; page-break-after: always; page-break-inside: avoid; background-color: white;">${liveHtml}</div>`;
+      
       const fullHTML = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>@page { size: A4; margin: 0; } body { margin: 0; -webkit-print-color-adjust: exact; background-color: #ffffff !important; }</style>
+  <style>@page { size: 210mm 297mm; margin: 0; } body { margin: 0; padding: 0; display: block !important; -webkit-print-color-adjust: exact; }</style>
 </head>
 <body>
-${liveHtml}
+${wrappedHtml}
 </body>
 </html>`;
 
