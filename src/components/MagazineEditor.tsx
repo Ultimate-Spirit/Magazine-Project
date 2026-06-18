@@ -175,27 +175,24 @@ export const MagazineEditor: React.FC = () => {
       });
 
       if (!response.ok) {
-        let errMsg = `Server error ${response.status}`;
-        try {
-          const errData = await response.json();
-          if (errData.error) errMsg += `: ${errData.error}`;
-        } catch(e) {}
-        throw new Error(errMsg);
+        const err = await response.text();
+        throw new Error(err);
       }
 
       const blob = await response.blob();
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href     = url;
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
       a.download = 'document.pdf';
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      a.remove();
+      window.URL.revokeObjectURL(url);
 
       showToast('PDF downloaded successfully!', 'success');
-    } catch (err: any) {
-      showToast(err.message || 'Failed to generate PDF.', 'error');
+    } catch (error: any) {
+      alert('PDF Export Failed: ' + (error instanceof Error ? error.message : 'Unknown server error'));
+      showToast('Failed to generate PDF.', 'error');
     }
   };
 
