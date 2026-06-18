@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { A4Preview } from './A4Preview';
-import { Save, ArrowLeft, Loader2, AlertCircle, ImageIcon, Upload } from 'lucide-react';
-import type { Company } from '../types';
+import { ArrowLeft, Loader2, AlertCircle, UploadCloud } from 'lucide-react';
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
 const toTitleCase = (name: string) =>
@@ -20,14 +19,6 @@ const isImageVar = (name: string) => {
 const UNSPLASH_PLACEHOLDER =
   'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?auto=format&fit=crop&w=800&q=80';
 
-const buildDummyState = (vars: string[]): Record<string, string> => {
-  const state: Record<string, string> = {};
-  vars.forEach(v => {
-    state[v] = isImageVar(v) ? UNSPLASH_PLACEHOLDER : toTitleCase(v);
-  });
-  return state;
-};
-
 const extractVars = (html: string): string[] =>
   Array.from(new Set((html.match(/\{\{([^}]+)\}\}/g) || []).map(v => v.slice(2, -2).trim())));
 
@@ -39,15 +30,15 @@ const Toast: React.FC<{ message: string; type: 'error' | 'success'; onClose: () 
 }) => (
   <div
     className={`fixed bottom-6 right-6 z-50 flex items-start gap-3 px-5 py-4 rounded-xl shadow-xl max-w-sm border animate-in slide-in-from-bottom-4 fade-in ${
-      type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+      type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-green-50 border-green-200 text-green-800'
     }`}
   >
-    <AlertCircle className={`w-5 h-5 shrink-0 mt-0.5 ${type === 'error' ? 'text-red-500' : 'text-emerald-500'}`} />
+    <AlertCircle className={`w-5 h-5 shrink-0 mt-0.5 ${type === 'error' ? 'text-red-500' : 'text-green-500'}`} />
     <p className="text-sm font-semibold leading-snug">{message}</p>
     <button
       onClick={onClose}
       className={`ml-auto font-bold text-lg leading-none ${
-        type === 'error' ? 'text-red-400 hover:text-red-600' : 'text-emerald-400 hover:text-emerald-600'
+        type === 'error' ? 'text-red-400 hover:text-red-600' : 'text-green-400 hover:text-green-600'
       }`}
     >
       ×
@@ -55,90 +46,15 @@ const Toast: React.FC<{ message: string; type: 'error' | 'success'; onClose: () 
   </div>
 );
 
-/* ─── Image Upload Zone ───────────────────────────────────────── */
-const ImageUploadZone: React.FC<{
-  variable: string;
-  value: string;
-  uploading: boolean;
-  onChange: (file: File) => void;
-}> = ({ variable, value, uploading, onChange }) => {
-  const [dragging, setDragging] = useState(false);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setDragging(false);
-      const file = e.dataTransfer.files?.[0];
-      if (file && file.type.startsWith('image/')) onChange(file);
-    },
-    [onChange],
-  );
-
-  return (
-    <label
-      className={`relative flex flex-col items-center justify-center w-full h-36 rounded-xl border-2 border-dashed cursor-pointer transition-all overflow-hidden ${
-        dragging
-          ? 'border-blue-500 bg-blue-50'
-          : 'border-gray-300 hover:border-gray-400 bg-gray-50 hover:bg-gray-100/80'
-      }`}
-      onDragOver={e => { e.preventDefault(); setDragging(true); }}
-      onDragLeave={() => setDragging(false)}
-      onDrop={handleDrop}
-    >
-      {/* Background thumbnail */}
-      {value && (
-        <img
-          src={value}
-          alt={variable}
-          className="absolute inset-0 w-full h-full object-cover opacity-10"
-        />
-      )}
-
-      <div className="relative z-10 flex flex-col items-center gap-2 pointer-events-none">
-        {uploading ? (
-          <>
-            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-            <span className="text-xs font-semibold text-blue-600 uppercase tracking-widest">Uploading…</span>
-          </>
-        ) : (
-          <>
-            {value ? (
-              <ImageIcon className="w-6 h-6 text-gray-500" />
-            ) : (
-              <Upload className="w-6 h-6 text-gray-400" />
-            )}
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
-              {value ? 'Replace Image' : 'Drop or Click to Upload'}
-            </span>
-          </>
-        )}
-      </div>
-
-      <input
-        type="file"
-        accept="image/*"
-        className="hidden"
-        disabled={uploading}
-        onChange={e => {
-          const file = e.target.files?.[0];
-          if (file) onChange(file);
-        }}
-      />
-    </label>
-  );
-};
-
 /* ─── Main Component ──────────────────────────────────────────── */
 export const MagazineEditor: React.FC = () => {
   const { folderId, pageId } = useParams<{ folderId: string; pageId: string }>();
   const navigate = useNavigate();
 
-  const [_company, setCompany] = useState<Company | null>(null);
   const [pageTitle, setPageTitle] = useState('');
   const [rawHtml, setRawHtml] = useState('');
   const [templateVariables, setTemplateVariables] = useState<string[]>([]);
   const [formData, setFormData] = useState<Record<string, string>>({});
-  const [previewData, setPreviewData] = useState<Record<string, string>>({});
   const [uploadingVars, setUploadingVars] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -149,19 +65,11 @@ export const MagazineEditor: React.FC = () => {
     setTimeout(() => setToast(null), 6000);
   };
 
-  /* Fetch page + template */
   useEffect(() => {
     const fetch = async () => {
       if (!pageId || !folderId) return;
       try {
         setLoading(true);
-        const { data: folderData } = await supabase
-          .from('folders')
-          .select('*, companies(*)')
-          .eq('id', folderId)
-          .single();
-        if (folderData?.companies) setCompany(folderData.companies);
-
         const { data: pageData, error: pageErr } = await supabase
           .from('pages')
           .select('*, templates(*)')
@@ -176,7 +84,22 @@ export const MagazineEditor: React.FC = () => {
         if (tpl) {
           const html = tpl.raw_html || tpl.payload?.rawHtml || '';
           setRawHtml(html);
-          setFormData(pageData.data || {});
+          
+          const vars = extractVars(html);
+          setTemplateVariables(vars);
+          
+          const dbData = pageData.data || {};
+          const initialState: Record<string, string> = {};
+          
+          vars.forEach(v => {
+            if (dbData[v]) {
+              initialState[v] = dbData[v];
+            } else {
+              initialState[v] = isImageVar(v) ? UNSPLASH_PLACEHOLDER : toTitleCase(v);
+            }
+          });
+          
+          setFormData(initialState);
         } else {
           showToast('No template is linked to this page.', 'error');
         }
@@ -189,73 +112,51 @@ export const MagazineEditor: React.FC = () => {
     fetch();
   }, [folderId, pageId]);
 
-  /* Extract variables & inject dummy state if DB is empty */
-  useEffect(() => {
-    if (!rawHtml) return;
-    const vars = extractVars(rawHtml);
-    setTemplateVariables(vars);
-    setFormData(prev => {
-      const isEmpty = Object.keys(prev).length === 0;
-      const base = isEmpty ? buildDummyState(vars) : { ...prev };
-      vars.forEach(v => { if (base[v] === undefined) base[v] = ''; });
-      return base;
-    });
-  }, [rawHtml]);
-
-  /* Debounce form → preview (250ms) to prevent iframe jitter */
-  useEffect(() => {
-    const id = setTimeout(() => setPreviewData(formData), 250);
-    return () => clearTimeout(id);
-  }, [formData]);
-
-  /* Text input handler */
-  const handleInputChange = (variable: string, value: string) =>
+  const handleInputChange = (variable: string, value: string) => {
     setFormData(prev => ({ ...prev, [variable]: value }));
+  };
 
-  /* Supabase Storage image upload */
-  const handleImageUpload = async (variable: string, file: File) => {
+  const handleFileUpload = async (variable: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 500 * 1024) {
+      alert("File exceeds 500kb limit");
+      return;
+    }
+
     setUploadingVars(prev => ({ ...prev, [variable]: true }));
     try {
       const ext = file.name.split('.').pop();
-      const path = `${folderId}/${pageId}-${variable}-${Date.now()}.${ext}`;
+      const fileName = `${folderId}/${pageId}-${variable}-${Date.now()}.${ext}`;
 
       const { error: uploadErr } = await supabase.storage
         .from('magazine_assets')
-        .upload(path, file, { upsert: true });
+        .upload(fileName, file, { upsert: true });
 
-      if (uploadErr) {
-        showToast(
-          uploadErr.message.includes('not found')
-            ? "Storage Error: Please create a public bucket named 'magazine_assets' in your Supabase dashboard."
-            : `Upload failed: ${uploadErr.message}`,
-          'error',
-        );
-        return;
-      }
+      if (uploadErr) throw uploadErr;
 
-      const { data } = supabase.storage.from('magazine_assets').getPublicUrl(path);
+      const { data } = supabase.storage.from('magazine_assets').getPublicUrl(fileName);
       if (!data?.publicUrl) throw new Error('Could not retrieve public URL.');
 
       setFormData(prev => ({ ...prev, [variable]: data.publicUrl }));
-      showToast('Image uploaded successfully!', 'success');
     } catch (err: any) {
       showToast(err.message || 'Unexpected upload error.', 'error');
     } finally {
       setUploadingVars(prev => ({ ...prev, [variable]: false }));
+      event.target.value = ''; // reset input
     }
   };
 
-  /* Processed HTML for preview */
   const processedHtml = useMemo(() => {
     if (!rawHtml) return '';
     return templateVariables.reduce((html, variable) => {
-      const val = previewData[variable] || '';
+      const val = formData[variable] || '';
       const esc = variable.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
       return html.replace(new RegExp(`\\{\\{\\s*${esc}\\s*\\}\\}`, 'g'), val);
     }, rawHtml);
-  }, [rawHtml, templateVariables, previewData]);
+  }, [rawHtml, templateVariables, formData]);
 
-  /* Save page */
   const handleSave = async () => {
     if (!pageId) return;
     setSaving(true);
@@ -274,27 +175,23 @@ export const MagazineEditor: React.FC = () => {
     }
   };
 
-  /* ─── Loading State ─────────────────────────────────────────── */
   if (loading) {
     return (
-      <div className="flex h-screen w-full bg-white items-center justify-center flex-col gap-4 text-gray-900">
-        <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
-        <p className="text-xs font-bold uppercase tracking-[0.4em] text-gray-400 animate-pulse">
+      <div className="flex h-screen w-full bg-gray-50 items-center justify-center flex-col gap-4 text-gray-900">
+        <Loader2 className="w-10 h-10 animate-spin text-gray-900" />
+        <p className="text-xs font-bold uppercase tracking-[0.4em] text-gray-500 animate-pulse">
           Loading Editor
         </p>
       </div>
     );
   }
 
-  /* ─── Editor UI ─────────────────────────────────────────────── */
   return (
-    <div className="flex h-screen w-full bg-white overflow-hidden text-gray-900">
-      {/* Toast notification */}
+    <div className="flex h-screen w-full bg-gray-50 text-gray-900 overflow-hidden">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      {/* ── Left: Canvas workspace ── */}
-      <div className="flex-1 bg-white flex justify-center items-center overflow-hidden relative">
-        {/* Back button */}
+      {/* Left Canvas Workspace */}
+      <div className="flex-1 bg-[#F8F9FA] flex justify-center items-center relative overflow-hidden">
         <button
           onClick={() => navigate(`/folder/${folderId}`)}
           className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:text-gray-900 shadow-sm transition-all z-20"
@@ -303,59 +200,82 @@ export const MagazineEditor: React.FC = () => {
           Back
         </button>
 
-        {/* Page title */}
         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20">
           <span className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-500">
             {pageTitle}
           </span>
         </div>
 
-        {/* Unboxed Canva-like Scaled Wrapper */}
         <div 
-          style={{ transform: 'scale(calc(min(0.85, 100vh / 1123)))', transformOrigin: 'center center' }} 
-          className="flex-shrink-0"
+          style={{ transform: 'scale(calc(min(0.85, (100vh - 64px) / 1123)))', transformOrigin: 'center center' }} 
+          className="flex-shrink-0 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.3)] bg-white"
         >
           <A4Preview htmlContent={processedHtml} />
         </div>
       </div>
 
-      {/* ── Right: Properties panel sidebar ── */}
-      <div className="w-[400px] flex-shrink-0 bg-white border-l border-gray-200 p-6 overflow-y-auto z-10 flex flex-col gap-5">
-        {/* Panel header */}
+      {/* Right Properties Panel */}
+      <div className="w-[420px] flex-shrink-0 bg-white border-l border-gray-200 p-6 flex flex-col gap-6 overflow-y-auto">
         <div className="space-y-1">
-          <h2 className="text-base font-bold text-gray-900 tracking-tight">Properties</h2>
-          <p className="text-xs text-gray-500 font-medium">Edit template fields below</p>
+          <h2 className="text-lg font-semibold text-gray-900">Properties</h2>
+          <p className="text-sm text-gray-500">Edit template fields below</p>
         </div>
 
-        {/* Fields */}
         {templateVariables.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center border border-dashed border-gray-200 rounded-2xl py-16 gap-3">
+          <div className="flex-1 flex flex-col items-center justify-center border border-dashed border-gray-200 rounded-xl py-16 gap-3">
             <span className="text-2xl">📄</span>
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">No Fields Found</p>
-            <p className="text-[10px] text-gray-400 text-center max-w-[18ch]">This template has no dynamic variables.</p>
+            <p className="text-xs text-gray-400 text-center max-w-[18ch]">This template has no dynamic variables.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-6">
             {templateVariables.map(variable => (
               <div key={variable} className="flex flex-col gap-2">
-                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-500">
+                <label className="text-xs font-medium text-gray-700">
                   {toTitleCase(variable)}
                 </label>
 
                 {isImageVar(variable) ? (
-                  <ImageUploadZone
-                    variable={variable}
-                    value={formData[variable] || ''}
-                    uploading={!!uploadingVars[variable]}
-                    onChange={file => handleImageUpload(variable, file)}
-                  />
+                  <div className="relative flex flex-col items-center justify-center w-full h-32 rounded-lg border border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 transition-colors overflow-hidden group">
+                    <input 
+                      type="file" 
+                      accept=".jpg,.jpeg,.png" 
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                      onChange={(e) => handleFileUpload(variable, e)}
+                      disabled={uploadingVars[variable]}
+                    />
+                    
+                    {formData[variable] && formData[variable] !== UNSPLASH_PLACEHOLDER && (
+                      <img
+                        src={formData[variable]}
+                        alt={variable}
+                        className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity"
+                      />
+                    )}
+
+                    <div className="relative z-0 flex flex-col items-center gap-2">
+                      {uploadingVars[variable] ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin text-gray-900" />
+                          <span className="text-xs font-medium text-gray-900">Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <UploadCloud className="w-5 h-5 text-gray-500 group-hover:text-gray-700" />
+                          <span className="text-xs font-medium text-gray-600">
+                            {formData[variable] && formData[variable] !== UNSPLASH_PLACEHOLDER ? 'Replace Image' : 'Upload Image'}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 ) : (
                   <input
                     type="text"
                     value={formData[variable] || ''}
                     onChange={e => handleInputChange(variable, e.target.value)}
                     placeholder={`Enter ${toTitleCase(variable).toLowerCase()}`}
-                    className="bg-white border border-gray-300 rounded-md p-2.5 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full outline-none transition-all"
+                    className="bg-white border border-gray-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all w-full"
                   />
                 )}
               </div>
@@ -363,23 +283,19 @@ export const MagazineEditor: React.FC = () => {
           </div>
         )}
 
-        {/* Save button — sticky at bottom */}
-        <div className="mt-auto pt-6 border-t border-gray-200">
+        <div className="mt-auto pt-6 border-t border-gray-100">
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold rounded-md transition-all text-sm shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 py-3 bg-black hover:bg-gray-800 text-white font-medium rounded-md transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Saving…
+                Saving...
               </>
             ) : (
-              <>
-                <Save className="w-4 h-4" />
-                Save Page
-              </>
+              'Save Changes'
             )}
           </button>
         </div>
