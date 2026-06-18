@@ -10,7 +10,7 @@ export const A4Preview: React.FC<A4PreviewProps> = ({ htmlContent }) => {
 <head>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { margin: 0; padding: 0; overflow: hidden; width: 794px; height: 1123px; background-color: white; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; display: block; }
   </style>
 </head>
 <body>
@@ -19,8 +19,8 @@ ${htmlContent}
 </html>`;
 
   return (
-    <div style={{ width: '794px', height: '1123px' }} className="relative bg-white overflow-hidden flex-shrink-0">
-      <iframe style={{ width: '100%', height: '100%', border: 'none', display: 'block', verticalAlign: 'bottom', margin: 0, padding: 0 }} srcDoc={srcDoc} title="A4 Live Preview" />
+    <div className="relative shadow-[0_30px_80px_-20px_rgba(0,0,0,0.3)] ring-1 ring-gray-900/10 bg-white overflow-hidden flex-shrink-0 flex flex-col" style={{ width: '794px', height: '1123px' }}>
+      <iframe style={{ display: 'block', width: '100%', height: '100%', border: 'none', margin: 0, padding: 0 }} srcDoc={srcDoc} title="A4 Live Preview" />
     </div>
   );
 };
