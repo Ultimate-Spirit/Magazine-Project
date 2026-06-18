@@ -26,10 +26,59 @@ import { useAuth } from '../contexts/AuthContext';
 import { ConfirmModal } from './common/ConfirmModal';
 import { logActivity } from '../lib/activityLogger';
 import type { Page, Folder, Company, Template } from '../types';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { PrintTemplate } from './PrintTemplate';
 
 import React from 'react';
+
+interface SortablePageItemProps {
+  page: Page;
+  isAnchor: boolean;
+  isCompiling: boolean;
+}
+
+function SortablePageItem({ page, isAnchor, isCompiling }: SortablePageItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: page.id,
+    disabled: isAnchor || isCompiling
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-4 p-4 rounded-2xl border ${isAnchor ? 'bg-primary/5 border-primary/20' : 'bg-card border-border/10'} ${isDragging ? 'shadow-xl scale-[1.02] border-primary/40 z-50' : 'shadow-sm'} transition-all`}
+    >
+      <div 
+        {...attributes}
+        {...listeners}
+        className={`shrink-0 ${isAnchor ? 'opacity-20 cursor-not-allowed' : 'opacity-50 hover:opacity-100 cursor-grab active:cursor-grabbing text-foreground'}`}
+      >
+        {isAnchor ? <Layout className="w-5 h-5" /> : <GripVertical className="w-5 h-5" />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <h4 className="text-sm font-black text-foreground truncate">{page.title || 'Untitled'}</h4>
+          {isAnchor && (
+            <span className="px-2 py-0.5 rounded bg-primary/20 text-primary text-[8px] font-black uppercase tracking-widest">
+              Anchor: {page.templates?.category}
+            </span>
+          )}
+        </div>
+        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest truncate">
+          Source: {page.templates?.template_name || 'Custom Definition'}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export function FolderContents() {
   const { folderId } = useParams<{ folderId: string }>();
@@ -114,6 +163,7 @@ export function FolderContents() {
         .from('pages')
         .select('*, templates(*)')
         .eq('folder_id', folderId)
+        .order('order_index', { ascending: true, nullsFirst: false })
         .order('updated_at', { ascending: false });
 
       if (pagesErr) throw pagesErr;
@@ -227,6 +277,9 @@ export function FolderContents() {
 
   const openCompiler = () => {
     const sorted = [...(pages || [])].sort((a, b) => {
+      if (a.order_index !== undefined && a.order_index !== null && b.order_index !== undefined && b.order_index !== null) {
+        return a.order_index - b.order_index;
+      }
       const weightA = a.templates?.weight ?? 10;
       const weightB = b.templates?.weight ?? 10;
       return weightA - weightB;
@@ -235,19 +288,25 @@ export function FolderContents() {
     setIsCompilerOpen(true);
   };
 
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
-    const sourceIndex = result.source.index;
-    const destIndex = result.destination.index;
-    const draggedPage = compilerPages[sourceIndex];
-    const draggedCategory = draggedPage?.templates?.category;
-    if (draggedCategory === 'Cover' || draggedCategory === 'Last Page') return;
-    const items = Array.from(compilerPages);
-    const destPage = items[destIndex];
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = compilerPages.findIndex(p => p.id === active.id);
+    const newIndex = compilerPages.findIndex(p => p.id === over.id);
+    
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const draggedPage = compilerPages[oldIndex];
+    if (draggedPage?.templates?.category === 'Cover' || draggedPage?.templates?.category === 'Last Page') return;
+
+    const destPage = compilerPages[newIndex];
     if (destPage?.templates?.category === 'Cover') return;
-    if (destPage?.templates?.category === 'Last Page' && destIndex === items.length - 1) return;
-    const [reorderedItem] = items.splice(sourceIndex, 1);
-    items.splice(destIndex, 0, reorderedItem);
+    if (destPage?.templates?.category === 'Last Page' && newIndex === compilerPages.length - 1) return;
+
+    const newPages = arrayMove(compilerPages, oldIndex, newIndex);
+    
+    const items = [...newPages];
     const coverIndex = items.findIndex(p => p.templates?.category === 'Cover');
     if (coverIndex > 0) {
       const cover = items.splice(coverIndex, 1)[0];
@@ -258,7 +317,21 @@ export function FolderContents() {
       const lastP = items.splice(lastPageIndex, 1)[0];
       items.push(lastP);
     }
+
     setCompilerPages(items);
+
+    try {
+      const updates = items.map((p, idx) => ({
+        id: p.id,
+        order_index: idx
+      }));
+
+      for (const update of updates) {
+        await supabase.from('pages').update({ order_index: update.order_index }).eq('id', update.id);
+      }
+    } catch (err) {
+      console.error('Failed to persist order', err);
+    }
   };
 
   const generatePDF = async () => {
@@ -578,49 +651,22 @@ export function FolderContents() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 lg:p-8 invisible-scrollbar bg-slate-50/50 dark:bg-slate-900/10">
-                <DragDropContext onDragEnd={handleDragEnd}>
-                  <Droppable droppableId="pdf-pages">
-                    {(provided) => (
-                      <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-3">
-                        {(compilerPages || []).map((page, index) => {
-                          const isAnchor = page.templates?.category === 'Cover' || page.templates?.category === 'Last Page';
-                          return (
-                            <Draggable key={page.id} draggableId={page.id} index={index} isDragDisabled={isAnchor || isCompiling}>
-                              {(provided, snapshot) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  className={`flex items-center gap-4 p-4 rounded-2xl border ${isAnchor ? 'bg-primary/5 border-primary/20' : 'bg-card border-border/10'} ${snapshot.isDragging ? 'shadow-xl scale-[1.02] border-primary/40' : 'shadow-sm'} transition-all`}
-                                >
-                                  <div 
-                                    {...provided.dragHandleProps} 
-                                    className={`shrink-0 ${isAnchor ? 'opacity-20 cursor-not-allowed' : 'opacity-50 hover:opacity-100 cursor-grab active:cursor-grabbing text-foreground'}`}
-                                  >
-                                    {isAnchor ? <Layout className="w-5 h-5" /> : <GripVertical className="w-5 h-5" />}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <h4 className="text-sm font-black text-foreground truncate">{page.title || 'Untitled'}</h4>
-                                      {isAnchor && (
-                                        <span className="px-2 py-0.5 rounded bg-primary/20 text-primary text-[8px] font-black uppercase tracking-widest">
-                                          Anchor: {page.templates?.category}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest truncate">
-                                      Source: {page.templates?.template_name || 'Custom Definition'}
-                                    </p>
-                                  </div>
-                                </div>
-                              )}
-                            </Draggable>
-                          );
-                        })}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
+                <DndContext 
+                  sensors={useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }))} 
+                  collisionDetection={closestCenter} 
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext items={compilerPages.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-3">
+                      {compilerPages.map((page) => {
+                        const isAnchor = page.templates?.category === 'Cover' || page.templates?.category === 'Last Page';
+                        return (
+                          <SortablePageItem key={page.id} page={page} isAnchor={isAnchor} isCompiling={isCompiling} />
+                        );
+                      })}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               </div>
 
               <div className="p-6 lg:p-8 border-t border-border/5 bg-card/50 shrink-0">

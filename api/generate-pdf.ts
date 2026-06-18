@@ -21,8 +21,7 @@ export async function POST(request: Request) {
         await page.waitForTimeout(2000);
         const pdf = await page.pdf({
           format: 'A4',
-          printBackground: true,
-          margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' }
+          printBackground: true
         });
         return pdf;
       }
