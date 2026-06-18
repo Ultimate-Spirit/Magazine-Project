@@ -14,17 +14,29 @@ export async function POST(request: Request) {
 
     const requestBody = await request.json();
 
-    const response = await fetch(`https://production-sfo.browserless.io/pdf?token=${token}`, {
+    const browserlessScript = `
+      export default async function({ page, context }) {
+        await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 2 });
+        await page.setContent(context.html, { waitUntil: 'networkidle0' });
+        await page.waitForTimeout(2000);
+        const pdf = await page.pdf({
+          preferCSSPageSize: true,
+          printBackground: true,
+          margin: { top: 0, right: 0, bottom: 0, left: 0 }
+        });
+        return pdf;
+      }
+    `;
+
+    const response = await fetch(`https://production-sfo.browserless.io/function?token=${token}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        html: requestBody.html,
-        options: {
-          preferCSSPageSize: true,
-          printBackground: true,
-          margin: { top: 0, right: 0, bottom: 0, left: 0 }
+        code: browserlessScript,
+        context: {
+          html: requestBody.html
         }
       })
     });

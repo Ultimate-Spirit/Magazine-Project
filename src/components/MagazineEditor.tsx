@@ -163,19 +163,10 @@ export const MagazineEditor: React.FC = () => {
     try {
       showToast('Generating PDF, please wait...', 'success');
       
-      const wrappedHtml = `<div style="width: 210mm; height: 297mm; position: relative; overflow: hidden; page-break-after: always; page-break-inside: avoid; background-color: white;">${liveHtml}</div>`;
+      const cleanHtml = liveHtml.replace(/<\/?(?:html|head|body|!DOCTYPE)[^>]*>/gi, '');
+      const wrappedHtml = `<div class="a4-wrapper" style="width: 794px; height: 1123px; position: relative; overflow: hidden; page-break-after: always; display: flex; flex-direction: column; background-color: white;">${cleanHtml}</div>`;
       
-      const fullHTML = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>@page { size: 210mm 297mm; margin: 0; } body { margin: 0; padding: 0; display: block !important; -webkit-print-color-adjust: exact; }</style>
-</head>
-<body>
-${wrappedHtml}
-</body>
-</html>`;
+      const fullHTML = `<!DOCTYPE html><html lang="en"><head><script src="https://cdn.tailwindcss.com"></script><style> @page { size: A4 portrait; margin: 0; } body { margin: 0; padding: 0; background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; display: block !important; } .a4-wrapper > div { width: 100% !important; height: 100% !important; max-width: none !important; aspect-ratio: auto !important; margin: 0 !important; padding: 0 !important; } </style></head><body>${wrappedHtml}</body></html>`;
 
       const response = await fetch('/api/generate-pdf', {
         method: 'POST',
