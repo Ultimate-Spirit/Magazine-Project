@@ -24,6 +24,13 @@ const getPreviewHtml = (rawHtml: string) => {
   });
 };
 
+const coverBoilerplate = `<style>
+  body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: white; }
+</style>
+<div class="relative w-full h-full bg-gray-900 overflow-hidden">
+
+</div>`;
+
 interface StandaloneTemplateManagerProps {
   category: 'Cover' | 'Last Page';
 }
@@ -40,7 +47,7 @@ export const StandaloneTemplateManager: React.FC<StandaloneTemplateManagerProps>
     weight: 10,
   });
   
-  const [rawHtmlInput, setRawHtmlInput] = useState('');
+  const [rawHtmlInput, setRawHtmlInput] = useState(category === 'Cover' ? coverBoilerplate : '');
   const [parsedVariables, setParsedVariables] = useState<string[]>([]);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -191,7 +198,7 @@ export const StandaloneTemplateManager: React.FC<StandaloneTemplateManagerProps>
                 department_tag: '',
                 weight: 10,
               });
-              setRawHtmlInput('');
+              setRawHtmlInput(category === 'Cover' ? coverBoilerplate : '');
               setParsedVariables([]);
               setShowCreateTemplate(true);
             }}
