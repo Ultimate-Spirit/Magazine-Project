@@ -277,7 +277,7 @@ export const MagazineEditor: React.FC = () => {
   /* ─── Loading State ─────────────────────────────────────────── */
   if (loading) {
     return (
-      <div className="flex h-[calc(100vh-4rem)] w-full bg-gray-50 items-center justify-center flex-col gap-4 text-gray-900">
+      <div className="flex h-screen w-full bg-white items-center justify-center flex-col gap-4 text-gray-900">
         <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
         <p className="text-xs font-bold uppercase tracking-[0.4em] text-gray-400 animate-pulse">
           Loading Editor
