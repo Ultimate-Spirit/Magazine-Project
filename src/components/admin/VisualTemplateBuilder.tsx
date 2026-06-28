@@ -34,33 +34,29 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [fields, setFields] = useState<any[]>([]);
-  const hasHydrated = useRef(false);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    if (data && !hasHydrated.current) {
-      const templateRecord: any = Array.isArray(data) ? data[0] : data;
-      
-      let parsedLayout = templateRecord?.layout_json || templateRecord;
-      
-      if (typeof parsedLayout === 'string') {
-        try {
-          parsedLayout = JSON.parse(parsedLayout);
-        } catch(e) {
-          parsedLayout = {};
-        }
-      }
-      
-      const incomingFields = parsedLayout?.fields || [];
-      
-      if (templateRecord && fields.length === 0) {
-        setFields(incomingFields);
-        hasHydrated.current = true;
-      }
+    // If creating a new template, data is null, so we must immediately ready the canvas
+    if (data === null) {
+      setFields([]);
+      setIsReady(true);
+      return;
     }
-  }, [data, fields.length]);
 
-  if (isLoading || data === undefined) {
-    return <div className="flex h-screen items-center justify-center">Loading template...</div>;
+    if (data && !isReady) {
+      // Create a normalized wrapper so the strict assignment logic safely parses both full rows and direct layout objects
+      const safeData = data.layout_json !== undefined ? data : { layout_json: data };
+      
+      const layout = safeData?.layout_json; 
+      const safeFields = (layout && Array.isArray(layout.fields)) ? layout.fields : []; 
+      setFields(safeFields); 
+      setIsReady(true);
+    }
+  }, [data, isReady]);
+
+  if (!isReady) {
+    return <div className="flex h-screen items-center justify-center">Loading Canvas System...</div>;
   }
 
   const payload = data || { background_url: '', fields: [] };
