@@ -27,7 +27,7 @@ interface VisualTemplateBuilderProps {
   onChange: (val: TemplatePayload) => void;
 }
 
-export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ value, onChange }) => {
+export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ value: data, onChange }) => {
   const [uploading, setUploading] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -36,14 +36,29 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
   const hasHydrated = useRef(false);
 
   useEffect(() => {
-    if (value && !hasHydrated.current) {
-      const incomingFields = value?.fields || [];
-      setFields(incomingFields);
-      hasHydrated.current = true;
+    if (data && !hasHydrated.current) {
+      const templateRecord: any = Array.isArray(data) ? data[0] : data;
+      
+      let parsedLayout = templateRecord?.layout_json || templateRecord;
+      
+      if (typeof parsedLayout === 'string') {
+        try {
+          parsedLayout = JSON.parse(parsedLayout);
+        } catch(e) {
+          parsedLayout = {};
+        }
+      }
+      
+      const incomingFields = parsedLayout?.fields || [];
+      
+      if (templateRecord && fields.length === 0) {
+        setFields(incomingFields);
+        hasHydrated.current = true;
+      }
     }
-  }, [value]);
+  }, [data, fields.length]);
 
-  if (value === undefined) {
+  if (data === undefined) {
     return (
       <div className="w-full h-96 flex flex-col items-center justify-center border-2 border-dashed border-border rounded-xl bg-muted/10">
         <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
@@ -52,7 +67,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
     );
   }
 
-  const payload = value || { background_url: '', fields: [] };
+  const payload = data || { background_url: '', fields: [] };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
