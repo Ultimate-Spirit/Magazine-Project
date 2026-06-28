@@ -25,14 +25,15 @@ export interface TemplatePayload {
 interface VisualTemplateBuilderProps {
   value: TemplatePayload | null;
   onChange: (val: TemplatePayload) => void;
+  isLoading?: boolean;
 }
 
-export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ value: data, onChange }) => {
+export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ value: data, onChange, isLoading }) => {
   const [uploading, setUploading] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [fields, setFields] = useState<TemplateField[]>([]);
+  const [fields, setFields] = useState<any[]>([]);
   const hasHydrated = useRef(false);
 
   useEffect(() => {
@@ -58,13 +59,8 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
     }
   }, [data, fields.length]);
 
-  if (data === undefined) {
-    return (
-      <div className="w-full h-96 flex flex-col items-center justify-center border-2 border-dashed border-border rounded-xl bg-muted/10">
-        <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
-        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Loading Template Data...</p>
-      </div>
-    );
+  if (isLoading || data === undefined) {
+    return <div className="flex h-screen items-center justify-center">Loading template...</div>;
   }
 
   const payload = data || { background_url: '', fields: [] };
