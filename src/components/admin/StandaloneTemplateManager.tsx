@@ -12,24 +12,9 @@ import {
 } from 'lucide-react';
 import type { Template } from '../../types';
 import { ConfirmModal } from '../common/ConfirmModal';
-import { A4Preview } from '../A4Preview';
+import { VisualTemplateBuilder, type TemplatePayload } from './VisualTemplateBuilder';
 
-const getPreviewHtml = (rawHtml: string) => {
-  return rawHtml.replace(/\{\{([^}]+)\}\}/g, (match, varName) => {
-    const lowerVar = varName.toLowerCase();
-    if (lowerVar.includes('image') || lowerVar.includes('url') || lowerVar.includes('pic') || lowerVar.includes('cover')) {
-      return 'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?auto=format&fit=crop&w=800&q=80';
-    }
-    return varName.replace(/_/g, ' ').toUpperCase();
-  });
-};
 
-const coverBoilerplate = `<style>
-  body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: white; }
-</style>
-<div class="relative w-full h-full bg-gray-900 overflow-hidden">
-
-</div>`;
 
 interface StandaloneTemplateManagerProps {
   category: 'Cover' | 'Last Page';
@@ -47,8 +32,7 @@ export const StandaloneTemplateManager: React.FC<StandaloneTemplateManagerProps>
     weight: 10,
   });
   
-  const [rawHtmlInput, setRawHtmlInput] = useState(category === 'Cover' ? coverBoilerplate : '');
-  const [parsedVariables, setParsedVariables] = useState<string[]>([]);
+  const [templatePayload, setTemplatePayload] = useState<TemplatePayload | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [templateToDelete, setTemplateToDelete] = useState<Template | null>(null);
@@ -74,15 +58,7 @@ export const StandaloneTemplateManager: React.FC<StandaloneTemplateManagerProps>
     }
   };
 
-  useEffect(() => {
-    const regex = /\{\{([^}]+)\}\}/g;
-    const matches = Array.from(rawHtmlInput.matchAll(regex), m => m[1].trim());
-    setParsedVariables([...new Set(matches)]);
-  }, [rawHtmlInput]);
 
-  const handleHtmlChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setRawHtmlInput(e.target.value);
-  };
 
   const handleSaveTemplate = async () => {
     if (!templateForm.template_name.trim()) return;
@@ -93,10 +69,7 @@ export const StandaloneTemplateManager: React.FC<StandaloneTemplateManagerProps>
         category: category,
         department_tag: templateForm.department_tag,
         weight: templateForm.weight,
-        payload: {
-          rawHtml: rawHtmlInput,
-          variables: parsedVariables
-        },
+        payload: templatePayload,
         is_global: true, // Standalone templates are global by nature
         bundle_id: null // No bundle associated
       };
@@ -127,8 +100,7 @@ export const StandaloneTemplateManager: React.FC<StandaloneTemplateManagerProps>
         department_tag: '',
         weight: 10,
       });
-      setRawHtmlInput('');
-      setParsedVariables([]);
+      setTemplatePayload(null);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -162,8 +134,7 @@ export const StandaloneTemplateManager: React.FC<StandaloneTemplateManagerProps>
       department_tag: template.department_tag || '',
       weight: template.weight,
     });
-    setRawHtmlInput(template.payload?.rawHtml || '');
-    setParsedVariables(template.payload?.variables || []);
+    setTemplatePayload(template.payload as TemplatePayload || null);
     setShowCreateTemplate(true);
   };
 
@@ -198,8 +169,7 @@ export const StandaloneTemplateManager: React.FC<StandaloneTemplateManagerProps>
                 department_tag: '',
                 weight: 10,
               });
-              setRawHtmlInput(category === 'Cover' ? coverBoilerplate : '');
-              setParsedVariables([]);
+              setTemplatePayload(null);
               setShowCreateTemplate(true);
             }}
             className="flex items-center gap-2 px-6 py-3 bg-card border border-border text-foreground rounded-xl font-bold hover:bg-secondary transition-all"
@@ -252,40 +222,12 @@ export const StandaloneTemplateManager: React.FC<StandaloneTemplateManagerProps>
               </div>
 
               <div className="col-span-full space-y-3">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Template Code (HTML/Tailwind)</label>
-                <textarea 
-                  className="w-full h-96 font-mono text-sm bg-slate-900 text-slate-100 p-4 rounded-xl border-2 border-slate-800 focus:border-primary outline-none resize-y"
-                  placeholder="<div>{{Title}}</div>..."
-                  value={rawHtmlInput}
-                  onChange={handleHtmlChange}
-                  spellCheck="false"
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Visual Template Builder</label>
+                <VisualTemplateBuilder 
+                  value={templatePayload} 
+                  onChange={setTemplatePayload} 
                 />
               </div>
-
-              {parsedVariables.length > 0 && (
-                <div className="col-span-full space-y-3">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-primary" />
-                    Detected Variables ({parsedVariables.length})
-                  </label>
-                  <div className="flex flex-wrap gap-2 p-4 bg-primary/5 rounded-xl border border-primary/10">
-                    {parsedVariables.map((variable, idx) => (
-                      <span key={idx} className="px-3 py-1.5 bg-primary text-primary-foreground text-xs font-bold rounded-lg shadow-sm">
-                        {variable}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {rawHtmlInput && (
-                <div className="col-span-full space-y-3">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Live Template Preview</label>
-                  <div className="w-full max-w-2xl mx-auto">
-                    <A4Preview htmlContent={getPreviewHtml(rawHtmlInput)} />
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className="flex items-center gap-3 pt-6 border-t border-border/10">

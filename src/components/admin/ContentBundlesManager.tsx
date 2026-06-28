@@ -15,17 +15,7 @@ import {
 } from 'lucide-react';
 import type { TemplateBundle, Template } from '../../types';
 import { ConfirmModal } from '../common/ConfirmModal';
-import { A4Preview } from '../A4Preview';
-
-const getPreviewHtml = (rawHtml: string) => {
-  return rawHtml.replace(/\{\{([^}]+)\}\}/g, (match, varName) => {
-    const lowerVar = varName.toLowerCase();
-    if (lowerVar.includes('image') || lowerVar.includes('url') || lowerVar.includes('pic') || lowerVar.includes('cover')) {
-      return 'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?auto=format&fit=crop&w=800&q=80';
-    }
-    return varName.replace(/_/g, ' ').toUpperCase();
-  });
-};
+import { VisualTemplateBuilder, type TemplatePayload } from './VisualTemplateBuilder';
 
 export const ContentBundlesManager: React.FC = () => {
   const [bundles, setBundles] = useState<TemplateBundle[]>([]);
@@ -51,8 +41,7 @@ export const ContentBundlesManager: React.FC = () => {
     is_global: false
   });
 
-  const [rawHtmlInput, setRawHtmlInput] = useState('');
-  const [parsedVariables, setParsedVariables] = useState<string[]>([]);
+  const [templatePayload, setTemplatePayload] = useState<TemplatePayload | null>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -179,10 +168,7 @@ export const ContentBundlesManager: React.FC = () => {
         category: templateForm.category,
         department_tag: templateForm.department_tag,
         weight: templateForm.weight,
-        payload: {
-          rawHtml: rawHtmlInput,
-          variables: parsedVariables
-        },
+        payload: templatePayload,
         is_global: templateForm.is_global
       };
 
@@ -214,8 +200,7 @@ export const ContentBundlesManager: React.FC = () => {
         weight: 10,
         is_global: false
       });
-      setRawHtmlInput('');
-      setParsedVariables([]);
+      setTemplatePayload(null);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -251,8 +236,7 @@ export const ContentBundlesManager: React.FC = () => {
       weight: template.weight,
       is_global: template.is_global || false
     });
-    setRawHtmlInput(template.payload?.rawHtml || '');
-    setParsedVariables(template.payload?.variables || []);
+    setTemplatePayload(template.payload as TemplatePayload || null);
     setShowCreateTemplate(true);
   };
 
@@ -399,8 +383,7 @@ export const ContentBundlesManager: React.FC = () => {
                   weight: 10,
                   is_global: false
                 });
-                setRawHtmlInput('');
-                setParsedVariables([]);
+                setTemplatePayload(null);
                 setShowCreateTemplate(true);
               }}
               className="flex items-center gap-2 px-6 py-3 bg-card border border-border text-foreground rounded-xl font-bold hover:bg-secondary transition-all"
@@ -468,47 +451,13 @@ export const ContentBundlesManager: React.FC = () => {
                   </div>
                 )}
 
-                <div className="col-span-full space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Template Code (HTML/Tailwind)</label>
-                  <textarea 
-                    className="w-full h-64 bg-background border border-border rounded-xl px-4 py-3 text-sm font-mono text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-y"
-                    value={rawHtmlInput}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setRawHtmlInput(val);
-                      const regex = /\{\{([^}]+)\}\}/g;
-                      const vars = new Set<string>();
-                      let match;
-                      while ((match = regex.exec(val)) !== null) {
-                        vars.add(match[1].trim());
-                      }
-                      setParsedVariables(Array.from(vars));
-                    }}
-                    placeholder="Paste your raw HTML here using {{variable}} syntax..."
+                <div className="col-span-full space-y-3">
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Visual Template Builder</label>
+                  <VisualTemplateBuilder 
+                    value={templatePayload} 
+                    onChange={setTemplatePayload} 
                   />
                 </div>
-
-                {parsedVariables.length > 0 && (
-                  <div className="col-span-full space-y-3">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Detected Variables</label>
-                    <div className="flex flex-wrap gap-2">
-                      {parsedVariables.map(v => (
-                        <span key={v} className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-xs font-black uppercase tracking-widest">
-                          {v}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {rawHtmlInput && (
-                  <div className="col-span-full space-y-3">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Live Template Preview</label>
-                    <div className="w-full max-w-2xl mx-auto">
-                      <A4Preview htmlContent={getPreviewHtml(rawHtmlInput)} />
-                    </div>
-                  </div>
-                )}
               </div>
               <div className="flex justify-end gap-3 pt-4 border-t border-border/10 mt-6">
                 <button 
