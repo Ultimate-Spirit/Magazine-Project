@@ -215,7 +215,7 @@ export function FolderContents() {
 
     setIsActionLoading(true);
     try {
-      const masterPayload = template.payload || {};
+      const masterPayload = template.layout_json || {};
       
       const { data, error } = await supabase
         .from('pages')
@@ -253,7 +253,7 @@ export function FolderContents() {
         .from('pages')
         .update({
           title: template.template_name,
-          data: template.payload || {},
+          data: template.layout_json || {},
           updated_at: new Date().toISOString()
         })
         .eq('id', page.id);
@@ -361,7 +361,7 @@ export function FolderContents() {
       let fullHtmlStr = '';
       
       compilerPages.forEach((page, index) => {
-        let html = page.templates?.raw_html || page.templates?.payload?.rawHtml || '';
+        let html = '';
         const formData = page.data || {};
         const vars = Object.keys(formData);
         vars.forEach(key => {

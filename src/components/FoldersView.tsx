@@ -158,7 +158,7 @@ export function FoldersView({ onSelectCompany }: Props) {
       const pagesToInsert = allTemplatesToInsert.map(template => ({
         folder_id: newFolder.id,
         title: template.template_name,
-        data: template.payload,
+        data: template.layout_json,
         template_id: template.id,
         created_by: profile?.id
       }));

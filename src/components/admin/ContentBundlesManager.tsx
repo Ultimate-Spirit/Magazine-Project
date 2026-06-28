@@ -168,7 +168,7 @@ export const ContentBundlesManager: React.FC = () => {
         category: templateForm.category,
         department_tag: templateForm.department_tag,
         weight: templateForm.weight,
-        payload: templatePayload,
+        layout_json: templatePayload,
         is_global: templateForm.is_global
       };
 
@@ -236,7 +236,7 @@ export const ContentBundlesManager: React.FC = () => {
       weight: template.weight,
       is_global: template.is_global || false
     });
-    setTemplatePayload(template.payload as TemplatePayload || null);
+    setTemplatePayload(template.layout_json as TemplatePayload || null);
     setShowCreateTemplate(true);
   };
 

@@ -56,7 +56,7 @@ export interface Template {
   category: 'Cover' | 'Content' | 'Newsletter' | 'Last Page';
   department_tag: string;
   weight: number;
-  payload: any;
+  layout_json: any;
   is_global?: boolean;
   created_at: string;
 }

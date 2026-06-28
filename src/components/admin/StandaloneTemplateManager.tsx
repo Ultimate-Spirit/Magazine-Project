@@ -69,7 +69,7 @@ export const StandaloneTemplateManager: React.FC<StandaloneTemplateManagerProps>
         category: category,
         department_tag: templateForm.department_tag,
         weight: templateForm.weight,
-        payload: templatePayload,
+        layout_json: templatePayload,
         is_global: true, // Standalone templates are global by nature
         bundle_id: null // No bundle associated
       };
@@ -134,7 +134,7 @@ export const StandaloneTemplateManager: React.FC<StandaloneTemplateManagerProps>
       department_tag: template.department_tag || '',
       weight: template.weight,
     });
-    setTemplatePayload(template.payload as TemplatePayload || null);
+    setTemplatePayload(template.layout_json as TemplatePayload || null);
     setShowCreateTemplate(true);
   };
 

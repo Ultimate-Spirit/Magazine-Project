@@ -19,8 +19,10 @@ const isImageVar = (name: string) => {
 const UNSPLASH_PLACEHOLDER =
   'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?auto=format&fit=crop&w=800&q=80';
 
-const extractVars = (html: string): string[] =>
-  Array.from(new Set((html.match(/\{\{([^}]+)\}\}/g) || []).map(v => v.slice(2, -2).trim())));
+const extractVarsFromLayout = (layout: any): string[] => {
+  if (!layout || !layout.fields) return [];
+  return layout.fields.map((f: any) => f.name);
+};
 
 /* ─── Toast ────────────────────────────────────────────────────── */
 const Toast: React.FC<{ message: string; type: 'error' | 'success'; onClose: () => void }> = ({
@@ -52,7 +54,7 @@ export const MagazineEditor: React.FC = () => {
   const navigate = useNavigate();
 
   const [pageTitle, setPageTitle] = useState('');
-  const [rawHtml, setRawHtml] = useState('');
+  const [layoutJson, setLayoutJson] = useState<any>(null);
   const [templateVariables, setTemplateVariables] = useState<string[]>([]);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [uploadingVars, setUploadingVars] = useState<Record<string, boolean>>({});
@@ -82,10 +84,10 @@ export const MagazineEditor: React.FC = () => {
 
         const tpl = pageData.templates;
         if (tpl) {
-          const html = tpl.raw_html || tpl.payload?.rawHtml || '';
-          setRawHtml(html);
+          const layout = tpl.layout_json;
+          setLayoutJson(layout);
           
-          const vars = extractVars(html);
+          const vars = extractVarsFromLayout(layout);
           setTemplateVariables(vars);
           
           const dbData = pageData.data || {};
@@ -149,15 +151,27 @@ export const MagazineEditor: React.FC = () => {
   };
 
   const liveHtml = useMemo(() => {
-    let html = rawHtml;
-    if (!html) return '';
-    const vars = Object.keys(formData);
-    vars.forEach(key => {
-      const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
-      html = html.replace(regex, formData[key] || '');
-    });
+    if (!layoutJson) return '';
+    const { background_url, fields } = layoutJson;
+    let html = `<div style="position: relative; width: 100%; height: 100%; background-image: url('${background_url || ''}'); background-size: cover; background-position: center; overflow: hidden;">`;
+    
+    if (fields && Array.isArray(fields)) {
+      fields.forEach((field: any) => {
+        const val = formData[field.name] || '';
+        html += `<div style="position: absolute; top: ${field.top}%; left: ${field.left}%; width: ${field.width}%; height: ${field.height}%;">`;
+        if (field.type === 'Image') {
+          html += `<img src="${val}" style="width: 100%; height: 100%; object-fit: cover;" />`;
+        } else {
+          // Fallback for Text, Chart, Icon for now
+          html += `<div style="width: 100%; height: 100%; word-break: break-word;">${val}</div>`;
+        }
+        html += `</div>`;
+      });
+    }
+    
+    html += `</div>`;
     return html;
-  }, [rawHtml, formData]);
+  }, [layoutJson, formData]);
 
   const handleDownloadPdf = async () => {
     try {
