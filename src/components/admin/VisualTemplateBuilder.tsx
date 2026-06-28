@@ -33,14 +33,24 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [fields, setFields] = useState<TemplateField[]>([]);
-  const [fieldsInitialized, setFieldsInitialized] = useState(false);
+  const hasHydrated = useRef(false);
 
   useEffect(() => {
-    if (value && !fieldsInitialized) {
-      setFields(value.fields || []);
-      setFieldsInitialized(true);
+    if (value && !hasHydrated.current) {
+      const incomingFields = value?.fields || [];
+      setFields(incomingFields);
+      hasHydrated.current = true;
     }
-  }, [value, fieldsInitialized]);
+  }, [value]);
+
+  if (value === undefined) {
+    return (
+      <div className="w-full h-96 flex flex-col items-center justify-center border-2 border-dashed border-border rounded-xl bg-muted/10">
+        <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
+        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Loading Template Data...</p>
+      </div>
+    );
+  }
 
   const payload = value || { background_url: '', fields: [] };
 
