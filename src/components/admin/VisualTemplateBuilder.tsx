@@ -55,10 +55,6 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
     }
   }, [data, isReady]);
 
-  if (!isReady) {
-    return <div className="flex h-screen items-center justify-center">Loading Canvas System...</div>;
-  }
-
   const payload = data || { background_url: '', fields: [] };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,35 +147,35 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
     };
   };
 
-  if (!payload.background_url) {
-    return (
-      <div className="w-full h-96 border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center bg-muted/20 relative">
-        {uploading ? (
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <span className="font-bold">Uploading background...</span>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-3">
-            <UploadCloud className="w-12 h-12 text-muted-foreground" />
-            <div className="text-center">
-              <p className="font-bold">Upload Background Image</p>
-              <p className="text-sm text-muted-foreground mt-1">Accepts PNG or SVG only</p>
+  return !isReady ? (
+    <div className="flex h-screen items-center justify-center">Loading Canvas System...</div>
+  ) : (
+    <div className="canvas-wrapper">
+      {!payload.background_url ? (
+        <div className="w-full h-96 border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center bg-muted/20 relative">
+          {uploading ? (
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 className="w-10 h-10 animate-spin text-primary" />
+              <span className="font-bold">Uploading background...</span>
             </div>
-            <input 
-              type="file" 
-              accept=".png,.svg"
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              onChange={handleFileUpload}
-            />
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
+          ) : (
+            <div className="flex flex-col items-center gap-3">
+              <UploadCloud className="w-12 h-12 text-muted-foreground" />
+              <div className="text-center">
+                <p className="font-bold">Upload Background Image</p>
+                <p className="text-sm text-muted-foreground mt-1">Accepts PNG or SVG only</p>
+              </div>
+              <input 
+                type="file" 
+                accept=".png,.svg"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                onChange={handleFileUpload}
+              />
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3 bg-muted/30 p-4 rounded-xl border border-border/50">
         <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground mr-2">Add Field:</span>
         <button onClick={() => addField('Text')} className="flex items-center gap-2 px-4 py-2 bg-background border border-border rounded-lg hover:border-primary hover:text-primary transition-colors text-sm font-bold">
@@ -396,6 +392,8 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
           )}
         </div>
       </div>
+        </div>
+      )}
     </div>
   );
 };
