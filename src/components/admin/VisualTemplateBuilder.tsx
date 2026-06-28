@@ -32,6 +32,16 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const [fields, setFields] = useState<TemplateField[]>([]);
+  const [fieldsInitialized, setFieldsInitialized] = useState(false);
+
+  useEffect(() => {
+    if (value && !fieldsInitialized) {
+      setFields(value.fields || []);
+      setFieldsInitialized(true);
+    }
+  }, [value, fieldsInitialized]);
+
   const payload = value || { background_url: '', fields: [] };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,24 +98,30 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
       metadata,
     };
 
+    const newFields = [...fields, newField];
+    setFields(newFields);
     onChange({
       ...payload,
-      fields: [...payload.fields, newField]
+      fields: newFields
     });
     setSelectedFieldId(newField.id);
   };
 
   const updateField = (id: string, updates: Partial<TemplateField>) => {
+    const newFields = fields.map((f) => (f.id === id ? { ...f, ...updates } : f));
+    setFields(newFields);
     onChange({
       ...payload,
-      fields: payload.fields.map((f) => (f.id === id ? { ...f, ...updates } : f))
+      fields: newFields
     });
   };
 
   const deleteField = (id: string) => {
+    const newFields = fields.filter(f => f.id !== id);
+    setFields(newFields);
     onChange({
       ...payload,
-      fields: payload.fields.filter(f => f.id !== id)
+      fields: newFields
     });
     if (selectedFieldId === id) setSelectedFieldId(null);
   };
@@ -181,7 +197,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
               backgroundPosition: 'center'
             }}
           >
-            {payload.fields.map(field => {
+            {fields.map(field => {
               const { width, height } = getContainerSize();
               
               // Only render Rnd if container size is known (ref is attached)
@@ -251,7 +267,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
           <h3 className="font-bold text-lg border-b border-border pb-2">Field Settings</h3>
           {selectedFieldId ? (
             <div className="space-y-4">
-              {payload.fields.filter(f => f.id === selectedFieldId).map(field => (
+              {fields.filter(f => f.id === selectedFieldId).map(field => (
                 <div key={field.id} className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Variable Name</label>
