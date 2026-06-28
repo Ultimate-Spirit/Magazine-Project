@@ -13,6 +13,7 @@ export interface TemplateField {
   height: number;
   metadata?: {
     chartType?: string;
+    maxChars?: number;
   };
 }
 
@@ -73,12 +74,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
   const addField = (type: TemplateField['type']) => {
     let metadata = {};
     if (type === 'Chart') {
-      const chartType = prompt('Select chart type (bar, line, pie, radar):', 'bar');
-      if (!chartType || !['bar', 'line', 'pie', 'radar'].includes(chartType.toLowerCase())) {
-        alert('Invalid or no chart type selected.');
-        return;
-      }
-      metadata = { chartType: chartType.toLowerCase() };
+      metadata = { chartType: 'bar' };
     }
 
     const newField: TemplateField = {
@@ -227,7 +223,9 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                 >
                   <div className="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                     <button 
-                      className="bg-destructive text-white p-1 rounded-sm"
+                      type="button"
+                      className="bg-destructive text-white p-1 rounded-sm hover:bg-red-600 transition-colors z-50 pointer-events-auto"
+                      onPointerDown={(e) => { e.stopPropagation(); deleteField(field.id); }}
                       onClick={(e) => { e.stopPropagation(); deleteField(field.id); }}
                     >
                       <X className="w-3 h-3" />
@@ -308,18 +306,46 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                   </div>
 
                   {field.type === 'Chart' && (
-                    <div className="space-y-2">
+                    <div className="space-y-2 relative">
                       <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Chart Type</label>
-                      <select 
-                        className="w-full bg-background border border-border rounded-xl px-4 py-2 text-sm outline-none"
-                        value={field.metadata?.chartType || 'bar'}
-                        onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, chartType: e.target.value } })}
-                      >
-                        <option value="bar">Bar</option>
-                        <option value="line">Line</option>
-                        <option value="pie">Pie</option>
-                        <option value="radar">Radar</option>
-                      </select>
+                      <div className="relative group">
+                        <select 
+                          className="w-full appearance-none bg-white hover:bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-sm cursor-pointer"
+                          value={field.metadata?.chartType || 'bar'}
+                          onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, chartType: e.target.value } })}
+                        >
+                          <option value="bar">Bar</option>
+                          <option value="line">Line</option>
+                          <option value="pie">Pie</option>
+                          <option value="scatter">Scatter</option>
+                          <option value="radar">Radar</option>
+                          <option value="funnel">Funnel</option>
+                          <option value="gauge">Gauge</option>
+                          <option value="heatmap">Heatmap</option>
+                          <option value="tree">Tree</option>
+                          <option value="treemap">Treemap</option>
+                          <option value="sunburst">Sunburst</option>
+                          <option value="candlestick">Candlestick</option>
+                          <option value="boxplot">Boxplot</option>
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500 group-hover:text-primary transition-colors">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {field.type === 'Text' && (
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Max Characters</label>
+                      <input 
+                        type="number" 
+                        placeholder="No limit"
+                        min="1"
+                        className="w-full bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none"
+                        value={field.metadata?.maxChars || ''}
+                        onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, maxChars: e.target.value ? parseInt(e.target.value, 10) : undefined } })}
+                      />
                     </div>
                   )}
 
