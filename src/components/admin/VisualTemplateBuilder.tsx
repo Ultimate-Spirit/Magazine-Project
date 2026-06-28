@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Rnd } from 'react-rnd';
 import { supabase } from '../../lib/supabaseClient';
 import { Image as ImageIcon, Type, BarChart2, Smile, UploadCloud, X, Loader2, Plus, Settings } from 'lucide-react';
