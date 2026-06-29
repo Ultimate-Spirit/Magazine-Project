@@ -120,6 +120,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
   const [uploading, setUploading] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dragStartPos = useRef({ x: 0, y: 0 });
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   const [fields, setFields] = useState<any[]>([]);
@@ -321,9 +322,9 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                   <Smile className="w-4 h-4" /> Icon
                 </button>
                 <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-2 py-1 ml-4 shadow-sm">
-                  <button onClick={() => zoomOut()} className="w-6 h-6 flex items-center justify-center hover:bg-muted rounded text-muted-foreground font-bold">-</button>
+                  <button onClick={() => zoomOut(0.2)} className="w-6 h-6 flex items-center justify-center hover:bg-muted rounded text-muted-foreground font-bold">-</button>
                   <span className="text-xs font-bold w-12 text-center text-foreground">{Math.round(state.scale * 100)}%</span>
-                  <button onClick={() => zoomIn()} className="w-6 h-6 flex items-center justify-center hover:bg-muted rounded text-muted-foreground font-bold">+</button>
+                  <button onClick={() => zoomIn(0.2)} className="w-6 h-6 flex items-center justify-center hover:bg-muted rounded text-muted-foreground font-bold">+</button>
                   <button onClick={() => resetTransform()} className="text-[10px] font-bold px-2 hover:bg-muted rounded text-muted-foreground uppercase tracking-wider">100%</button>
                 </div>
                 <div className="flex-1"></div>
@@ -368,7 +369,14 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                               x: (field.left / 100) * width,
                               y: (field.top / 100) * height
                             }}
+                            onDragStart={(e, d) => {
+                              dragStartPos.current = { x: d.x, y: d.y };
+                            }}
                             onDragStop={(e, d) => {
+                              const dx = Math.abs(d.x - dragStartPos.current.x);
+                              const dy = Math.abs(d.y - dragStartPos.current.y);
+                              if (dx < 3 && dy < 3) return;
+
                               updateField(field.id, {
                                 left: (d.x / width) * 100,
                                 top: (d.y / height) * 100
