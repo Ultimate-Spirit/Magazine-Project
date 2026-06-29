@@ -32,6 +32,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
   const [uploading, setUploading] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   const [fields, setFields] = useState<any[]>([]);
   const [isReady, setIsReady] = useState(false);
@@ -56,6 +57,21 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
   }, [data, isReady]);
 
   const payload = data || { background_url: '', fields: [] };
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        setContainerSize({
+          width: entry.contentRect.width,
+          height: entry.contentRect.height
+        });
+      }
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [isReady, payload.background_url]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -140,11 +156,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
   };
 
   const getContainerSize = () => {
-    if (!containerRef.current) return { width: 0, height: 0 };
-    return {
-      width: containerRef.current.offsetWidth,
-      height: containerRef.current.offsetHeight
-    };
+    return containerSize;
   };
 
   return !isReady ? (
