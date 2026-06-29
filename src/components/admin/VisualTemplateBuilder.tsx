@@ -3,6 +3,7 @@ import { Rnd } from 'react-rnd';
 import { supabase } from '../../lib/supabaseClient';
 import { Image as ImageIcon, Type, BarChart2, Smile, UploadCloud, X, Loader2, Plus, Settings, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+import Select from 'react-select';
 
 export interface TemplateField {
   id: string;
@@ -36,6 +37,84 @@ interface VisualTemplateBuilderProps {
   onChange: (val: TemplatePayload) => void;
   isLoading?: boolean;
 }
+
+const FONT_OPTIONS = [
+  { value: "", label: "Default" },
+  { value: "'Roboto', sans-serif", label: "Roboto" },
+  { value: "'Open Sans', sans-serif", label: "Open Sans" },
+  { value: "'Lato', sans-serif", label: "Lato" },
+  { value: "'Montserrat', sans-serif", label: "Montserrat" },
+  { value: "'Oswald', sans-serif", label: "Oswald" },
+  { value: "'Source Sans Pro', sans-serif", label: "Source Sans Pro" },
+  { value: "'Slabo 27px', serif", label: "Slabo 27px" },
+  { value: "'Raleway', sans-serif", label: "Raleway" },
+  { value: "'PT Sans', sans-serif", label: "PT Sans" },
+  { value: "'Merriweather', serif", label: "Merriweather" },
+  { value: "'Nunito', sans-serif", label: "Nunito" },
+  { value: "'Playfair Display', serif", label: "Playfair Display" },
+  { value: "'Lora', serif", label: "Lora" },
+  { value: "'Mukta', sans-serif", label: "Mukta" },
+  { value: "'Work Sans', sans-serif", label: "Work Sans" },
+  { value: "'Fira Sans', sans-serif", label: "Fira Sans" },
+  { value: "'Quicksand', sans-serif", label: "Quicksand" },
+  { value: "'Barlow', sans-serif", label: "Barlow" },
+  { value: "'Poppins', sans-serif", label: "Poppins" },
+  { value: "'Ubuntu', sans-serif", label: "Ubuntu" },
+  { value: "'Inter', sans-serif", label: "Inter" },
+  { value: "'Rubik', sans-serif", label: "Rubik" },
+  { value: "'Karla', sans-serif", label: "Karla" },
+  { value: "'Josefin Sans', sans-serif", label: "Josefin Sans" },
+  { value: "'Cabin', sans-serif", label: "Cabin" },
+  { value: "'Arimo', sans-serif", label: "Arimo" },
+  { value: "'Dancing Script', cursive", label: "Dancing Script" },
+  { value: "'Inconsolata', monospace", label: "Inconsolata" },
+  { value: "'Crimson Text', serif", label: "Crimson Text" },
+  { value: "'Anton', sans-serif", label: "Anton" },
+  { value: "'Oxygen', sans-serif", label: "Oxygen" },
+  { value: "'Bebas Neue', sans-serif", label: "Bebas Neue" },
+  { value: "'Libre Baskerville', serif", label: "Libre Baskerville" },
+  { value: "'Lobster', cursive", label: "Lobster" },
+  { value: "'Pacifico', cursive", label: "Pacifico" },
+  { value: "'Varela Round', sans-serif", label: "Varela Round" },
+  { value: "'Abel', sans-serif", label: "Abel" },
+  { value: "'Comfortaa', cursive", label: "Comfortaa" },
+  { value: "'Exo 2', sans-serif", label: "Exo 2" },
+  { value: "'Kanit', sans-serif", label: "Kanit" },
+  { value: "'Teko', sans-serif", label: "Teko" },
+  { value: "'Fjalla One', sans-serif", label: "Fjalla One" },
+  { value: "'Caveat', cursive", label: "Caveat" },
+  { value: "'Righteous', cursive", label: "Righteous" },
+  { value: "'Abril Fatface', cursive", label: "Abril Fatface" },
+  { value: "'Permanent Marker', cursive", label: "Permanent Marker" },
+  { value: "'Creepster', cursive", label: "Creepster" },
+  { value: "'Alfa Slab One', cursive", label: "Alfa Slab One" },
+  { value: "'Cinzel', serif", label: "Cinzel" },
+];
+
+const CHART_OPTIONS = [
+  { value: 'bar', label: 'Bar' },
+  { value: 'line', label: 'Line' },
+  { value: 'pie', label: 'Pie' },
+  { value: 'scatter', label: 'Scatter' },
+  { value: 'radar', label: 'Radar' },
+  { value: 'funnel', label: 'Funnel' },
+  { value: 'gauge', label: 'Gauge' },
+  { value: 'heatmap', label: 'Heatmap' },
+  { value: 'tree', label: 'Tree' },
+  { value: 'treemap', label: 'Treemap' },
+  { value: 'sunburst', label: 'Sunburst' },
+  { value: 'candlestick', label: 'Candlestick' },
+  { value: 'boxplot', label: 'Boxplot' },
+];
+
+const SELECT_STYLES = {
+  control: (state: any) => `!bg-background !border-border !rounded-xl !shadow-sm !min-h-[42px] ${state.isFocused ? '!border-primary !ring-1 !ring-primary' : ''}`,
+  menu: () => `!bg-background !border !border-border !rounded-xl !shadow-md !mt-1 !z-50`,
+  option: (state: any) => `!cursor-pointer ${state.isFocused ? '!bg-muted/50' : ''} ${state.isSelected ? '!bg-primary/10 !text-primary !font-bold' : '!text-foreground'}`,
+  singleValue: () => `!text-foreground !text-sm`,
+  input: () => `!text-foreground`,
+  placeholder: () => `!text-muted-foreground`,
+};
 
 export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ value: data, onChange, isLoading }) => {
   const [uploading, setUploading] = useState(false);
@@ -255,11 +334,14 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <div className="lg:col-span-3 flex justify-center items-start bg-muted/20 border border-border rounded-xl p-0 overflow-hidden h-[800px]">
-                  <TransformComponent wrapperClass="w-full h-full" contentClass="w-full h-full flex justify-center items-center">
+                <div className="lg:col-span-3 bg-muted/20 border border-border rounded-xl overflow-hidden h-[800px] w-full">
+                  <TransformComponent 
+                    wrapperStyle={{ width: '100%', height: '100%', minHeight: '800px' }} 
+                    contentStyle={{ width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                  >
                     <div 
                       ref={containerRef}
-                      className="relative bg-white shadow-xl aspect-[210/297] w-full max-w-2xl overflow-hidden"
+                      className="relative bg-white shadow-2xl aspect-[210/297] w-full max-w-2xl overflow-hidden"
                       style={{
                         backgroundImage: `url(${payload.background_url})`,
                         backgroundSize: 'cover',
@@ -358,7 +440,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                 <div className="space-y-4 max-h-[800px] overflow-auto pr-2">
                   <h3 className="font-bold text-lg border-b border-border pb-2">Field Settings</h3>
                   {selectedFieldId ? (
-                    <div className="space-y-4">
+                    <div className="space-y-4 pb-12">
                       {fields.filter(f => f.id === selectedFieldId).map(field => (
                         <div key={field.id} className="space-y-4">
                           <div className="space-y-2">
@@ -427,30 +509,14 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                           {field.type === 'Chart' && (
                             <div className="space-y-2 relative">
                               <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Chart Type</label>
-                              <div className="relative group">
-                                <select 
-                                  className="w-full appearance-none bg-white hover:bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-sm cursor-pointer"
-                                  value={field.metadata?.chartType || 'bar'}
-                                  onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, chartType: e.target.value } })}
-                                >
-                                  <option value="bar">Bar</option>
-                                  <option value="line">Line</option>
-                                  <option value="pie">Pie</option>
-                                  <option value="scatter">Scatter</option>
-                                  <option value="radar">Radar</option>
-                                  <option value="funnel">Funnel</option>
-                                  <option value="gauge">Gauge</option>
-                                  <option value="heatmap">Heatmap</option>
-                                  <option value="tree">Tree</option>
-                                  <option value="treemap">Treemap</option>
-                                  <option value="sunburst">Sunburst</option>
-                                  <option value="candlestick">Candlestick</option>
-                                  <option value="boxplot">Boxplot</option>
-                                </select>
-                                <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500 group-hover:text-primary transition-colors">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                                </div>
-                              </div>
+                              <Select 
+                                options={CHART_OPTIONS}
+                                value={CHART_OPTIONS.find(o => o.value === (field.metadata?.chartType || 'bar'))}
+                                onChange={(option) => updateField(field.id, { metadata: { ...field.metadata, chartType: option?.value || 'bar' } })}
+                                classNames={SELECT_STYLES}
+                                unstyled
+                                menuPlacement="auto"
+                              />
                             </div>
                           )}
 
@@ -466,23 +532,18 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                                   onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, sampleText: e.target.value } })}
                                 />
                               </div>
+                              
                               <div className="space-y-2">
                                 <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Font Family</label>
-                                <div className="relative group">
-                                  <select 
-                                    className="w-full appearance-none bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none cursor-pointer"
-                                    value={field.metadata?.fontFamily || ''}
-                                    onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, fontFamily: e.target.value } })}
-                                  >
-                                    <option value="">Default</option>
-                                    <option value="'Playfair Display', serif">Playfair Display</option>
-                                    <option value="'Cinzel', serif">Cinzel</option>
-                                    <option value="'Montserrat', sans-serif">Montserrat</option>
-                                    <option value="'Lato', sans-serif">Lato</option>
-                                    <option value="'Oswald', sans-serif">Oswald</option>
-                                    <option value="'Merriweather', serif">Merriweather</option>
-                                  </select>
-                                </div>
+                                <Select 
+                                  options={FONT_OPTIONS}
+                                  value={FONT_OPTIONS.find(o => o.value === (field.metadata?.fontFamily || '')) || FONT_OPTIONS[0]}
+                                  onChange={(option) => updateField(field.id, { metadata: { ...field.metadata, fontFamily: option?.value || '' } })}
+                                  classNames={SELECT_STYLES}
+                                  unstyled
+                                  isSearchable
+                                  menuPlacement="auto"
+                                />
                               </div>
 
                               <div className="space-y-2">
