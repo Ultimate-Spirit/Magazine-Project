@@ -299,8 +299,10 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
           minScale={0.25}
           maxScale={3}
           centerOnInit={true}
-          wheel={{ step: 0.1 }}
-          panning={{ disabled: false, excluded: ['react-draggable'] }}
+          wheel={{ step: 0.04, smoothStep: 0.005 }}
+          panning={{ disabled: false, excluded: ['react-draggable'], velocityDisabled: false }}
+          alignmentAnimation={{ animationTime: 200 }}
+          zoomAnimation={{ animationTime: 200 }}
         >
           {({ zoomIn, zoomOut, resetTransform, state }) => (
             <div className="space-y-6">
