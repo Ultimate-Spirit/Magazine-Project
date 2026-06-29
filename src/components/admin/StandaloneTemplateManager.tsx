@@ -180,76 +180,68 @@ export const StandaloneTemplateManager: React.FC<StandaloneTemplateManagerProps>
         </div>
 
         {showCreateTemplate && (
-          <div className="micro-surface p-6 lg:p-8 rounded-[2rem] border border-border/10 space-y-6 animate-in slide-in-from-top-4">
-            <h3 className="text-lg font-bold">{editingTemplate ? `Update ${category}` : `New ${category}`}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Template Name</label>
-                <input 
-                  type="text" 
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                  value={templateForm.template_name}
-                  onChange={(e) => setTemplateForm({ ...templateForm, template_name: e.target.value })}
-                />
+          <VisualTemplateBuilder 
+            value={templatePayload} 
+            onChange={setTemplatePayload} 
+            sidebarHeader={
+              <div className="space-y-6">
+                <h3 className="text-xl font-black text-white">{editingTemplate ? `Update ${category}` : `New ${category}`}</h3>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Template Name</label>
+                    <input 
+                      type="text" 
+                      className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+                      value={templateForm.template_name}
+                      onChange={(e) => setTemplateForm({ ...templateForm, template_name: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Department Tag</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. Sales"
+                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+                        value={templateForm.department_tag}
+                        onChange={(e) => setTemplateForm({ ...templateForm, department_tag: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Weight</label>
+                      <input 
+                        type="number" 
+                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+                        value={templateForm.weight}
+                        onChange={(e) => setTemplateForm({ ...templateForm, weight: parseInt(e.target.value) || 0 })}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Category</label>
-                <input 
-                  type="text" 
-                  className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-base text-muted-foreground cursor-not-allowed"
-                  value={category}
-                  disabled
-                />
+            }
+            sidebarFooter={
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={handleSaveTemplate}
+                  disabled={actionLoading || !templateForm.template_name.trim()}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                >
+                  {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                  Save {category}
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowCreateTemplate(false);
+                    setEditingTemplate(null);
+                  }}
+                  className="w-full px-6 py-4 text-gray-400 font-bold hover:text-white hover:bg-gray-800 rounded-xl transition-all"
+                >
+                  Cancel
+                </button>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Department Tag</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Sales, Marketing"
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                  value={templateForm.department_tag}
-                  onChange={(e) => setTemplateForm({ ...templateForm, department_tag: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Sorting Weight</label>
-                <input 
-                  type="number" 
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                  value={templateForm.weight}
-                  onChange={(e) => setTemplateForm({ ...templateForm, weight: parseInt(e.target.value) || 0 })}
-                />
-              </div>
-
-              <div className="col-span-full space-y-3">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Visual Template Builder</label>
-                <VisualTemplateBuilder 
-                  value={templatePayload} 
-                  onChange={setTemplatePayload} 
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 pt-6 border-t border-border/10">
-              <button 
-                onClick={handleSaveTemplate}
-                disabled={actionLoading || !templateForm.template_name.trim()}
-                className="flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                Save {category}
-              </button>
-              <button 
-                onClick={() => {
-                  setShowCreateTemplate(false);
-                  setEditingTemplate(null);
-                }}
-                className="px-8 py-3 text-muted-foreground font-bold hover:text-foreground hover:bg-muted rounded-xl transition-all"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
+            }
+          />
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
