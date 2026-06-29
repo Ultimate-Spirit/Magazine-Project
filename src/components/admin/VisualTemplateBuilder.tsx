@@ -14,6 +14,10 @@ export interface TemplateField {
   metadata?: {
     chartType?: string;
     maxChars?: number;
+    borderRadius?: number;
+    sampleText?: string;
+    fontFamily?: string;
+    fontColor?: string;
   };
 }
 
@@ -34,6 +38,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
+  const [zoomLevel, setZoomLevel] = useState(1);
   const [fields, setFields] = useState<any[]>([]);
   const [isReady, setIsReady] = useState(false);
 
@@ -202,6 +207,12 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
         <button onClick={() => addField('Icon')} className="flex items-center gap-2 px-4 py-2 bg-background border border-border rounded-lg hover:border-primary hover:text-primary transition-colors text-sm font-bold">
           <Smile className="w-4 h-4" /> Icon
         </button>
+        <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-2 py-1 ml-4 shadow-sm">
+          <button onClick={() => setZoomLevel(z => Math.max(0.25, z - 0.25))} className="w-6 h-6 flex items-center justify-center hover:bg-muted rounded text-muted-foreground font-bold">-</button>
+          <span className="text-xs font-bold w-12 text-center text-foreground">{Math.round(zoomLevel * 100)}%</span>
+          <button onClick={() => setZoomLevel(z => Math.min(3, z + 0.25))} className="w-6 h-6 flex items-center justify-center hover:bg-muted rounded text-muted-foreground font-bold">+</button>
+          <button onClick={() => setZoomLevel(1)} className="text-[10px] font-bold px-2 hover:bg-muted rounded text-muted-foreground uppercase tracking-wider">100%</button>
+        </div>
         <div className="flex-1"></div>
         <button 
           onClick={() => onChange({ ...payload, background_url: '' })}
@@ -212,26 +223,38 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-3 flex justify-center bg-muted/20 border border-border rounded-xl p-8 overflow-auto">
+        <div className="lg:col-span-3 flex justify-center items-start bg-muted/20 border border-border rounded-xl p-8 overflow-auto">
           <div 
-            ref={containerRef}
-            className="relative bg-white shadow-xl aspect-[210/297] w-full max-w-2xl overflow-hidden"
-            style={{
-              backgroundImage: `url(${payload.background_url})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
+            style={{ 
+              transform: `scale(${zoomLevel})`, 
+              transformOrigin: 'top center',
+              transition: 'transform 0.15s ease-out',
+              width: '100%',
+              maxWidth: '42rem',
+              display: 'flex',
+              justifyContent: 'center'
             }}
           >
-            {fields.map(field => {
-              const { width, height } = getContainerSize();
-              
-              // Only render Rnd if container size is known (ref is attached)
-              if (width === 0) return null;
+            <div 
+              ref={containerRef}
+              className="relative bg-white shadow-xl aspect-[210/297] w-full overflow-hidden"
+              style={{
+                backgroundImage: `url(${payload.background_url})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            >
+              {fields.map(field => {
+                const { width, height } = getContainerSize();
+                
+                // Only render Rnd if container size is known (ref is attached)
+                if (width === 0) return null;
 
-              return (
-                <Rnd
-                  key={field.id}
-                  bounds="parent"
+                return (
+                  <Rnd
+                    key={field.id}
+                    scale={zoomLevel}
+                    bounds="parent"
                   size={{
                     width: `${field.width}%`,
                     height: `${field.height}%`
@@ -257,27 +280,44 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                       top: (position.y / height) * 100
                     });
                   }}
+                  style={{
+                    borderRadius: field.metadata?.borderRadius ? `${field.metadata.borderRadius}px` : undefined,
+                  }}
                   className={`border-2 group cursor-move flex items-center justify-center bg-primary/20 backdrop-blur-[1px] ${
                     selectedFieldId === field.id ? 'border-primary z-10 shadow-lg' : 'border-primary/50 border-dashed hover:border-primary z-0'
                   }`}
                   onClick={() => setSelectedFieldId(field.id)}
                 >
-                  <div className="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                  <div className="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-50">
                     <button 
                       type="button"
-                      className="bg-destructive text-white p-1 rounded-sm hover:bg-red-600 transition-colors z-50 pointer-events-auto"
+                      className="bg-destructive text-white p-1 rounded-sm hover:bg-red-600 transition-colors pointer-events-auto"
                       onPointerDown={(e) => { e.stopPropagation(); deleteField(field.id); }}
                       onClick={(e) => { e.stopPropagation(); deleteField(field.id); }}
                     >
                       <X className="w-3 h-3" />
                     </button>
                   </div>
-                  <div className="flex flex-col items-center justify-center p-2 text-primary font-black drop-shadow-md text-center break-words w-full h-full overflow-hidden">
-                    {field.type === 'Text' && <Type className="w-6 h-6 mb-1 opacity-50" />}
+                  <div 
+                    className="flex flex-col items-center justify-center p-2 font-black drop-shadow-md text-center break-words w-full h-full overflow-hidden"
+                    style={{
+                      color: field.metadata?.fontColor || 'hsl(var(--primary))',
+                      fontFamily: field.metadata?.fontFamily || undefined,
+                    }}
+                  >
+                    {field.type === 'Text' && (
+                      field.metadata?.sampleText ? (
+                        <span className="text-base leading-tight break-all">{field.metadata.sampleText}</span>
+                      ) : (
+                        <Type className="w-6 h-6 mb-1 opacity-50" />
+                      )
+                    )}
                     {field.type === 'Image' && <ImageIcon className="w-6 h-6 mb-1 opacity-50" />}
                     {field.type === 'Chart' && <BarChart2 className="w-6 h-6 mb-1 opacity-50" />}
                     {field.type === 'Icon' && <Smile className="w-6 h-6 mb-1 opacity-50" />}
-                    <span className="text-[10px] leading-tight break-all">{field.name}</span>
+                    {!field.metadata?.sampleText && (
+                      <span className="text-[10px] leading-tight break-all">{field.name}</span>
+                    )}
                     {field.metadata?.chartType && (
                       <span className="text-[8px] opacity-75 mt-1 uppercase">[{field.metadata.chartType}]</span>
                     )}
@@ -285,6 +325,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                 </Rnd>
               );
             })}
+          </div>
           </div>
         </div>
         
@@ -346,6 +387,17 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                     </div>
                   </div>
 
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Border Radius (px)</label>
+                    <input 
+                      type="number" 
+                      min="0"
+                      className="w-full bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none"
+                      value={field.metadata?.borderRadius || ''}
+                      onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, borderRadius: e.target.value ? parseInt(e.target.value, 10) : undefined } })}
+                    />
+                  </div>
+
                   {field.type === 'Chart' && (
                     <div className="space-y-2 relative">
                       <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Chart Type</label>
@@ -377,17 +429,65 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                   )}
 
                   {field.type === 'Text' && (
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Max Characters</label>
-                      <input 
-                        type="number" 
-                        placeholder="No limit"
-                        min="1"
-                        className="w-full bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none"
-                        value={field.metadata?.maxChars || ''}
-                        onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, maxChars: e.target.value ? parseInt(e.target.value, 10) : undefined } })}
-                      />
-                    </div>
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Sample Text</label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Header Title"
+                          className="w-full bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none"
+                          value={field.metadata?.sampleText || ''}
+                          onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, sampleText: e.target.value } })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Font Family</label>
+                        <div className="relative group">
+                          <select 
+                            className="w-full appearance-none bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none cursor-pointer"
+                            value={field.metadata?.fontFamily || ''}
+                            onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, fontFamily: e.target.value } })}
+                          >
+                            <option value="">Default</option>
+                            <option value="Arial, sans-serif">Arial</option>
+                            <option value="Helvetica, sans-serif">Helvetica</option>
+                            <option value="Times New Roman, serif">Times New Roman</option>
+                            <option value="'Inter', sans-serif">Inter</option>
+                            <option value="'Roboto', sans-serif">Roboto</option>
+                            <option value="'Outfit', sans-serif">Outfit</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Text Color</label>
+                        <div className="flex gap-2 items-center">
+                          <input 
+                            type="color" 
+                            className="w-10 h-10 rounded cursor-pointer border-0 p-0"
+                            value={field.metadata?.fontColor || '#000000'}
+                            onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, fontColor: e.target.value } })}
+                          />
+                          <input 
+                            type="text"
+                            className="flex-1 bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none"
+                            value={field.metadata?.fontColor || ''}
+                            onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, fontColor: e.target.value } })}
+                            placeholder="#000000"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Max Characters</label>
+                        <input 
+                          type="number" 
+                          placeholder="No limit"
+                          min="1"
+                          className="w-full bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none"
+                          value={field.metadata?.maxChars || ''}
+                          onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, maxChars: e.target.value ? parseInt(e.target.value, 10) : undefined } })}
+                        />
+                      </div>
+                    </>
                   )}
 
                   <div className="pt-4 border-t border-border">
