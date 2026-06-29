@@ -1,7 +1,8 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Rnd } from 'react-rnd';
 import { supabase } from '../../lib/supabaseClient';
-import { Image as ImageIcon, Type, BarChart2, Smile, UploadCloud, X, Loader2, Plus, Settings } from 'lucide-react';
+import { Image as ImageIcon, Type, BarChart2, Smile, UploadCloud, X, Loader2, Plus, Settings, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 
 export interface TemplateField {
   id: string;
@@ -18,6 +19,10 @@ export interface TemplateField {
     sampleText?: string;
     fontFamily?: string;
     fontColor?: string;
+    fontWeight?: string;
+    fontStyle?: string;
+    textDecoration?: string;
+    textAlign?: 'left' | 'center' | 'right';
   };
 }
 
@@ -38,12 +43,10 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
-  const [zoomLevel, setZoomLevel] = useState(1);
   const [fields, setFields] = useState<any[]>([]);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // If creating a new template, data is null, so we must immediately ready the canvas
     if (data === null) {
       setFields([]);
       setIsReady(true);
@@ -51,9 +54,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
     }
 
     if (data && !isReady) {
-      // Create a normalized wrapper so the strict assignment logic safely parses both full rows and direct layout objects
       const safeData = data.layout_json !== undefined ? data : { layout_json: data };
-      
       const layout = safeData?.layout_json; 
       const safeFields = (layout && Array.isArray(layout.fields)) ? layout.fields : []; 
       setFields(safeFields); 
@@ -77,6 +78,28 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
     observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, [isReady, payload.background_url]);
+
+  // Google Font Injection
+  useEffect(() => {
+    const fonts = new Set<string>();
+    fields.forEach(f => {
+      if (f.type === 'Text' && f.metadata?.fontFamily) {
+        const match = f.metadata.fontFamily.match(/^'([^']+)'/);
+        if (match) fonts.add(match[1]);
+      }
+    });
+
+    fonts.forEach(font => {
+      const linkId = `google-font-${font.replace(/\s+/g, '-')}`;
+      if (!document.getElementById(linkId)) {
+        const link = document.createElement('link');
+        link.id = linkId;
+        link.rel = 'stylesheet';
+        link.href = `https://fonts.googleapis.com/css2?family=${font.replace(/\s+/g, '+')}:ital,wght@0,400;0,700;1,400;1,700&display=swap`;
+        document.head.appendChild(link);
+      }
+    });
+  }, [fields]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -192,319 +215,373 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
           )}
         </div>
       ) : (
-        <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-3 bg-muted/30 p-4 rounded-xl border border-border/50">
-        <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground mr-2">Add Field:</span>
-        <button onClick={() => addField('Text')} className="flex items-center gap-2 px-4 py-2 bg-background border border-border rounded-lg hover:border-primary hover:text-primary transition-colors text-sm font-bold">
-          <Type className="w-4 h-4" /> Text
-        </button>
-        <button onClick={() => addField('Image')} className="flex items-center gap-2 px-4 py-2 bg-background border border-border rounded-lg hover:border-primary hover:text-primary transition-colors text-sm font-bold">
-          <ImageIcon className="w-4 h-4" /> Image
-        </button>
-        <button onClick={() => addField('Chart')} className="flex items-center gap-2 px-4 py-2 bg-background border border-border rounded-lg hover:border-primary hover:text-primary transition-colors text-sm font-bold">
-          <BarChart2 className="w-4 h-4" /> Chart
-        </button>
-        <button onClick={() => addField('Icon')} className="flex items-center gap-2 px-4 py-2 bg-background border border-border rounded-lg hover:border-primary hover:text-primary transition-colors text-sm font-bold">
-          <Smile className="w-4 h-4" /> Icon
-        </button>
-        <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-2 py-1 ml-4 shadow-sm">
-          <button onClick={() => setZoomLevel(z => Math.max(0.25, z - 0.25))} className="w-6 h-6 flex items-center justify-center hover:bg-muted rounded text-muted-foreground font-bold">-</button>
-          <span className="text-xs font-bold w-12 text-center text-foreground">{Math.round(zoomLevel * 100)}%</span>
-          <button onClick={() => setZoomLevel(z => Math.min(3, z + 0.25))} className="w-6 h-6 flex items-center justify-center hover:bg-muted rounded text-muted-foreground font-bold">+</button>
-          <button onClick={() => setZoomLevel(1)} className="text-[10px] font-bold px-2 hover:bg-muted rounded text-muted-foreground uppercase tracking-wider">100%</button>
-        </div>
-        <div className="flex-1"></div>
-        <button 
-          onClick={() => onChange({ ...payload, background_url: '' })}
-          className="text-xs font-bold text-destructive hover:underline"
+        <TransformWrapper
+          initialScale={1}
+          minScale={0.25}
+          maxScale={3}
+          centerOnInit={true}
+          wheel={{ step: 0.1 }}
+          panning={{ disabled: false, excluded: ['react-draggable'] }}
         >
-          Change Background
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-3 flex justify-center items-start bg-muted/20 border border-border rounded-xl p-8 overflow-auto">
-          <div 
-            style={{ 
-              transform: `scale(${zoomLevel})`, 
-              transformOrigin: 'top center',
-              transition: 'transform 0.15s ease-out',
-              width: '100%',
-              maxWidth: '42rem',
-              display: 'flex',
-              justifyContent: 'center'
-            }}
-          >
-            <div 
-              ref={containerRef}
-              className="relative bg-white shadow-xl aspect-[210/297] w-full overflow-hidden"
-              style={{
-                backgroundImage: `url(${payload.background_url})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}
-            >
-              {fields.map(field => {
-                const { width, height } = getContainerSize();
-                
-                // Only render Rnd if container size is known (ref is attached)
-                if (width === 0) return null;
-
-                return (
-                  <Rnd
-                    key={field.id}
-                    scale={zoomLevel}
-                    bounds="parent"
-                  size={{
-                    width: `${field.width}%`,
-                    height: `${field.height}%`
-                  }}
-                  position={{
-                    x: (field.left / 100) * width,
-                    y: (field.top / 100) * height
-                  }}
-                  onDragStop={(e, d) => {
-                    updateField(field.id, {
-                      left: (d.x / width) * 100,
-                      top: (d.y / height) * 100
-                    });
-                  }}
-                  onResizeStop={(e, direction, ref, delta, position) => {
-                    const newWidth = parseFloat(ref.style.width); // This is in % because of default settings
-                    const newHeight = parseFloat(ref.style.height); // This is in %
-                    
-                    updateField(field.id, {
-                      width: newWidth,
-                      height: newHeight,
-                      left: (position.x / width) * 100,
-                      top: (position.y / height) * 100
-                    });
-                  }}
-                  style={{
-                    borderRadius: field.metadata?.borderRadius ? `${field.metadata.borderRadius}px` : undefined,
-                  }}
-                  className={`border-2 group cursor-move flex items-center justify-center bg-primary/20 backdrop-blur-[1px] ${
-                    selectedFieldId === field.id ? 'border-primary z-10 shadow-lg' : 'border-primary/50 border-dashed hover:border-primary z-0'
-                  }`}
-                  onClick={() => setSelectedFieldId(field.id)}
-                >
-                  <div className="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-50">
-                    <button 
-                      type="button"
-                      className="bg-destructive text-white p-1 rounded-sm hover:bg-red-600 transition-colors pointer-events-auto"
-                      onPointerDown={(e) => { e.stopPropagation(); deleteField(field.id); }}
-                      onClick={(e) => { e.stopPropagation(); deleteField(field.id); }}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                  <div 
-                    className="flex flex-col items-center justify-center p-2 font-black drop-shadow-md text-center break-words w-full h-full overflow-hidden"
-                    style={{
-                      color: field.metadata?.fontColor || 'hsl(var(--primary))',
-                      fontFamily: field.metadata?.fontFamily || undefined,
-                    }}
-                  >
-                    {field.type === 'Text' && (
-                      field.metadata?.sampleText ? (
-                        <span className="text-base leading-tight break-all">{field.metadata.sampleText}</span>
-                      ) : (
-                        <Type className="w-6 h-6 mb-1 opacity-50" />
-                      )
-                    )}
-                    {field.type === 'Image' && <ImageIcon className="w-6 h-6 mb-1 opacity-50" />}
-                    {field.type === 'Chart' && <BarChart2 className="w-6 h-6 mb-1 opacity-50" />}
-                    {field.type === 'Icon' && <Smile className="w-6 h-6 mb-1 opacity-50" />}
-                    {!field.metadata?.sampleText && (
-                      <span className="text-[10px] leading-tight break-all">{field.name}</span>
-                    )}
-                    {field.metadata?.chartType && (
-                      <span className="text-[8px] opacity-75 mt-1 uppercase">[{field.metadata.chartType}]</span>
-                    )}
-                  </div>
-                </Rnd>
-              );
-            })}
-          </div>
-          </div>
-        </div>
-        
-        <div className="space-y-4">
-          <h3 className="font-bold text-lg border-b border-border pb-2">Field Settings</h3>
-          {selectedFieldId ? (
-            <div className="space-y-4">
-              {fields.filter(f => f.id === selectedFieldId).map(field => (
-                <div key={field.id} className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Variable Name</label>
-                    <input 
-                      type="text" 
-                      className="w-full bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none"
-                      value={field.name}
-                      onChange={(e) => updateField(field.id, { name: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Top (%)</label>
-                      <input 
-                        type="number" 
-                        step="0.1"
-                        className="w-full bg-background border border-border rounded-xl px-3 py-1.5 text-sm outline-none"
-                        value={field.top.toFixed(1)}
-                        onChange={(e) => updateField(field.id, { top: parseFloat(e.target.value) || 0 })}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Left (%)</label>
-                      <input 
-                        type="number" 
-                        step="0.1"
-                        className="w-full bg-background border border-border rounded-xl px-3 py-1.5 text-sm outline-none"
-                        value={field.left.toFixed(1)}
-                        onChange={(e) => updateField(field.id, { left: parseFloat(e.target.value) || 0 })}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Width (%)</label>
-                      <input 
-                        type="number" 
-                        step="0.1"
-                        className="w-full bg-background border border-border rounded-xl px-3 py-1.5 text-sm outline-none"
-                        value={field.width.toFixed(1)}
-                        onChange={(e) => updateField(field.id, { width: parseFloat(e.target.value) || 0 })}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Height (%)</label>
-                      <input 
-                        type="number" 
-                        step="0.1"
-                        className="w-full bg-background border border-border rounded-xl px-3 py-1.5 text-sm outline-none"
-                        value={field.height.toFixed(1)}
-                        onChange={(e) => updateField(field.id, { height: parseFloat(e.target.value) || 0 })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Border Radius (px)</label>
-                    <input 
-                      type="number" 
-                      min="0"
-                      className="w-full bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none"
-                      value={field.metadata?.borderRadius || ''}
-                      onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, borderRadius: e.target.value ? parseInt(e.target.value, 10) : undefined } })}
-                    />
-                  </div>
-
-                  {field.type === 'Chart' && (
-                    <div className="space-y-2 relative">
-                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Chart Type</label>
-                      <div className="relative group">
-                        <select 
-                          className="w-full appearance-none bg-white hover:bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-sm cursor-pointer"
-                          value={field.metadata?.chartType || 'bar'}
-                          onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, chartType: e.target.value } })}
-                        >
-                          <option value="bar">Bar</option>
-                          <option value="line">Line</option>
-                          <option value="pie">Pie</option>
-                          <option value="scatter">Scatter</option>
-                          <option value="radar">Radar</option>
-                          <option value="funnel">Funnel</option>
-                          <option value="gauge">Gauge</option>
-                          <option value="heatmap">Heatmap</option>
-                          <option value="tree">Tree</option>
-                          <option value="treemap">Treemap</option>
-                          <option value="sunburst">Sunburst</option>
-                          <option value="candlestick">Candlestick</option>
-                          <option value="boxplot">Boxplot</option>
-                        </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500 group-hover:text-primary transition-colors">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {field.type === 'Text' && (
-                    <>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Sample Text</label>
-                        <input 
-                          type="text" 
-                          placeholder="e.g. Header Title"
-                          className="w-full bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none"
-                          value={field.metadata?.sampleText || ''}
-                          onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, sampleText: e.target.value } })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Font Family</label>
-                        <div className="relative group">
-                          <select 
-                            className="w-full appearance-none bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none cursor-pointer"
-                            value={field.metadata?.fontFamily || ''}
-                            onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, fontFamily: e.target.value } })}
-                          >
-                            <option value="">Default</option>
-                            <option value="Arial, sans-serif">Arial</option>
-                            <option value="Helvetica, sans-serif">Helvetica</option>
-                            <option value="Times New Roman, serif">Times New Roman</option>
-                            <option value="'Inter', sans-serif">Inter</option>
-                            <option value="'Roboto', sans-serif">Roboto</option>
-                            <option value="'Outfit', sans-serif">Outfit</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Text Color</label>
-                        <div className="flex gap-2 items-center">
-                          <input 
-                            type="color" 
-                            className="w-10 h-10 rounded cursor-pointer border-0 p-0"
-                            value={field.metadata?.fontColor || '#000000'}
-                            onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, fontColor: e.target.value } })}
-                          />
-                          <input 
-                            type="text"
-                            className="flex-1 bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none"
-                            value={field.metadata?.fontColor || ''}
-                            onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, fontColor: e.target.value } })}
-                            placeholder="#000000"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Max Characters</label>
-                        <input 
-                          type="number" 
-                          placeholder="No limit"
-                          min="1"
-                          className="w-full bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none"
-                          value={field.metadata?.maxChars || ''}
-                          onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, maxChars: e.target.value ? parseInt(e.target.value, 10) : undefined } })}
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  <div className="pt-4 border-t border-border">
-                    <p className="text-xs text-muted-foreground">Coordinates are calculated strictly as percentages relative to the A4 container.</p>
-                  </div>
+          {({ zoomIn, zoomOut, resetTransform, state }) => (
+            <div className="space-y-6">
+              <div className="flex flex-wrap items-center gap-3 bg-muted/30 p-4 rounded-xl border border-border/50">
+                <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground mr-2">Add Field:</span>
+                <button onClick={() => addField('Text')} className="flex items-center gap-2 px-4 py-2 bg-background border border-border rounded-lg hover:border-primary hover:text-primary transition-colors text-sm font-bold">
+                  <Type className="w-4 h-4" /> Text
+                </button>
+                <button onClick={() => addField('Image')} className="flex items-center gap-2 px-4 py-2 bg-background border border-border rounded-lg hover:border-primary hover:text-primary transition-colors text-sm font-bold">
+                  <ImageIcon className="w-4 h-4" /> Image
+                </button>
+                <button onClick={() => addField('Chart')} className="flex items-center gap-2 px-4 py-2 bg-background border border-border rounded-lg hover:border-primary hover:text-primary transition-colors text-sm font-bold">
+                  <BarChart2 className="w-4 h-4" /> Chart
+                </button>
+                <button onClick={() => addField('Icon')} className="flex items-center gap-2 px-4 py-2 bg-background border border-border rounded-lg hover:border-primary hover:text-primary transition-colors text-sm font-bold">
+                  <Smile className="w-4 h-4" /> Icon
+                </button>
+                <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-2 py-1 ml-4 shadow-sm">
+                  <button onClick={() => zoomOut()} className="w-6 h-6 flex items-center justify-center hover:bg-muted rounded text-muted-foreground font-bold">-</button>
+                  <span className="text-xs font-bold w-12 text-center text-foreground">{Math.round(state.scale * 100)}%</span>
+                  <button onClick={() => zoomIn()} className="w-6 h-6 flex items-center justify-center hover:bg-muted rounded text-muted-foreground font-bold">+</button>
+                  <button onClick={() => resetTransform()} className="text-[10px] font-bold px-2 hover:bg-muted rounded text-muted-foreground uppercase tracking-wider">100%</button>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center text-center py-12 text-muted-foreground">
-              <Settings className="w-8 h-8 mb-2 opacity-20" />
-              <p className="text-sm font-medium">Select a field on the canvas to edit its properties.</p>
+                <div className="flex-1"></div>
+                <button 
+                  onClick={() => onChange({ ...payload, background_url: '' })}
+                  className="text-xs font-bold text-destructive hover:underline"
+                >
+                  Change Background
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div className="lg:col-span-3 flex justify-center items-start bg-muted/20 border border-border rounded-xl p-0 overflow-hidden h-[800px]">
+                  <TransformComponent wrapperClass="w-full h-full" contentClass="w-full h-full flex justify-center items-center">
+                    <div 
+                      ref={containerRef}
+                      className="relative bg-white shadow-xl aspect-[210/297] w-full max-w-2xl overflow-hidden"
+                      style={{
+                        backgroundImage: `url(${payload.background_url})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center'
+                      }}
+                    >
+                      {fields.map(field => {
+                        const { width, height } = getContainerSize();
+                        
+                        if (width === 0) return null;
+
+                        return (
+                          <Rnd
+                            key={field.id}
+                            scale={state.scale}
+                            bounds="parent"
+                            size={{
+                              width: `${field.width}%`,
+                              height: `${field.height}%`
+                            }}
+                            position={{
+                              x: (field.left / 100) * width,
+                              y: (field.top / 100) * height
+                            }}
+                            onDragStop={(e, d) => {
+                              updateField(field.id, {
+                                left: (d.x / width) * 100,
+                                top: (d.y / height) * 100
+                              });
+                            }}
+                            onResizeStop={(e, direction, ref, delta, position) => {
+                              const newWidth = parseFloat(ref.style.width);
+                              const newHeight = parseFloat(ref.style.height);
+                              
+                              updateField(field.id, {
+                                width: newWidth,
+                                height: newHeight,
+                                left: (position.x / width) * 100,
+                                top: (position.y / height) * 100
+                              });
+                            }}
+                            style={{
+                              borderRadius: field.metadata?.borderRadius ? `${field.metadata.borderRadius}px` : undefined,
+                            }}
+                            className={`border-2 group cursor-move flex items-center justify-center bg-primary/20 backdrop-blur-[1px] react-draggable ${
+                              selectedFieldId === field.id ? 'border-primary z-10 shadow-lg' : 'border-primary/50 border-dashed hover:border-primary z-0'
+                            }`}
+                            onClick={() => setSelectedFieldId(field.id)}
+                          >
+                            <div className="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-50">
+                              <button 
+                                type="button"
+                                className="bg-destructive text-white p-1 rounded-sm hover:bg-red-600 transition-colors pointer-events-auto"
+                                onPointerDown={(e) => { e.stopPropagation(); deleteField(field.id); }}
+                                onClick={(e) => { e.stopPropagation(); deleteField(field.id); }}
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                            <div 
+                              className="flex flex-col items-center justify-center p-2 font-black drop-shadow-md text-center break-words w-full h-full overflow-hidden"
+                              style={{
+                                color: field.metadata?.fontColor || 'hsl(var(--primary))',
+                                fontFamily: field.metadata?.fontFamily || undefined,
+                                fontWeight: field.metadata?.fontWeight || 'normal',
+                                fontStyle: field.metadata?.fontStyle || 'normal',
+                                textDecoration: field.metadata?.textDecoration || 'none',
+                                textAlign: field.metadata?.textAlign || 'center',
+                                alignItems: field.metadata?.textAlign === 'left' ? 'flex-start' : field.metadata?.textAlign === 'right' ? 'flex-end' : 'center',
+                              }}
+                            >
+                              {field.type === 'Text' && (
+                                field.metadata?.sampleText ? (
+                                  <span className="text-base leading-tight break-all" style={{ width: '100%' }}>{field.metadata.sampleText}</span>
+                                ) : (
+                                  <Type className="w-6 h-6 mb-1 opacity-50" />
+                                )
+                              )}
+                              {field.type === 'Image' && <ImageIcon className="w-6 h-6 mb-1 opacity-50" />}
+                              {field.type === 'Chart' && <BarChart2 className="w-6 h-6 mb-1 opacity-50" />}
+                              {field.type === 'Icon' && <Smile className="w-6 h-6 mb-1 opacity-50" />}
+                              {!field.metadata?.sampleText && (
+                                <span className="text-[10px] leading-tight break-all">{field.name}</span>
+                              )}
+                              {field.metadata?.chartType && (
+                                <span className="text-[8px] opacity-75 mt-1 uppercase">[{field.metadata.chartType}]</span>
+                              )}
+                            </div>
+                          </Rnd>
+                        );
+                      })}
+                    </div>
+                  </TransformComponent>
+                </div>
+                
+                <div className="space-y-4 max-h-[800px] overflow-auto pr-2">
+                  <h3 className="font-bold text-lg border-b border-border pb-2">Field Settings</h3>
+                  {selectedFieldId ? (
+                    <div className="space-y-4">
+                      {fields.filter(f => f.id === selectedFieldId).map(field => (
+                        <div key={field.id} className="space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Variable Name</label>
+                            <input 
+                              type="text" 
+                              className="w-full bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none"
+                              value={field.name}
+                              onChange={(e) => updateField(field.id, { name: e.target.value })}
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Top (%)</label>
+                              <input 
+                                type="number" 
+                                step="0.1"
+                                className="w-full bg-background border border-border rounded-xl px-3 py-1.5 text-sm outline-none"
+                                value={field.top.toFixed(1)}
+                                onChange={(e) => updateField(field.id, { top: parseFloat(e.target.value) || 0 })}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Left (%)</label>
+                              <input 
+                                type="number" 
+                                step="0.1"
+                                className="w-full bg-background border border-border rounded-xl px-3 py-1.5 text-sm outline-none"
+                                value={field.left.toFixed(1)}
+                                onChange={(e) => updateField(field.id, { left: parseFloat(e.target.value) || 0 })}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Width (%)</label>
+                              <input 
+                                type="number" 
+                                step="0.1"
+                                className="w-full bg-background border border-border rounded-xl px-3 py-1.5 text-sm outline-none"
+                                value={field.width.toFixed(1)}
+                                onChange={(e) => updateField(field.id, { width: parseFloat(e.target.value) || 0 })}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Height (%)</label>
+                              <input 
+                                type="number" 
+                                step="0.1"
+                                className="w-full bg-background border border-border rounded-xl px-3 py-1.5 text-sm outline-none"
+                                value={field.height.toFixed(1)}
+                                onChange={(e) => updateField(field.id, { height: parseFloat(e.target.value) || 0 })}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Border Radius (px)</label>
+                            <input 
+                              type="number" 
+                              min="0"
+                              className="w-full bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none"
+                              value={field.metadata?.borderRadius || ''}
+                              onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, borderRadius: e.target.value ? parseInt(e.target.value, 10) : undefined } })}
+                            />
+                          </div>
+
+                          {field.type === 'Chart' && (
+                            <div className="space-y-2 relative">
+                              <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Chart Type</label>
+                              <div className="relative group">
+                                <select 
+                                  className="w-full appearance-none bg-white hover:bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-sm cursor-pointer"
+                                  value={field.metadata?.chartType || 'bar'}
+                                  onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, chartType: e.target.value } })}
+                                >
+                                  <option value="bar">Bar</option>
+                                  <option value="line">Line</option>
+                                  <option value="pie">Pie</option>
+                                  <option value="scatter">Scatter</option>
+                                  <option value="radar">Radar</option>
+                                  <option value="funnel">Funnel</option>
+                                  <option value="gauge">Gauge</option>
+                                  <option value="heatmap">Heatmap</option>
+                                  <option value="tree">Tree</option>
+                                  <option value="treemap">Treemap</option>
+                                  <option value="sunburst">Sunburst</option>
+                                  <option value="candlestick">Candlestick</option>
+                                  <option value="boxplot">Boxplot</option>
+                                </select>
+                                <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500 group-hover:text-primary transition-colors">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {field.type === 'Text' && (
+                            <>
+                              <div className="space-y-2">
+                                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Sample Text</label>
+                                <input 
+                                  type="text" 
+                                  placeholder="e.g. Header Title"
+                                  className="w-full bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none"
+                                  value={field.metadata?.sampleText || ''}
+                                  onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, sampleText: e.target.value } })}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Font Family</label>
+                                <div className="relative group">
+                                  <select 
+                                    className="w-full appearance-none bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none cursor-pointer"
+                                    value={field.metadata?.fontFamily || ''}
+                                    onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, fontFamily: e.target.value } })}
+                                  >
+                                    <option value="">Default</option>
+                                    <option value="'Playfair Display', serif">Playfair Display</option>
+                                    <option value="'Cinzel', serif">Cinzel</option>
+                                    <option value="'Montserrat', sans-serif">Montserrat</option>
+                                    <option value="'Lato', sans-serif">Lato</option>
+                                    <option value="'Oswald', sans-serif">Oswald</option>
+                                    <option value="'Merriweather', serif">Merriweather</option>
+                                  </select>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Text Formatting</label>
+                                <div className="flex gap-2">
+                                  <button 
+                                    onClick={() => updateField(field.id, { metadata: { ...field.metadata, fontWeight: field.metadata?.fontWeight === 'bold' ? 'normal' : 'bold' }})}
+                                    className={`p-2 border rounded-lg transition-colors ${field.metadata?.fontWeight === 'bold' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted text-muted-foreground'}`}
+                                  >
+                                    <Bold className="w-4 h-4" />
+                                  </button>
+                                  <button 
+                                    onClick={() => updateField(field.id, { metadata: { ...field.metadata, fontStyle: field.metadata?.fontStyle === 'italic' ? 'normal' : 'italic' }})}
+                                    className={`p-2 border rounded-lg transition-colors ${field.metadata?.fontStyle === 'italic' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted text-muted-foreground'}`}
+                                  >
+                                    <Italic className="w-4 h-4" />
+                                  </button>
+                                  <button 
+                                    onClick={() => updateField(field.id, { metadata: { ...field.metadata, textDecoration: field.metadata?.textDecoration === 'underline' ? 'none' : 'underline' }})}
+                                    className={`p-2 border rounded-lg transition-colors ${field.metadata?.textDecoration === 'underline' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted text-muted-foreground'}`}
+                                  >
+                                    <Underline className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Text Alignment</label>
+                                <div className="flex gap-2">
+                                  <button 
+                                    onClick={() => updateField(field.id, { metadata: { ...field.metadata, textAlign: 'left' }})}
+                                    className={`p-2 border rounded-lg transition-colors ${field.metadata?.textAlign === 'left' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted text-muted-foreground'}`}
+                                  >
+                                    <AlignLeft className="w-4 h-4" />
+                                  </button>
+                                  <button 
+                                    onClick={() => updateField(field.id, { metadata: { ...field.metadata, textAlign: 'center' }})}
+                                    className={`p-2 border rounded-lg transition-colors ${(!field.metadata?.textAlign || field.metadata?.textAlign === 'center') ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted text-muted-foreground'}`}
+                                  >
+                                    <AlignCenter className="w-4 h-4" />
+                                  </button>
+                                  <button 
+                                    onClick={() => updateField(field.id, { metadata: { ...field.metadata, textAlign: 'right' }})}
+                                    className={`p-2 border rounded-lg transition-colors ${field.metadata?.textAlign === 'right' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted text-muted-foreground'}`}
+                                  >
+                                    <AlignRight className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Text Color</label>
+                                <div className="flex gap-2 items-center">
+                                  <input 
+                                    type="color" 
+                                    className="w-10 h-10 rounded cursor-pointer border-0 p-0"
+                                    value={field.metadata?.fontColor || '#000000'}
+                                    onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, fontColor: e.target.value } })}
+                                  />
+                                  <input 
+                                    type="text"
+                                    className="flex-1 bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none"
+                                    value={field.metadata?.fontColor || ''}
+                                    onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, fontColor: e.target.value } })}
+                                    placeholder="#000000"
+                                  />
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Max Characters</label>
+                                <input 
+                                  type="number" 
+                                  placeholder="No limit"
+                                  min="1"
+                                  className="w-full bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none"
+                                  value={field.metadata?.maxChars || ''}
+                                  onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, maxChars: e.target.value ? parseInt(e.target.value, 10) : undefined } })}
+                                />
+                              </div>
+                            </>
+                          )}
+
+                          <div className="pt-4 border-t border-border">
+                            <p className="text-xs text-muted-foreground">Coordinates are calculated strictly as percentages relative to the A4 container.</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-center py-12 text-muted-foreground">
+                      <Settings className="w-8 h-8 mb-2 opacity-20" />
+                      <p className="text-sm font-medium">Select a field on the canvas to edit its properties.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
-        </div>
-      </div>
-        </div>
+        </TransformWrapper>
       )}
     </div>
   );
