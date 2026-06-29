@@ -147,7 +147,7 @@ export const StandaloneTemplateManager: React.FC<StandaloneTemplateManagerProps>
   }
 
   return (
-    <div className="p-8 pb-32 max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-8">
+    <div className="w-full pb-32 space-y-8 animate-in fade-in slide-in-from-bottom-8">
       {error && (
         <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
