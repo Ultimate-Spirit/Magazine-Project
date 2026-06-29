@@ -185,33 +185,33 @@ export const StandaloneTemplateManager: React.FC<StandaloneTemplateManagerProps>
             onChange={setTemplatePayload} 
             sidebarHeader={
               <div className="space-y-6">
-                <h3 className="text-xl font-black text-white">{editingTemplate ? `Update ${category}` : `New ${category}`}</h3>
+                <h3 className="text-xl font-black text-foreground">{editingTemplate ? `Update ${category}` : `New ${category}`}</h3>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Template Name</label>
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Template Name</label>
                     <input 
                       type="text" 
-                      className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+                      className="w-full bg-background border border-border text-foreground rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
                       value={templateForm.template_name}
                       onChange={(e) => setTemplateForm({ ...templateForm, template_name: e.target.value })}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Department Tag</label>
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Department Tag</label>
                       <input 
                         type="text" 
                         placeholder="e.g. Sales"
-                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+                        className="w-full bg-background border border-border text-foreground rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
                         value={templateForm.department_tag}
                         onChange={(e) => setTemplateForm({ ...templateForm, department_tag: e.target.value })}
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Weight</label>
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Weight</label>
                       <input 
                         type="number" 
-                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+                        className="w-full bg-background border border-border text-foreground rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
                         value={templateForm.weight}
                         onChange={(e) => setTemplateForm({ ...templateForm, weight: parseInt(e.target.value) || 0 })}
                       />
@@ -235,7 +235,7 @@ export const StandaloneTemplateManager: React.FC<StandaloneTemplateManagerProps>
                     setShowCreateTemplate(false);
                     setEditingTemplate(null);
                   }}
-                  className="w-full px-6 py-4 text-gray-400 font-bold hover:text-white hover:bg-gray-800 rounded-xl transition-all"
+                  className="w-full px-6 py-4 text-muted-foreground font-bold hover:text-foreground hover:bg-muted rounded-xl transition-all"
                 >
                   Cancel
                 </button>

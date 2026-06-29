@@ -110,12 +110,12 @@ const CHART_OPTIONS = [
 ];
 
 const SELECT_STYLES = {
-  control: (state: any) => `!bg-gray-800 !border-gray-700 !rounded-xl !shadow-sm !min-h-[42px] ${state.isFocused ? '!border-primary !ring-1 !ring-primary' : ''}`,
-  menu: () => `!bg-gray-800 !border !border-gray-700 !rounded-xl !shadow-xl !mt-1 !z-50`,
-  option: (state: any) => `!cursor-pointer ${state.isFocused ? '!bg-gray-700' : ''} ${state.isSelected ? '!bg-primary/20 !text-primary !font-bold' : '!text-white'}`,
-  singleValue: () => `!text-white !text-sm`,
-  input: () => `!text-white`,
-  placeholder: () => `!text-gray-400`,
+  control: (state: any) => `!bg-background !border-border !rounded-xl !shadow-sm !min-h-[42px] ${state.isFocused ? '!border-primary !ring-1 !ring-primary' : ''}`,
+  menu: () => `!bg-background !border !border-border !rounded-xl !shadow-md !mt-1 !z-50`,
+  option: (state: any) => `!cursor-pointer ${state.isFocused ? '!bg-muted/50' : ''} ${state.isSelected ? '!bg-primary/10 !text-primary !font-bold' : '!text-foreground'}`,
+  singleValue: () => `!text-foreground !text-sm`,
+  input: () => `!text-foreground`,
+  placeholder: () => `!text-muted-foreground`,
 };
 
 export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ value: data, onChange, isLoading, sidebarHeader, sidebarFooter }) => {
@@ -399,7 +399,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                             <div className="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-50">
                               <button 
                                 type="button"
-                                className="bg-red-500 text-white p-1 rounded-sm hover:bg-red-600 transition-colors pointer-events-auto shadow-md"
+                                className="bg-destructive text-white p-1 rounded-sm hover:bg-red-600 transition-colors pointer-events-auto shadow-md"
                                 onPointerDown={(e) => { e.stopPropagation(); deleteField(field.id); }}
                                 onClick={(e) => { e.stopPropagation(); deleteField(field.id); }}
                               >
@@ -447,63 +447,63 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
         )}
       </div>
 
-      <div className="w-[400px] flex-shrink-0 h-full overflow-y-auto bg-gray-900 border-l border-gray-800 p-6 flex flex-col gap-6 custom-scrollbar">
+      <div className="w-[400px] flex-shrink-0 h-full overflow-y-auto bg-background border-l border-border p-6 flex flex-col gap-6 custom-scrollbar">
         {sidebarHeader}
         
         {payload.background_url && (
           <div className="flex-1 flex flex-col min-h-0">
-            <h3 className="font-black text-lg border-b border-gray-800 pb-3 text-white mb-6">Field Properties</h3>
+            <h3 className="font-bold text-lg border-b border-border pb-3 text-foreground mb-6">Field Settings</h3>
             {selectedFieldId ? (
               <div className="space-y-6">
                 {fields.filter(f => f.id === selectedFieldId).map(field => (
                   <div key={field.id} className="space-y-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Variable Name</label>
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Variable Name</label>
                       <input 
                         type="text" 
-                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+                        className="w-full bg-background border border-border text-foreground rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
                         value={field.name}
                         onChange={(e) => updateField(field.id, { name: e.target.value })}
                       />
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4 bg-gray-800/50 p-4 rounded-2xl border border-gray-800">
+                    <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-2xl border border-border">
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Top (%)</label>
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Top (%)</label>
                         <input 
                           type="number" 
                           step="0.1"
-                          className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm outline-none"
+                          className="w-full bg-background border border-border text-foreground rounded-lg px-3 py-1.5 text-sm outline-none"
                           value={field.top.toFixed(1)}
                           onChange={(e) => updateField(field.id, { top: parseFloat(e.target.value) || 0 })}
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Left (%)</label>
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Left (%)</label>
                         <input 
                           type="number" 
                           step="0.1"
-                          className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm outline-none"
+                          className="w-full bg-background border border-border text-foreground rounded-lg px-3 py-1.5 text-sm outline-none"
                           value={field.left.toFixed(1)}
                           onChange={(e) => updateField(field.id, { left: parseFloat(e.target.value) || 0 })}
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Width (%)</label>
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Width (%)</label>
                         <input 
                           type="number" 
                           step="0.1"
-                          className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm outline-none"
+                          className="w-full bg-background border border-border text-foreground rounded-lg px-3 py-1.5 text-sm outline-none"
                           value={field.width.toFixed(1)}
                           onChange={(e) => updateField(field.id, { width: parseFloat(e.target.value) || 0 })}
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Height (%)</label>
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Height (%)</label>
                         <input 
                           type="number" 
                           step="0.1"
-                          className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm outline-none"
+                          className="w-full bg-background border border-border text-foreground rounded-lg px-3 py-1.5 text-sm outline-none"
                           value={field.height.toFixed(1)}
                           onChange={(e) => updateField(field.id, { height: parseFloat(e.target.value) || 0 })}
                         />
@@ -511,11 +511,11 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Border Radius (px)</label>
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Border Radius (px)</label>
                       <input 
                         type="number" 
                         min="0"
-                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+                        className="w-full bg-background border border-border text-foreground rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
                         value={field.metadata?.borderRadius || ''}
                         onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, borderRadius: e.target.value ? parseInt(e.target.value, 10) : undefined } })}
                       />
@@ -523,7 +523,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
 
                     {field.type === 'Chart' && (
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Chart Type</label>
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Chart Type</label>
                         <Select 
                           options={CHART_OPTIONS}
                           value={CHART_OPTIONS.find(o => o.value === (field.metadata?.chartType || 'bar'))}
@@ -538,18 +538,18 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                     {field.type === 'Text' && (
                       <div className="space-y-6">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Sample Text</label>
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Sample Text</label>
                           <textarea 
                             rows={3}
                             placeholder="e.g. Header Title"
-                            className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary outline-none transition-all resize-none"
+                            className="w-full bg-background border border-border text-foreground rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-primary outline-none transition-all resize-none"
                             value={field.metadata?.sampleText || ''}
                             onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, sampleText: e.target.value } })}
                           />
                         </div>
                         
                         <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Font Family</label>
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Font Family</label>
                           <Select 
                             options={FONT_OPTIONS}
                             value={FONT_OPTIONS.find(o => o.value === (field.metadata?.fontFamily || '')) || FONT_OPTIONS[0]}
@@ -562,23 +562,23 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                         </div>
 
                         <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Text Formatting</label>
-                          <div className="flex gap-2 p-1 bg-gray-800 border border-gray-700 rounded-xl">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Text Formatting</label>
+                          <div className="flex gap-2">
                             <button 
                               onClick={() => updateField(field.id, { metadata: { ...field.metadata, fontWeight: field.metadata?.fontWeight === 'bold' ? 'normal' : 'bold' }})}
-                              className={`flex-1 flex justify-center p-2 rounded-lg transition-colors ${field.metadata?.fontWeight === 'bold' ? 'bg-primary text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
+                              className={`flex-1 flex justify-center p-2 border rounded-lg transition-colors ${field.metadata?.fontWeight === 'bold' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted text-muted-foreground'}`}
                             >
                               <Bold className="w-4 h-4" />
                             </button>
                             <button 
                               onClick={() => updateField(field.id, { metadata: { ...field.metadata, fontStyle: field.metadata?.fontStyle === 'italic' ? 'normal' : 'italic' }})}
-                              className={`flex-1 flex justify-center p-2 rounded-lg transition-colors ${field.metadata?.fontStyle === 'italic' ? 'bg-primary text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
+                              className={`flex-1 flex justify-center p-2 border rounded-lg transition-colors ${field.metadata?.fontStyle === 'italic' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted text-muted-foreground'}`}
                             >
                               <Italic className="w-4 h-4" />
                             </button>
                             <button 
                               onClick={() => updateField(field.id, { metadata: { ...field.metadata, textDecoration: field.metadata?.textDecoration === 'underline' ? 'none' : 'underline' }})}
-                              className={`flex-1 flex justify-center p-2 rounded-lg transition-colors ${field.metadata?.textDecoration === 'underline' ? 'bg-primary text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
+                              className={`flex-1 flex justify-center p-2 border rounded-lg transition-colors ${field.metadata?.textDecoration === 'underline' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted text-muted-foreground'}`}
                             >
                               <Underline className="w-4 h-4" />
                             </button>
@@ -586,23 +586,23 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                         </div>
 
                         <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Text Alignment</label>
-                          <div className="flex gap-2 p-1 bg-gray-800 border border-gray-700 rounded-xl">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Text Alignment</label>
+                          <div className="flex gap-2">
                             <button 
                               onClick={() => updateField(field.id, { metadata: { ...field.metadata, textAlign: 'left' }})}
-                              className={`flex-1 flex justify-center p-2 rounded-lg transition-colors ${field.metadata?.textAlign === 'left' ? 'bg-primary text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
+                              className={`flex-1 flex justify-center p-2 border rounded-lg transition-colors ${field.metadata?.textAlign === 'left' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted text-muted-foreground'}`}
                             >
                               <AlignLeft className="w-4 h-4" />
                             </button>
                             <button 
                               onClick={() => updateField(field.id, { metadata: { ...field.metadata, textAlign: 'center' }})}
-                              className={`flex-1 flex justify-center p-2 rounded-lg transition-colors ${(!field.metadata?.textAlign || field.metadata?.textAlign === 'center') ? 'bg-primary text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
+                              className={`flex-1 flex justify-center p-2 border rounded-lg transition-colors ${(!field.metadata?.textAlign || field.metadata?.textAlign === 'center') ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted text-muted-foreground'}`}
                             >
                               <AlignCenter className="w-4 h-4" />
                             </button>
                             <button 
                               onClick={() => updateField(field.id, { metadata: { ...field.metadata, textAlign: 'right' }})}
-                              className={`flex-1 flex justify-center p-2 rounded-lg transition-colors ${field.metadata?.textAlign === 'right' ? 'bg-primary text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
+                              className={`flex-1 flex justify-center p-2 border rounded-lg transition-colors ${field.metadata?.textAlign === 'right' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted text-muted-foreground'}`}
                             >
                               <AlignRight className="w-4 h-4" />
                             </button>
@@ -610,17 +610,17 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                         </div>
 
                         <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Text Color</label>
-                          <div className="flex gap-3 items-center bg-gray-800 border border-gray-700 p-2 rounded-xl">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Text Color</label>
+                          <div className="flex gap-2 items-center">
                             <input 
                               type="color" 
-                              className="w-10 h-10 rounded-lg cursor-pointer border-0 p-0 shadow-inner shrink-0"
+                              className="w-10 h-10 rounded cursor-pointer border-0 p-0"
                               value={field.metadata?.fontColor || '#000000'}
                               onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, fontColor: e.target.value } })}
                             />
                             <input 
                               type="text"
-                              className="flex-1 bg-transparent text-white font-mono text-sm outline-none px-2"
+                              className="flex-1 bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none"
                               value={field.metadata?.fontColor || ''}
                               onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, fontColor: e.target.value } })}
                               placeholder="#000000"
@@ -629,12 +629,12 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                         </div>
                         
                         <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Max Characters</label>
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Max Characters</label>
                           <input 
                             type="number" 
                             placeholder="No limit"
                             min="1"
-                            className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+                            className="w-full bg-background border border-border text-foreground rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
                             value={field.metadata?.maxChars || ''}
                             onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, maxChars: e.target.value ? parseInt(e.target.value, 10) : undefined } })}
                           />
@@ -645,9 +645,9 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center text-center py-16 text-gray-500 bg-gray-800/20 rounded-3xl border border-gray-800 border-dashed">
-                <Settings className="w-12 h-12 mb-4 opacity-20" />
-                <p className="text-sm font-medium text-gray-400 max-w-[200px]">Select any field on the canvas to edit its properties.</p>
+              <div className="flex flex-col items-center justify-center text-center py-12 text-muted-foreground">
+                <Settings className="w-8 h-8 mb-2 opacity-20" />
+                <p className="text-sm font-medium">Select a field on the canvas to edit its properties.</p>
               </div>
             )}
           </div>
