@@ -150,8 +150,8 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
       const entry = entries[0];
       if (entry) {
         setContainerSize({
-          width: entry.contentRect.width,
-          height: entry.contentRect.height
+          width: Math.round(entry.contentRect.width),
+          height: Math.round(entry.contentRect.height)
         });
       }
     });
@@ -300,7 +300,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
           minScale={0.25}
           maxScale={3}
           centerOnInit={true}
-          wheel={{ step: 0.04, smoothStep: 0.005 }}
+          wheel={{ step: 0.1 }}
           panning={{ disabled: false, excluded: ['react-draggable'], velocityDisabled: false }}
           alignmentAnimation={{ animationTime: 200 }}
           zoomAnimation={{ animationTime: 200 }}
@@ -360,10 +360,9 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                           <Rnd
                             key={field.id}
                             scale={state.scale}
-                            bounds="parent"
                             size={{
-                              width: `${field.width}%`,
-                              height: `${field.height}%`
+                              width: (field.width / 100) * width,
+                              height: (field.height / 100) * height
                             }}
                             position={{
                               x: (field.left / 100) * width,
@@ -383,12 +382,12 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                               });
                             }}
                             onResizeStop={(e, direction, ref, delta, position) => {
-                              const newWidth = parseFloat(ref.style.width);
-                              const newHeight = parseFloat(ref.style.height);
+                              const newWidthPx = parseFloat(ref.style.width);
+                              const newHeightPx = parseFloat(ref.style.height);
                               
                               updateField(field.id, {
-                                width: newWidth,
-                                height: newHeight,
+                                width: (newWidthPx / width) * 100,
+                                height: (newHeightPx / height) * 100,
                                 left: (position.x / width) * 100,
                                 top: (position.y / height) * 100
                               });
