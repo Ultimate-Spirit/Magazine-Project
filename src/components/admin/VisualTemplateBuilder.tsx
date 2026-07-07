@@ -306,6 +306,14 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
           panning={{ disabled: false, excluded: ['react-draggable'], velocityDisabled: false }}
           alignmentAnimation={{ animationTime: 200 }}
           zoomAnimation={{ animationTime: 200 }}
+          onTransformed={(ref) => {
+            const el = document.getElementById('zoom-indicator');
+            if (el) el.innerText = `${Math.round(ref.state.scale * 100)}%`;
+          }}
+          onZoom={(ref) => {
+            const el = document.getElementById('zoom-indicator');
+            if (el) el.innerText = `${Math.round(ref.state.scale * 100)}%`;
+          }}
         >
           {({ zoomIn, zoomOut, resetTransform, state }) => (
             <div className="space-y-6">
@@ -325,7 +333,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                 </button>
                 <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-2 py-1 ml-4 shadow-sm">
                   <button onClick={() => zoomOut(0.2)} className="w-6 h-6 flex items-center justify-center hover:bg-muted rounded text-muted-foreground font-bold">-</button>
-                  <span className="text-xs font-bold w-12 text-center text-foreground">{Math.round(state.scale * 100)}%</span>
+                  <span id="zoom-indicator" className="text-xs font-bold w-12 text-center text-foreground">{Math.round(state.scale * 100)}%</span>
                   <button onClick={() => zoomIn(0.2)} className="w-6 h-6 flex items-center justify-center hover:bg-muted rounded text-muted-foreground font-bold">+</button>
                   <button onClick={() => resetTransform()} className="text-[10px] font-bold px-2 hover:bg-muted rounded text-muted-foreground uppercase tracking-wider">100%</button>
                 </div>
