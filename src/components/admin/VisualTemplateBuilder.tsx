@@ -149,9 +149,11 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (entry) {
-        setContainerSize({
-          width: Math.round(entry.contentRect.width),
-          height: Math.round(entry.contentRect.height)
+        setContainerSize(prev => {
+          const newWidth = Math.round(entry.contentRect.width);
+          const newHeight = Math.round(entry.contentRect.height);
+          if (prev.width === newWidth && prev.height === newHeight) return prev;
+          return { width: newWidth, height: newHeight };
         });
       }
     });
@@ -300,7 +302,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
           minScale={0.25}
           maxScale={3}
           centerOnInit={true}
-          wheel={{ step: 0.1 }}
+          wheel={{ step: 0.05, smoothStep: 0.005 }}
           panning={{ disabled: false, excluded: ['react-draggable'], velocityDisabled: false }}
           alignmentAnimation={{ animationTime: 200 }}
           zoomAnimation={{ animationTime: 200 }}

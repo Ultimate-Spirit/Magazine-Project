@@ -39,6 +39,14 @@ export const StandaloneTemplateManager: React.FC<StandaloneTemplateManagerProps>
 
   useEffect(() => {
     fetchTemplates();
+    setShowCreateTemplate(false);
+    setEditingTemplate(null);
+    setTemplateForm({
+      template_name: '',
+      department_tag: '',
+      weight: 10,
+    });
+    setTemplatePayload(null);
   }, [category]);
 
   const fetchTemplates = async () => {
