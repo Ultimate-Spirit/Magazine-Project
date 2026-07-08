@@ -124,58 +124,76 @@ export function FoldersView({ onSelectCompany }: Props) {
     e.preventDefault();
     if (!folderNameInput.trim()) return;
     
-    if (!selectedCoverPageId || !selectedLastPageId) {
+    // Extract raw values to prevent string 'null'
+    let finalBundleId = selectedBundleId;
+    if (finalBundleId === 'null' || finalBundleId === '' || !finalBundleId) finalBundleId = null;
+
+    let finalCoverId = selectedCoverPageId;
+    if (finalCoverId === 'null' || finalCoverId === '' || !finalCoverId) finalCoverId = null;
+
+    let finalLastPageId = selectedLastPageId;
+    if (finalLastPageId === 'null' || finalLastPageId === '' || !finalLastPageId) finalLastPageId = null;
+    
+    // Explicitly block if cover or last page is not valid (User explicitly requested they be mandatory)
+    if (!finalCoverId || !finalLastPageId) {
       showNotification('error', 'Both a Cover and a Last Page are required to create a bundle.');
       return;
     }
     
-    // Sanitize optional relations: convert empty strings or literal "null" to actual null
-    const safeBundleId = selectedBundleId && selectedBundleId !== 'null' ? selectedBundleId : null;
-    const safeCoverId = selectedCoverPageId && selectedCoverPageId !== 'null' ? selectedCoverPageId : null;
-    const safeLastPageId = selectedLastPageId && selectedLastPageId !== 'null' ? selectedLastPageId : null;
-    
     setIsActionLoading(true);
     try {
+      // Build payload cleanly, omitting undefined/null fields entirely to mathematically guarantee no "null" string insertion
+      const folderPayload: any = { 
+        name: folderNameInput.trim(), 
+        company_id: targetCid 
+      };
+      
+      if (finalBundleId) folderPayload.bundle_id = finalBundleId;
+      if (profile?.id && profile.id !== 'null') {
+        folderPayload.created_by = profile.id;
+        folderPayload.owner_id = profile.id;
+      }
+
       const { data: folderData, error } = await supabase
         .from('folders')
-        .insert([{ 
-          name: folderNameInput.trim(), 
-          company_id: targetCid,
-          created_by: profile?.id || null,
-          bundle_id: safeBundleId,
-          owner_id: profile?.id || null
-        }])
+        .insert([folderPayload])
         .select()
         .single();
+      
       if (error) throw error;
 
       const newFolder = folderData;
 
       let bundleTemplates: any[] = [];
-      if (safeBundleId) {
+      if (finalBundleId) {
         const { data } = await supabase
           .from('templates')
           .select('*')
-          .eq('bundle_id', safeBundleId)
+          .eq('bundle_id', finalBundleId)
           .order('weight', { ascending: true });
         if (data) bundleTemplates = data;
       }
 
-      const coverTemplate = safeCoverId ? coverTemplates.find(t => t.id === safeCoverId) : null;
-      const lastPageTemplate = safeLastPageId ? lastPageTemplates.find(t => t.id === safeLastPageId) : null;
+      const coverTemplate = finalCoverId ? coverTemplates.find(t => t.id === finalCoverId) : null;
+      const lastPageTemplate = finalLastPageId ? lastPageTemplates.find(t => t.id === finalLastPageId) : null;
 
       const allTemplatesToInsert = [];
       if (coverTemplate) allTemplatesToInsert.push(coverTemplate);
       if (bundleTemplates.length > 0) allTemplatesToInsert.push(...bundleTemplates);
       if (lastPageTemplate) allTemplatesToInsert.push(lastPageTemplate);
 
-      const pagesToInsert = allTemplatesToInsert.map(template => ({
-        folder_id: newFolder.id,
-        title: template.template_name,
-        data: template.layout_json,
-        template_id: template.id,
-        created_by: profile?.id || null
-      }));
+      const pagesToInsert = allTemplatesToInsert.map(template => {
+        const pagePayload: any = {
+          folder_id: newFolder.id,
+          title: template.template_name,
+          data: template.layout_json,
+          template_id: template.id
+        };
+        if (profile?.id && profile.id !== 'null') {
+          pagePayload.created_by = profile.id;
+        }
+        return pagePayload;
+      });
 
       if (pagesToInsert.length > 0) {
         const { error: pagesError } = await supabase.from('pages').insert(pagesToInsert);
