@@ -122,7 +122,12 @@ export function FoldersView({ onSelectCompany }: Props) {
 
   const handleCreateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!folderNameInput.trim() || !selectedBundleId || !selectedCoverPageId || !selectedLastPageId) return;
+    if (!folderNameInput.trim()) return;
+    
+    // Sanitize optional relations: convert empty strings or literal "null" to actual null
+    const safeBundleId = selectedBundleId && selectedBundleId !== 'null' ? selectedBundleId : null;
+    const safeCoverId = selectedCoverPageId && selectedCoverPageId !== 'null' ? selectedCoverPageId : null;
+    const safeLastPageId = selectedLastPageId && selectedLastPageId !== 'null' ? selectedLastPageId : null;
     
     setIsActionLoading(true);
     try {
@@ -131,9 +136,9 @@ export function FoldersView({ onSelectCompany }: Props) {
         .insert([{ 
           name: folderNameInput.trim(), 
           company_id: targetCid,
-          created_by: profile?.id,
-          bundle_id: selectedBundleId,
-          owner_id: profile?.id
+          created_by: profile?.id || null,
+          bundle_id: safeBundleId,
+          owner_id: profile?.id || null
         }])
         .select()
         .single();
@@ -141,18 +146,22 @@ export function FoldersView({ onSelectCompany }: Props) {
 
       const newFolder = folderData;
 
-      const { data: bundleTemplates } = await supabase
-        .from('templates')
-        .select('*')
-        .eq('bundle_id', selectedBundleId)
-        .order('weight', { ascending: true });
+      let bundleTemplates: any[] = [];
+      if (safeBundleId) {
+        const { data } = await supabase
+          .from('templates')
+          .select('*')
+          .eq('bundle_id', safeBundleId)
+          .order('weight', { ascending: true });
+        if (data) bundleTemplates = data;
+      }
 
-      const coverTemplate = coverTemplates.find(t => t.id === selectedCoverPageId);
-      const lastPageTemplate = lastPageTemplates.find(t => t.id === selectedLastPageId);
+      const coverTemplate = safeCoverId ? coverTemplates.find(t => t.id === safeCoverId) : null;
+      const lastPageTemplate = safeLastPageId ? lastPageTemplates.find(t => t.id === safeLastPageId) : null;
 
       const allTemplatesToInsert = [];
       if (coverTemplate) allTemplatesToInsert.push(coverTemplate);
-      if (bundleTemplates) allTemplatesToInsert.push(...bundleTemplates);
+      if (bundleTemplates.length > 0) allTemplatesToInsert.push(...bundleTemplates);
       if (lastPageTemplate) allTemplatesToInsert.push(lastPageTemplate);
 
       const pagesToInsert = allTemplatesToInsert.map(template => ({
@@ -160,7 +169,7 @@ export function FoldersView({ onSelectCompany }: Props) {
         title: template.template_name,
         data: template.layout_json,
         template_id: template.id,
-        created_by: profile?.id
+        created_by: profile?.id || null
       }));
 
       if (pagesToInsert.length > 0) {
@@ -170,14 +179,22 @@ export function FoldersView({ onSelectCompany }: Props) {
 
       await logActivity('created', 'folder', folderNameInput.trim(), targetCid, profile?.id || '');
       showNotification('success', 'Directory initialized');
+      
+      // Instantly update UI state
+      setFolders([newFolder, ...folders]);
+      
       setFolderNameInput('');
       setSelectedBundleId('');
       setSelectedCoverPageId('');
       setSelectedLastPageId('');
       setIsCreateModalOpen(false);
+      
+      // Navigate to the newly created folder
       navigate(`/folder/${newFolder.id}`);
     } catch (err: any) {
-      showNotification('error', err.message);
+      console.error('Folder Creation Error:', err);
+      showNotification('error', err.message || 'Failed to create folder.');
+    } finally {
       setIsActionLoading(false);
     }
   };
@@ -495,9 +512,8 @@ export function FoldersView({ onSelectCompany }: Props) {
                     className="w-full px-6 py-4 micro-surface border border-border/10 rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight appearance-none cursor-pointer"
                     value={selectedBundleId}
                     onChange={(e) => setSelectedBundleId(e.target.value)}
-                    required
                   >
-                    <option value="" disabled>Select a Blueprint Bundle...</option>
+                    <option value="">(Optional) Select a Blueprint Bundle...</option>
                     {(activeBundles || []).map(bundle => (
                       <option key={bundle.id} value={bundle.id}>{bundle?.bundle_name || 'Unnamed Bundle'}</option>
                     ))}
@@ -510,9 +526,8 @@ export function FoldersView({ onSelectCompany }: Props) {
                     className="w-full px-6 py-4 micro-surface border border-border/10 rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight appearance-none cursor-pointer"
                     value={selectedCoverPageId}
                     onChange={(e) => setSelectedCoverPageId(e.target.value)}
-                    required
                   >
-                    <option value="" disabled>Select a Cover Page...</option>
+                    <option value="">(Optional) Select a Cover Page...</option>
                     {(coverTemplates || []).map(template => (
                       <option key={template.id} value={template.id}>{template?.template_name || 'Unnamed Template'}</option>
                     ))}
@@ -525,9 +540,8 @@ export function FoldersView({ onSelectCompany }: Props) {
                     className="w-full px-6 py-4 micro-surface border border-border/10 rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight appearance-none cursor-pointer"
                     value={selectedLastPageId}
                     onChange={(e) => setSelectedLastPageId(e.target.value)}
-                    required
                   >
-                    <option value="" disabled>Select a Last Page...</option>
+                    <option value="">(Optional) Select a Last Page...</option>
                     {(lastPageTemplates || []).map(template => (
                       <option key={template.id} value={template.id}>{template?.template_name || 'Unnamed Template'}</option>
                     ))}
@@ -538,7 +552,7 @@ export function FoldersView({ onSelectCompany }: Props) {
 
             <button
               type="submit"
-              disabled={isActionLoading || !folderNameInput.trim() || (!editingFolder && (!selectedBundleId || !selectedCoverPageId || !selectedLastPageId))}
+              disabled={isActionLoading || !folderNameInput.trim()}
               className="w-full py-5 bg-primary text-primary-foreground font-black rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-[11px] uppercase tracking-[0.2em]"
             >
               {isActionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (editingFolder ? "Apply Changes" : "Initialize Directory")}
