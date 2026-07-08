@@ -17,55 +17,6 @@ import type { TemplateBundle, Template } from '../../types';
 import { ConfirmModal } from '../common/ConfirmModal';
 import { VisualTemplateBuilder, type TemplatePayload } from './VisualTemplateBuilder';
 
-const TemplateCard = ({ template, onEdit, onDelete }: { template: Template, onEdit: () => void, onDelete: () => void }) => {
-  return (
-    <div className="group relative p-6 micro-surface border border-border/10 rounded-[2rem] hover:-translate-y-1 transition-all duration-300">
-      <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button 
-          onClick={onEdit}
-          className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
-          title="Edit Template"
-        >
-          <Edit2 className="w-4 h-4" />
-        </button>
-        <button 
-          onClick={onDelete}
-          className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all"
-          title="Delete Template"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      </div>
-
-      <div className="flex items-center gap-4 mb-4">
-        <div className="p-3 bg-secondary rounded-2xl shrink-0">
-          <LayoutTemplate className="w-6 h-6 text-primary" />
-        </div>
-        <div>
-          <h3 className="font-bold text-lg leading-tight line-clamp-1">{template.template_name || 'Unnamed'}</h3>
-          <div className="flex items-center gap-2 mt-1">
-            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${
-              template.category === 'Cover' ? 'bg-purple-500/10 text-purple-500' :
-              template.category === 'Last Page' ? 'bg-orange-500/10 text-orange-500' :
-              'bg-blue-500/10 text-blue-500'
-            }`}>
-              {template.category}
-            </span>
-            {template.is_global && (
-              <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-[8px] font-black uppercase tracking-widest border border-primary/20">Global</span>
-            )}
-          </div>
-        </div>
-      </div>
-      
-      <div className="mt-4 pt-4 border-t border-border/5 flex items-center justify-between">
-        <p className="text-xs font-medium text-muted-foreground">Weight: {template.weight}</p>
-        <p className="text-xs font-medium text-muted-foreground">Tag: {template.department_tag || 'None'}</p>
-      </div>
-    </div>
-  );
-};
-
 export const ContentBundlesManager: React.FC = () => {
   const [bundles, setBundles] = useState<TemplateBundle[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -126,6 +77,7 @@ export const ContentBundlesManager: React.FC = () => {
         .from('templates')
         .select('*')
         .eq('bundle_id', bundleId)
+        .eq('category', 'Content')
         .order('weight', { ascending: true });
       
       if (fetchErr) throw fetchErr;
@@ -456,15 +408,12 @@ export const ContentBundlesManager: React.FC = () => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Category</label>
-                  <select 
-                    className="w-full bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none cursor-pointer"
-                    value={templateForm.category}
-                    onChange={(e) => setTemplateForm({ ...templateForm, category: e.target.value as any })}
-                  >
-                    <option value="Cover">Cover</option>
-                    <option value="Content">Content</option>
-                    <option value="Last Page">Last Page</option>
-                  </select>
+                  <input 
+                    type="text" 
+                    className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-base text-muted-foreground cursor-not-allowed"
+                    value="Content"
+                    disabled
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Department Tag</label>
@@ -529,59 +478,67 @@ export const ContentBundlesManager: React.FC = () => {
             </div>
           )}
 
-          <div className="space-y-12">
-            {/* Cover template rendering block */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                <LayoutTemplate className="w-5 h-5" /> Cover Templates
-              </h3>
-              {templates?.filter(t => t.category === 'Cover').length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {templates.filter(t => t.category === 'Cover').map(template => (
-                    <TemplateCard key={template.id} template={template} onEdit={() => openEditTemplate(template)} onDelete={() => setTemplateToDelete(template)} />
+          <div className="bg-card rounded-[2rem] border border-border/10 overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse whitespace-nowrap">
+                <thead>
+                  <tr className="border-b border-border/10 bg-muted/20">
+                    <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Weight</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Template Name</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Category</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Department</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/10">
+                  {templates?.map(template => (
+                    <tr key={template.id} className="hover:bg-muted/10 transition-colors group">
+                      <td className="px-6 py-4 text-sm font-mono text-muted-foreground">{template?.weight ?? '-'}</td>
+                      <td className="px-6 py-4 text-sm font-bold text-foreground">{template?.template_name || 'Unnamed'}</td>
+                      <td className="px-6 py-4 flex items-center gap-2">
+                        <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${
+                          template?.category === 'Cover' ? 'bg-purple-500/10 text-purple-500' :
+                          template?.category === 'Last Page' ? 'bg-orange-500/10 text-orange-500' :
+                          'bg-blue-500/10 text-blue-500'
+                        }`}>
+                          {template?.category || 'Content'}
+                        </span>
+                        {template?.is_global && (
+                          <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-[8px] font-black uppercase tracking-widest border border-primary/20">Global</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-muted-foreground">
+                        {template?.department_tag || '-'}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => openEditTemplate(template)}
+                            className="p-2 micro-surface border border-border/10 rounded-lg text-muted-foreground hover:text-primary transition-all"
+                            title="Edit Definition"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button 
+                            onClick={() => setTemplateToDelete(template)}
+                            className="p-2 micro-surface border border-border/10 rounded-lg text-muted-foreground hover:text-destructive transition-all"
+                            title="Delete Slot"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                   ))}
-                </div>
-              ) : (
-                <div className="p-8 text-center border-2 border-dashed border-border/20 rounded-[2rem]">
-                  <p className="text-muted-foreground font-medium">No Cover templates assigned to this bundle.</p>
-                </div>
-              )}
-            </div>
-
-            {/* Content Blueprints rendering block */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                <Layers className="w-5 h-5" /> Assigned Blueprints
-              </h3>
-              {templates?.filter(t => t.category === 'Content' || t.category === 'Newsletter').length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {templates.filter(t => t.category === 'Content' || t.category === 'Newsletter').map(template => (
-                    <TemplateCard key={template.id} template={template} onEdit={() => openEditTemplate(template)} onDelete={() => setTemplateToDelete(template)} />
-                  ))}
-                </div>
-              ) : (
-                <div className="p-8 text-center border-2 border-dashed border-border/20 rounded-[2rem]">
-                  <p className="text-muted-foreground font-medium">No Content blueprints assigned to this bundle.</p>
-                </div>
-              )}
-            </div>
-
-            {/* Last Page template rendering block */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                <LayoutTemplate className="w-5 h-5" /> Last Page Templates
-              </h3>
-              {templates?.filter(t => t.category === 'Last Page').length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {templates.filter(t => t.category === 'Last Page').map(template => (
-                    <TemplateCard key={template.id} template={template} onEdit={() => openEditTemplate(template)} onDelete={() => setTemplateToDelete(template)} />
-                  ))}
-                </div>
-              ) : (
-                <div className="p-8 text-center border-2 border-dashed border-border/20 rounded-[2rem]">
-                  <p className="text-muted-foreground font-medium">No Last Page templates assigned to this bundle.</p>
-                </div>
-              )}
+                  {(!templates || templates.length === 0) && (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-medium">
+                        No templates in this bundle yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
