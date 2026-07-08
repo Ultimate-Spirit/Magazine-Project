@@ -186,7 +186,7 @@ export function FoldersView({ onSelectCompany }: Props) {
         const pagePayload: any = {
           folder_id: newFolder.id,
           title: template.template_name,
-          data: template.layout_json,
+          data: template.layout_json || { background_url: '', fields: [] },
           template_id: template.id
         };
         if (profile?.id && profile.id !== 'null') {
