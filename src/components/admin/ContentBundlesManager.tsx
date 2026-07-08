@@ -553,18 +553,17 @@ export const ContentBundlesManager: React.FC = () => {
               <h3 className="text-lg font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                 <Layers className="w-5 h-5" /> Assigned Blueprints
               </h3>
-              {(() => {
-                const blueprints = templates?.filter(t => t.category === 'Content' || t.category === 'Newsletter') || [];
-                return blueprints && blueprints.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {blueprints.map((blueprint, index) => (
-                      <TemplateCard key={blueprint.id} template={blueprint} onEdit={() => openEditTemplate(blueprint)} onDelete={() => setTemplateToDelete(blueprint)} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-8 text-center text-red-500 border-2 border-dashed border-red-900 rounded-lg bg-red-950/20 my-4 font-mono">DEBUG: 0 Blueprints retrieved from Supabase relational query.</div>
-                );
-              })()}
+              {templates?.filter(t => t.category === 'Content' || t.category === 'Newsletter').length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {templates.filter(t => t.category === 'Content' || t.category === 'Newsletter').map(template => (
+                    <TemplateCard key={template.id} template={template} onEdit={() => openEditTemplate(template)} onDelete={() => setTemplateToDelete(template)} />
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center border-2 border-dashed border-border/20 rounded-[2rem]">
+                  <p className="text-muted-foreground font-medium">No Content blueprints assigned to this bundle.</p>
+                </div>
+              )}
             </div>
 
             {/* Last Page template rendering block */}
