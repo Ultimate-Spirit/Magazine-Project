@@ -33,6 +33,15 @@ import { CSS } from '@dnd-kit/utilities';
 import { PrintTemplate } from './PrintTemplate';
 
 import React from 'react';
+import Select from 'react-select';
+
+const SELECT_STYLES = {
+  control: () => '!bg-background !border-border/10 !rounded-xl !min-h-[42px] hover:!border-primary/50 !shadow-none !cursor-pointer',
+  menu: () => '!bg-background !border !border-border/20 !rounded-xl !shadow-xl !overflow-hidden !z-50',
+  option: (state: any) => `!cursor-pointer ${state.isFocused ? '!bg-muted/50' : ''} ${state.isSelected ? '!bg-primary/10 !text-primary !font-bold' : '!text-foreground'}`,
+  singleValue: () => '!text-foreground !font-bold !text-sm',
+  input: () => '!text-foreground'
+};
 
 interface SortablePageItemProps {
   page: Page;
@@ -206,6 +215,51 @@ export function FolderContents() {
       fetchData(true);
     }
   }, [folderId, profile, fetchData]);
+
+  const handleUpdateGlobalPage = async (newTemplateId: string, category: 'Cover' | 'Last Page') => {
+    if (!permissions?.can_edit_all_folders && !(permissions?.can_edit_own_folders && folder?.created_by === profile?.id)) {
+      showNotification('error', 'Unauthorized to modify this bundle.');
+      return;
+    }
+
+    setIsActionLoading(true);
+    try {
+      const template = globalTemplates.find(t => t.id === newTemplateId);
+      if (!template) throw new Error('Template not found');
+
+      const existingPage = pages.find(p => p.templates?.category === category);
+      if (!existingPage) throw new Error(`${category} page not found to update`);
+
+      const newPayload = template.layout_json || { background_url: '', fields: [] };
+      
+      const { data, error } = await supabase
+        .from('pages')
+        .update({
+          template_id: template.id,
+          title: template.template_name,
+          data: newPayload
+        })
+        .eq('id', existingPage.id)
+        .select('*, templates(*)')
+        .single();
+
+      if (error) throw error;
+
+      // Instant UI state update
+      setPages(pages.map(p => p.id === existingPage.id ? data : p));
+      
+      if (category === 'Cover') setSelectedCoverId(template.id);
+      if (category === 'Last Page') setSelectedLastPageId(template.id);
+      
+      await logActivity('updated', 'publication', template.template_name, company?.id || '', profile?.id || '');
+      showNotification('success', `${category} successfully changed`);
+    } catch (err: any) {
+      console.error('Update Error:', err);
+      showNotification('error', err.message || 'Failed to update template');
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
 
   const handleStartDraft = async (template: Template) => {
     if (!permissions?.can_create_publications) {
@@ -512,33 +566,27 @@ export function FolderContents() {
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                   <Layout className="w-3.5 h-3.5" /> Global Cover Master
                 </label>
-                <select 
-                  value={selectedCoverId}
-                  onChange={(e) => setSelectedCoverId(e.target.value)}
-                  disabled={pages.some(p => p.templates?.category === 'Cover')}
-                  className="w-full bg-background border border-border/10 rounded-xl px-4 py-3 text-sm font-bold text-foreground focus:ring-2 focus:ring-primary outline-none appearance-none disabled:opacity-50 transition-all cursor-pointer"
-                >
-                  <option value="" disabled>Choose a Cover Template...</option>
-                  {globalTemplates.filter(t => t.category === 'Cover').map(t => (
-                    <option key={t.id} value={t.id}>{t.template_name}</option>
-                  ))}
-                </select>
+                <Select 
+                  value={globalTemplates.filter(t => t.category === 'Cover').map(t => ({ value: t.id, label: t.template_name })).find(o => o.value === selectedCoverId) || null}
+                  onChange={(option) => option && handleUpdateGlobalPage(option.value, 'Cover')}
+                  options={globalTemplates.filter(t => t.category === 'Cover').map(t => ({ value: t.id, label: t.template_name }))}
+                  classNames={SELECT_STYLES}
+                  placeholder="Choose a Cover Template..."
+                  isDisabled={isActionLoading}
+                />
               </div>
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                   <Layout className="w-3.5 h-3.5" /> Global Back Cover Master
                 </label>
-                <select 
-                  value={selectedLastPageId}
-                  onChange={(e) => setSelectedLastPageId(e.target.value)}
-                  disabled={pages.some(p => p.templates?.category === 'Last Page')}
-                  className="w-full bg-background border border-border/10 rounded-xl px-4 py-3 text-sm font-bold text-foreground focus:ring-2 focus:ring-primary outline-none appearance-none disabled:opacity-50 transition-all cursor-pointer"
-                >
-                  <option value="" disabled>Choose a Last Page Template...</option>
-                  {globalTemplates.filter(t => t.category === 'Last Page').map(t => (
-                    <option key={t.id} value={t.id}>{t.template_name}</option>
-                  ))}
-                </select>
+                <Select 
+                  value={globalTemplates.filter(t => t.category === 'Last Page').map(t => ({ value: t.id, label: t.template_name })).find(o => o.value === selectedLastPageId) || null}
+                  onChange={(option) => option && handleUpdateGlobalPage(option.value, 'Last Page')}
+                  options={globalTemplates.filter(t => t.category === 'Last Page').map(t => ({ value: t.id, label: t.template_name }))}
+                  classNames={SELECT_STYLES}
+                  placeholder="Choose a Last Page Template..."
+                  isDisabled={isActionLoading}
+                />
               </div>
             </div>
             
