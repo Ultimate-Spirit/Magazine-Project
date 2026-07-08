@@ -124,6 +124,11 @@ export function FoldersView({ onSelectCompany }: Props) {
     e.preventDefault();
     if (!folderNameInput.trim()) return;
     
+    if (!selectedCoverPageId || !selectedLastPageId) {
+      showNotification('error', 'Both a Cover and a Last Page are required to create a bundle.');
+      return;
+    }
+    
     // Sanitize optional relations: convert empty strings or literal "null" to actual null
     const safeBundleId = selectedBundleId && selectedBundleId !== 'null' ? selectedBundleId : null;
     const safeCoverId = selectedCoverPageId && selectedCoverPageId !== 'null' ? selectedCoverPageId : null;
@@ -513,7 +518,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                     value={selectedBundleId}
                     onChange={(e) => setSelectedBundleId(e.target.value)}
                   >
-                    <option value="">(Optional) Select a Blueprint Bundle...</option>
+                    <option value="" disabled>Select a Blueprint Bundle...</option>
                     {(activeBundles || []).map(bundle => (
                       <option key={bundle.id} value={bundle.id}>{bundle?.bundle_name || 'Unnamed Bundle'}</option>
                     ))}
@@ -527,7 +532,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                     value={selectedCoverPageId}
                     onChange={(e) => setSelectedCoverPageId(e.target.value)}
                   >
-                    <option value="">(Optional) Select a Cover Page...</option>
+                    <option value="" disabled>Select a Cover Page...</option>
                     {(coverTemplates || []).map(template => (
                       <option key={template.id} value={template.id}>{template?.template_name || 'Unnamed Template'}</option>
                     ))}
@@ -541,7 +546,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                     value={selectedLastPageId}
                     onChange={(e) => setSelectedLastPageId(e.target.value)}
                   >
-                    <option value="">(Optional) Select a Last Page...</option>
+                    <option value="" disabled>Select a Last Page...</option>
                     {(lastPageTemplates || []).map(template => (
                       <option key={template.id} value={template.id}>{template?.template_name || 'Unnamed Template'}</option>
                     ))}
@@ -552,7 +557,7 @@ export function FoldersView({ onSelectCompany }: Props) {
 
             <button
               type="submit"
-              disabled={isActionLoading || !folderNameInput.trim()}
+              disabled={isActionLoading || !folderNameInput.trim() || (!editingFolder && (!selectedCoverPageId || !selectedLastPageId))}
               className="w-full py-5 bg-primary text-primary-foreground font-black rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-[11px] uppercase tracking-[0.2em]"
             >
               {isActionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (editingFolder ? "Apply Changes" : "Initialize Directory")}
