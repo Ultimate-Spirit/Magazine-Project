@@ -449,14 +449,15 @@ export const MagazineEditor: React.FC = () => {
 
   const handleDownloadTemplate = () => {
     const csvData: any[] = [];
-    csvData.push(['Template Key', 'Label / X-Axis', 'Data (Y-Axis 1)', 'Data (Y-Axis 2)']);
+    csvData.push(['Field Description', 'Your Text / Chart X-Axis', 'Chart Data 1', 'Chart Data 2']);
     
     fields.forEach((field: any) => {
+      const friendlyName = toTitleCase(field.name);
       if (field.type === 'Chart') {
-        csvData.push([field.id, 'Label 1', '100', '150']);
-        csvData.push([field.id, 'Label 2', '200', '250']);
+        csvData.push([friendlyName, 'Label 1', '100', '150']);
+        csvData.push([friendlyName, 'Label 2', '200', '250']);
       } else {
-        csvData.push([field.id, formData[field.id] || 'Your text here', '', '']);
+        csvData.push([friendlyName, formData[field.id] || 'Your text here', '', '']);
       }
     });
 
@@ -473,6 +474,11 @@ export const MagazineEditor: React.FC = () => {
   const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const keyMap: Record<string, string> = {};
+    fields.forEach((f: any) => {
+      keyMap[toTitleCase(f.name)] = f.id;
+    });
     
     Papa.parse(file, {
       header: false,
@@ -487,9 +493,15 @@ export const MagazineEditor: React.FC = () => {
 
         dataRows.forEach(row => {
           if (row.length < 2) return;
-          const key = row[0];
-          if (!key) return;
+          const friendlyName = row[0];
+          if (!friendlyName) return;
           
+          const key = keyMap[friendlyName];
+          if (!key) {
+            console.warn(`[CSV Parser] Skipping unrecognized field description: "${friendlyName}"`);
+            return;
+          }
+
           const label = row[1];
           const rawData1 = row[2] || '';
           const rawData2 = row[3] || '';
