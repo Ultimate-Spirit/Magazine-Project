@@ -81,9 +81,26 @@ const getChartOptions = (chartType: string, chartDataStr?: string) => {
   }
 };
 
+const urlToBase64 = async (url: string): Promise<string> => {
+  if (!url || url.startsWith('data:')) return url;
+  try {
+    const response = await fetch(url, { mode: 'cors' });
+    const blob = await response.blob();
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (err) {
+    console.error('Failed to convert image to base64:', url, err);
+    return url;
+  }
+};
+
 const StagingRenderer = ({ pages }: { pages: any[] }) => {
   return (
-    <div id="pdf-staging-root" style={{ position: 'fixed', left: '-9999px', top: 0, opacity: 1, display: 'block', zIndex: -100 }}>
+    <div id="pdf-staging-root" style={{ position: 'absolute', left: 0, top: 0, opacity: 1, display: 'block', zIndex: -9999 }}>
       {pages.map((page, idx) => {
         const layoutJson = page.templates?.layout_json || { fields: [] };
         const formData = page.data || {};
@@ -97,75 +114,68 @@ const StagingRenderer = ({ pages }: { pages: any[] }) => {
               position: 'relative', 
               overflow: 'hidden', 
               backgroundColor: 'white',
-              backgroundImage: layoutJson?.background_url ? `url('${layoutJson.background_url}')` : 'none',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
               marginBottom: '20px'
             }}
           >
-            {layoutJson?.background_url && <img src={layoutJson.background_url} loading="eager" style={{ display: 'none' }} alt="bg-preload" />}
-            {(layoutJson.fields || []).map((field: any) => {
-              const val = formData[field.id] || '';
-              const metadata = field.metadata || {};
-              return (
-                <div 
-                  key={field.id}
-                  style={{
-                    position: 'absolute',
-                    top: `${field.top}%`,
-                    left: `${field.left}%`,
-                    width: `${field.width}%`,
-                    height: `${field.height}%`,
-                    borderRadius: metadata.borderRadius ? `${metadata.borderRadius}px` : undefined,
-                    overflow: 'hidden',
-                    display: 'flex',
-                    alignItems: metadata.textAlign === 'left' ? 'flex-start' : metadata.textAlign === 'right' ? 'flex-end' : 'center',
-                    justifyContent: metadata.textAlign === 'left' ? 'flex-start' : metadata.textAlign === 'right' ? 'flex-end' : 'center',
-                    color: metadata.fontColor || 'inherit',
-                    fontFamily: metadata.fontFamily || 'inherit',
-                    fontSize: metadata.fontSize ? `${metadata.fontSize}px` : '16px',
-                    lineHeight: metadata.lineHeight || '1.5',
-                    fontWeight: metadata.fontWeight || 'normal',
-                    fontStyle: metadata.fontStyle || 'normal',
-                    textDecoration: metadata.textDecoration || 'none',
-                    textAlign: metadata.textAlign || 'center',
-                    wordBreak: 'break-word',
-                    whiteSpace: 'pre-wrap',
-                  }}
-                >
-                  {field.type === 'Image' ? (
-                    <>
-                      {val && <img src={val} loading="eager" style={{ display: 'none' }} alt="preload" />}
-                      <div 
-                        style={{ 
-                          width: '100%', 
-                          height: '100%', 
-                          backgroundImage: val ? `url('${val}')` : 'none', 
-                          backgroundSize: 'cover', 
-                          backgroundPosition: 'center',
-                          backgroundRepeat: 'no-repeat'
-                        }} 
-                      />
-                    </>
-                  ) : field.type === 'Chart' ? (
-                    <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
-                      <ReactECharts 
-                        option={getChartOptions(metadata.chartType || 'bar', val)} 
-                        style={{ height: '100%', width: '100%' }}
-                        opts={{ renderer: 'svg' }}
-                      />
-                    </div>
-                  ) : field.type === 'Icon' ? (
-                    (() => {
-                      const IconCmp = (LucideIcons as any)[val || 'Smile'] || LucideIcons.Smile;
-                      return <IconCmp style={{ width: '100%', height: '100%' }} />;
-                    })()
-                  ) : (
-                    <span style={{ width: '100%' }}>{val}</span>
-                  )}
-                </div>
-              );
-            })}
+            {layoutJson?.background_url && (
+              <img 
+                src={layoutJson.background_url} 
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }} 
+                alt="bg" 
+              />
+            )}
+            <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
+              {(layoutJson.fields || []).map((field: any) => {
+                const val = formData[field.id] || '';
+                const metadata = field.metadata || {};
+                return (
+                  <div 
+                    key={field.id}
+                    style={{
+                      position: 'absolute',
+                      top: `${field.top}%`,
+                      left: `${field.left}%`,
+                      width: `${field.width}%`,
+                      height: `${field.height}%`,
+                      borderRadius: metadata.borderRadius ? `${metadata.borderRadius}px` : undefined,
+                      overflow: 'hidden',
+                      display: 'flex',
+                      alignItems: metadata.textAlign === 'left' ? 'flex-start' : metadata.textAlign === 'right' ? 'flex-end' : 'center',
+                      justifyContent: metadata.textAlign === 'left' ? 'flex-start' : metadata.textAlign === 'right' ? 'flex-end' : 'center',
+                      color: metadata.fontColor || 'inherit',
+                      fontFamily: metadata.fontFamily || 'inherit',
+                      fontSize: metadata.fontSize ? `${metadata.fontSize}px` : '16px',
+                      lineHeight: metadata.lineHeight || '1.5',
+                      fontWeight: metadata.fontWeight || 'normal',
+                      fontStyle: metadata.fontStyle || 'normal',
+                      textDecoration: metadata.textDecoration || 'none',
+                      textAlign: metadata.textAlign || 'center',
+                      wordBreak: 'break-word',
+                      whiteSpace: 'pre-wrap',
+                    }}
+                  >
+                    {field.type === 'Image' ? (
+                      val ? <img src={val} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="img" /> : <div style={{ width: '100%', height: '100%' }} />
+                    ) : field.type === 'Chart' ? (
+                      <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
+                        <ReactECharts 
+                          option={getChartOptions(metadata.chartType || 'bar', val)} 
+                          style={{ height: '100%', width: '100%' }}
+                          opts={{ renderer: 'svg' }}
+                        />
+                      </div>
+                    ) : field.type === 'Icon' ? (
+                      (() => {
+                        const IconCmp = (LucideIcons as any)[val || 'Smile'] || LucideIcons.Smile;
+                        return <IconCmp style={{ width: '100%', height: '100%' }} />;
+                      })()
+                    ) : (
+                      <span style={{ width: '100%' }}>{val}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         );
       })}
@@ -561,15 +571,41 @@ export function FolderContents() {
     try {
       showNotification('success', 'Building Master PDF, please wait...');
 
+      // Pre-process images to base64
+      const preprocessedPages = JSON.parse(JSON.stringify(compilerPages));
+      for (const page of preprocessedPages) {
+        const layoutJson = page.templates?.layout_json;
+        if (layoutJson?.background_url) {
+          layoutJson.background_url = await urlToBase64(layoutJson.background_url);
+        }
+        
+        if (layoutJson?.fields) {
+          for (const field of layoutJson.fields) {
+            if (field.type === 'Image') {
+              const val = page.data?.[field.id];
+              if (val && typeof val === 'string' && !val.startsWith('data:')) {
+                page.data[field.id] = await urlToBase64(val);
+              }
+            }
+          }
+        }
+      }
+
       // Step 1: Create a staging DOM element
       const stagingDiv = document.createElement('div');
       document.body.appendChild(stagingDiv);
       const root = createRoot(stagingDiv);
 
-      root.render(<StagingRenderer pages={compilerPages} />);
+      root.render(<StagingRenderer pages={preprocessedPages} />);
 
       // Give React a brief moment to mount the DOM
       await new Promise(resolve => setTimeout(resolve, 100));
+
+      const stagingRoot = document.getElementById('pdf-staging-root');
+      if (stagingRoot) {
+        // Layout thrashing to force synchronous paint
+        const forceLayout = stagingRoot.offsetHeight;
+      }
 
       const pageNodes = Array.from(document.querySelectorAll('.a4-staging-page'));
       const allEchartsImgCleanups: (() => void)[] = [];
