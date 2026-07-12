@@ -380,28 +380,28 @@ export const MagazineEditor: React.FC = () => {
   };
 
   const handleDownloadPdf = async () => {
-    if (!transformRef.current) return;
-    const { state, setTransform } = transformRef.current.instance.transformState ? transformRef.current : { ...transformRef.current, state: transformRef.current.instance.transformState };
-    // Wait, the state in v4 is accessed via transformRef.current.state. Let's just use it safely.
-    const currentState = transformRef.current.instance.transformState;
-    const cachedState = { ...currentState };
-
     try {
       showToast('Generating PDF, please wait...', 'success');
-      
-      // Step 1: Programmatically cache zoom state, force scale to 1 (100%), x:0, y:0
-      transformRef.current.setTransform(0, 0, 1, 0);
-      
-      // Wait for React and DOM to fully render the reset state
-      await new Promise(resolve => setTimeout(resolve, 300));
       
       const node = document.getElementById('a4-canvas-container');
       if (!node) throw new Error('Canvas not found');
       
-      // Step 2: Configure html2canvas to target strictly the A4 template container node
-      const canvas = await html2canvas(node, { scale: 2, useCORS: true });
+      // Target strictly the A4 container and remove all transforms in the cloned DOM to ensure 100% scale capture
+      const canvas = await html2canvas(node, { 
+        scale: 2, 
+        useCORS: true,
+        onclone: (clonedDoc) => {
+          const clonedNode = clonedDoc.getElementById('a4-canvas-container');
+          if (clonedNode) {
+            let parent = clonedNode.parentElement;
+            while (parent) {
+              parent.style.transform = 'none';
+              parent = parent.parentElement;
+            }
+          }
+        }
+      });
       
-      // Step 3: Convert captured canvas to image and inject into jsPDF
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
         orientation: 'portrait',
@@ -409,16 +409,26 @@ export const MagazineEditor: React.FC = () => {
         format: 'a4'
       });
       
-      pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      const imgProps = pdf.getImageProperties(imgData);
+      const ratio = Math.min(pdfWidth / imgProps.width, pdfHeight / imgProps.height);
+      
+      const renderWidth = imgProps.width * ratio;
+      const renderHeight = imgProps.height * ratio;
+      
+      // Center the scaled image mathematically
+      const x = (pdfWidth - renderWidth) / 2;
+      const y = (pdfHeight - renderHeight) / 2;
+      
+      pdf.addImage(imgData, 'PNG', x, y, renderWidth, renderHeight);
       pdf.save('document.pdf');
       
       showToast('PDF downloaded successfully!', 'success');
     } catch (error: any) {
       alert('PDF Export Failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
       showToast('Failed to generate PDF.', 'error');
-    } finally {
-      // Step 4: Immediately restore cached zoom and pan state
-      transformRef.current.setTransform(cachedState.positionX, cachedState.positionY, cachedState.scale, 0);
     }
   };
 
