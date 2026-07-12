@@ -100,7 +100,7 @@ const SELECT_STYLES = {
   input: () => '!text-foreground'
 };
 
-const PagePreview = ({ page }: { page: Page }) => {
+const PagePreview = ({ page, isThumbnail = false }: { page: Page, isThumbnail?: boolean }) => {
   const layoutJson = page.templates?.layout_json;
   const fields = layoutJson?.fields || [];
   const formData = page.data || {};
@@ -150,7 +150,13 @@ const PagePreview = ({ page }: { page: Page }) => {
               <div style={{ width: '100%', height: '100%', backgroundImage: val ? `url('${val}')` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} />
             ) : field.type === 'Chart' ? (
               <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
-                <ReactECharts option={getChartOptions(metadata.chartType || 'bar', val)} style={{ height: '100%', width: '100%' }} opts={{ renderer: 'svg' }} />
+                {isThumbnail ? (
+                  <div className="w-full h-full bg-slate-100 flex items-center justify-center border border-border/10 rounded">
+                    <Layout className="w-8 h-8 text-muted-foreground/30" />
+                  </div>
+                ) : (
+                  <ReactECharts option={getChartOptions(metadata.chartType || 'bar', val)} style={{ height: '100%', width: '100%' }} opts={{ renderer: 'svg' }} />
+                )}
               </div>
             ) : field.type === 'Icon' ? (
               (() => {
@@ -207,8 +213,8 @@ function SortableGridItem({ page, included, onToggle, isCompiling }: SortableGri
         />
       </div>
       
-      <div className="absolute top-0 left-0 w-[794px] h-[1122px] origin-top-left scale-[0.15] pointer-events-none">
-        <PagePreview page={page} />
+      <div style={{ width: '794px', height: '1122px', position: 'absolute', top: 0, left: 0, transform: 'scale(0.151)', transformOrigin: 'top left', pointerEvents: 'none' }}>
+        <PagePreview page={page} isThumbnail={true} />
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-border/10 p-1 text-center">
@@ -952,8 +958,8 @@ export function FolderContents() {
                         <div className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur rounded-md p-0.5 text-primary border border-primary/20 shadow-sm">
                           <Lock className="w-3.5 h-3.5" />
                         </div>
-                        <div className="absolute top-0 left-0 w-[794px] h-[1122px] origin-top-left scale-[0.15] pointer-events-none">
-                          <PagePreview page={zoneA} />
+                        <div style={{ width: '794px', height: '1122px', position: 'absolute', top: 0, left: 0, transform: 'scale(0.151)', transformOrigin: 'top left', pointerEvents: 'none' }}>
+                          <PagePreview page={zoneA} isThumbnail={true} />
                         </div>
                         <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-border/10 p-1 text-center">
                           <h4 className="text-[10px] font-bold text-foreground truncate px-1">Zone A: Cover</h4>
@@ -986,8 +992,8 @@ export function FolderContents() {
                         <div className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur rounded-md p-0.5 text-primary border border-primary/20 shadow-sm">
                           <Lock className="w-3.5 h-3.5" />
                         </div>
-                        <div className="absolute top-0 left-0 w-[794px] h-[1122px] origin-top-left scale-[0.15] pointer-events-none">
-                          <PagePreview page={zoneC} />
+                        <div style={{ width: '794px', height: '1122px', position: 'absolute', top: 0, left: 0, transform: 'scale(0.151)', transformOrigin: 'top left', pointerEvents: 'none' }}>
+                          <PagePreview page={zoneC} isThumbnail={true} />
                         </div>
                         <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-border/10 p-1 text-center">
                           <h4 className="text-[10px] font-bold text-foreground truncate px-1">Zone C: Back Page</h4>
