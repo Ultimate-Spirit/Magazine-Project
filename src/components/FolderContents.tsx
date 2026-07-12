@@ -26,7 +26,7 @@ import { useAuth } from '../contexts/AuthContext';
 import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
 import * as LucideIcons from 'lucide-react';
-import { Settings, Lock } from 'lucide-react'; // Added Lock and Settings
+import { Settings, Lock, X } from 'lucide-react'; // Added Lock, Settings, X
 
 const getChartOptions = (chartType: string, chartDataStr?: string) => {
   let labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -83,10 +83,6 @@ const getChartOptions = (chartType: string, chartDataStr?: string) => {
 import { ConfirmModal } from './common/ConfirmModal';
 import { logActivity } from '../lib/activityLogger';
 import type { Page, Folder, Company, Template } from '../types';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { PrintTemplate } from './PrintTemplate';
 
 import React from 'react';
@@ -173,56 +169,7 @@ const PagePreview = ({ page, isThumbnail = false }: { page: Page, isThumbnail?: 
   );
 };
 
-interface SortableGridItemProps {
-  page: Page;
-  included: boolean;
-  onToggle: () => void;
-  isCompiling: boolean;
-}
 
-function SortableGridItem({ page, included, onToggle, isCompiling }: SortableGridItemProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: page.id,
-    disabled: isCompiling
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={`relative w-[120px] h-[170px] overflow-hidden bg-white border rounded shadow cursor-grab active:cursor-grabbing flex-shrink-0 ${isDragging ? 'shadow-xl scale-105 border-primary z-50' : 'shadow-sm border-border/10'} ${included ? '' : 'opacity-50'}`}
-    >
-      <div className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur rounded-md shadow-sm p-0.5 border border-gray-200">
-        <input 
-          type="checkbox" 
-          checked={included} 
-          onChange={(e) => {
-            e.stopPropagation();
-            onToggle();
-          }}
-          disabled={isCompiling}
-          className="w-4 h-4 rounded border-gray-300 text-primary cursor-pointer"
-          onPointerDown={(e) => e.stopPropagation()}
-        />
-      </div>
-      
-      <div style={{ width: '794px', height: '1122px', position: 'absolute', top: 0, left: 0, transform: 'scale(0.151)', transformOrigin: 'top left', pointerEvents: 'none' }}>
-        <PagePreview page={page} isThumbnail={true} />
-      </div>
-
-      <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-border/10 p-1 text-center">
-        <h4 className="text-[10px] font-bold text-foreground truncate px-1">{page.title || 'Untitled'}</h4>
-      </div>
-    </div>
-  );
-}
 
 export function FolderContents() {
   const { folderId } = useParams<{ folderId: string }>();
@@ -252,7 +199,6 @@ export function FolderContents() {
   const [compilerPages, setCompilerPages] = useState<Page[]>([]);
   
   const [isExportSettingsOpen, setIsExportSettingsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'layout' | 'diagnostics'>('layout');
   const [zoneA, setZoneA] = useState<Page | null>(null);
   const [zoneB, setZoneB] = useState<Page[]>([]);
   const [zoneC, setZoneC] = useState<Page | null>(null);
@@ -260,13 +206,6 @@ export function FolderContents() {
 
   const [isCompiling, setIsCompiling] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
 
   useEffect(() => {
     setIsMounted(true);
@@ -501,7 +440,6 @@ export function FolderContents() {
     const initialIncluded: Record<string, boolean> = {};
     contents.forEach(p => initialIncluded[p.id] = true);
     setZoneBIncluded(initialIncluded);
-    setActiveTab('layout'); // Reset to layout tab when opening
     setIsExportSettingsOpen(true);
   };
 
@@ -536,31 +474,7 @@ export function FolderContents() {
     return { totalPages, hasCover, hasBack, contentCount, emptyFieldsCount, placeholderImageCount, finalPages };
   };
 
-  const handleDragEndSettings = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
 
-    const oldIndex = zoneB.findIndex(p => p.id === active.id);
-    const newIndex = zoneB.findIndex(p => p.id === over.id);
-    
-    if (oldIndex === -1 || newIndex === -1) return;
-
-    const newZoneB = arrayMove(zoneB, oldIndex, newIndex);
-    setZoneB(newZoneB);
-
-    try {
-      const updates = newZoneB.map((p, idx) => ({
-        id: p.id,
-        data: { ...(p.data || {}), _order_index: idx }
-      }));
-
-      for (const update of updates) {
-        await supabase.from('pages').update({ data: update.data }).eq('id', update.id);
-      }
-    } catch (err: any) {
-      console.error('Failed to persist order', err);
-    }
-  };
 
   const generatePDFFromSettings = async () => {
     setIsCompiling(true);
@@ -909,182 +823,82 @@ export function FolderContents() {
           )}
         </div>
 
-        {/* Tabbed Command Center Modal */}
+        {/* Export Manager Modal */}
         {isMounted && isExportSettingsOpen && (
-          <div className="fixed inset-0 z-[100] flex flex-col justify-end lg:justify-center items-center p-4 pb-0 lg:p-10 animate-in fade-in duration-300">
-            <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md" onClick={() => !isCompiling && setIsExportSettingsOpen(false)} />
-            <div className="relative w-full max-w-5xl bg-white dark:bg-slate-950 border border-border/10 rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] lg:max-h-[85vh] overflow-hidden animate-in slide-in-from-bottom-8">
+          <div className="fixed inset-0 z-[100] flex justify-center items-center p-4 bg-slate-950/40 backdrop-blur-sm">
+            <div className="w-full max-w-2xl p-6 bg-white rounded-xl shadow-2xl flex flex-col gap-6 max-h-[90vh] overflow-hidden">
               
-              <div className="p-6 lg:p-8 border-b border-border/5 bg-card/30 shrink-0 space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-black text-foreground tracking-tight">Command Center</h2>
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">Export configuration & diagnostics</p>
-                  </div>
-                  <button 
-                    onClick={() => setIsExportSettingsOpen(false)}
-                    disabled={isCompiling}
-                    className="p-2 hover:bg-secondary rounded-full text-muted-foreground transition-all disabled:opacity-50"
-                  >
-                    <ArrowLeft className="w-5 h-5 rotate-180" />
-                  </button>
-                </div>
-                
-                {/* Tabs Header */}
-                <div className="flex items-center gap-6 border-b border-border/10">
-                   <button 
-                     onClick={() => setActiveTab('layout')}
-                     className={`pb-3 px-1 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${activeTab === 'layout' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
-                   >
-                     Tab 1: Page Layout
-                   </button>
-                   <button 
-                     onClick={() => setActiveTab('diagnostics')}
-                     className={`pb-3 px-1 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${activeTab === 'diagnostics' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
-                   >
-                     Tab 2: Diagnostics
-                   </button>
-                </div>
+              <div className="flex items-center justify-between border-b pb-4 shrink-0">
+                <h2 className="text-xl font-bold text-gray-900">Export Settings: Select Pages</h2>
+                <button 
+                  onClick={() => setIsExportSettingsOpen(false)}
+                  disabled={isCompiling}
+                  className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors disabled:opacity-50"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              <div className="w-full min-h-[600px] max-h-[80vh] overflow-y-auto flex flex-col p-4 bg-slate-50/50 dark:bg-slate-900/10">
-                {activeTab === 'layout' ? (
-                  <div className="flex-1 w-full p-4 lg:p-8 animate-in fade-in duration-300">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 place-items-center w-full">
-                      {(() => {
-                        const safeZoneB = zoneB || [];
-                        if (!zoneA && !zoneC && safeZoneB.length === 0) {
-                          return (
-                            <div className="col-span-full py-12 flex flex-col items-center justify-center opacity-50 text-center">
-                              <Loader2 className="w-8 h-8 animate-spin mb-4 text-primary mx-auto" />
-                              <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Loading pages...</p>
-                            </div>
-                          );
-                        }
-                        return (
-                          <>
-                            {/* Zone A: Locked Cover */}
-                            {zoneA && (
-                              <div className="relative w-[120px] h-[170px] overflow-hidden bg-white border rounded shadow-sm opacity-90 flex-shrink-0">
-                                <div className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur rounded-md p-0.5 text-primary border border-primary/20 shadow-sm">
-                                  <Lock className="w-3.5 h-3.5" />
-                                </div>
-                                <div style={{ width: '794px', height: '1122px', position: 'absolute', top: 0, left: 0, transform: 'scale(0.151)', transformOrigin: 'top left', pointerEvents: 'none' }}>
-                                  <PagePreview page={zoneA} isThumbnail={true} />
-                                </div>
-                                <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-border/10 p-1 text-center">
-                                  <h4 className="text-[10px] font-bold text-foreground truncate px-1">Zone A: Cover</h4>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Zone B: Sortable Contents */}
-                            <DndContext 
-                              sensors={sensors} 
-                              collisionDetection={closestCenter} 
-                              onDragEnd={handleDragEndSettings}
-                            >
-                              <SortableContext items={safeZoneB.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                                {safeZoneB.map((page) => (
-                                  <SortableGridItem 
-                                    key={page.id}
-                                    page={page} 
-                                    included={zoneBIncluded[page.id] ?? true}
-                                    onToggle={() => setZoneBIncluded(prev => ({ ...prev, [page.id]: !prev[page.id] }))}
-                                    isCompiling={isCompiling} 
-                                  />
-                                ))}
-                              </SortableContext>
-                            </DndContext>
-
-                            {/* Zone C: Locked Back Page */}
-                            {zoneC && (
-                              <div className="relative w-[120px] h-[170px] overflow-hidden bg-white border rounded shadow-sm opacity-90 flex-shrink-0">
-                                <div className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur rounded-md p-0.5 text-primary border border-primary/20 shadow-sm">
-                                  <Lock className="w-3.5 h-3.5" />
-                                </div>
-                                <div style={{ width: '794px', height: '1122px', position: 'absolute', top: 0, left: 0, transform: 'scale(0.151)', transformOrigin: 'top left', pointerEvents: 'none' }}>
-                                  <PagePreview page={zoneC} isThumbnail={true} />
-                                </div>
-                                <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-border/10 p-1 text-center">
-                                  <h4 className="text-[10px] font-bold text-foreground truncate px-1">Zone C: Back Page</h4>
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        );
-                      })()}
+              <div className="flex-1 overflow-y-auto space-y-3">
+                {/* Zone A */}
+                {zoneA && (
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-500 transition-colors bg-gray-50">
+                    <div className="flex items-center gap-4">
+                      <Lock className="w-5 h-5 text-gray-400" />
+                      <span className="font-semibold text-gray-900">{zoneA.title || 'Untitled Cover'}</span>
                     </div>
+                    <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded">Mandatory</span>
                   </div>
-                ) : activeTab === 'diagnostics' ? (
-                  <div className="flex-1 w-full p-4 lg:p-8 animate-in fade-in duration-300">
-                  <div className="max-w-3xl mx-auto space-y-6">
-                    <h3 className="text-lg font-black uppercase tracking-widest text-foreground">Pre-Flight Diagnostics</h3>
-                    {(() => {
-                      const diag = getDiagnostics();
-                      return (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className={`p-5 rounded-2xl border ${diag.hasCover ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-700' : 'bg-red-500/5 border-red-500/20 text-red-700'}`}>
-                            <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">Zone A Check</p>
-                            <div className="flex items-center gap-2">
-                              {diag.hasCover ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-                              <span className="font-bold">{diag.hasCover ? 'Cover Page Attached' : 'Missing Cover Page (Mandatory)'}</span>
-                            </div>
-                          </div>
-                          
-                          <div className={`p-5 rounded-2xl border ${diag.hasBack ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-700' : 'bg-red-500/5 border-red-500/20 text-red-700'}`}>
-                            <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">Zone C Check</p>
-                            <div className="flex items-center gap-2">
-                              {diag.hasBack ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-                              <span className="font-bold">{diag.hasBack ? 'Back Page Attached' : 'Missing Back Page (Mandatory)'}</span>
-                            </div>
-                          </div>
+                )}
 
-                          <div className={`p-5 rounded-2xl border ${diag.contentCount > 0 ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-700' : 'bg-yellow-500/5 border-yellow-500/20 text-yellow-700'}`}>
-                            <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">Content Inclusion</p>
-                            <div className="flex items-center gap-2">
-                              {diag.contentCount > 0 ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-                              <span className="font-bold">{diag.contentCount} Content Pages Selected</span>
-                            </div>
-                          </div>
+                {/* Zone B */}
+                {(zoneB || []).map((page, idx) => {
+                  const included = zoneBIncluded[page.id] ?? true;
+                  return (
+                    <div 
+                      key={page.id} 
+                      onClick={() => !isCompiling && setZoneBIncluded(prev => ({ ...prev, [page.id]: !prev[page.id] }))}
+                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-500 transition-colors bg-gray-50 cursor-pointer"
+                    >
+                      <div className="flex items-center gap-4">
+                        <input 
+                          type="checkbox"
+                          checked={included}
+                          readOnly
+                          className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 pointer-events-none"
+                        />
+                        <span className={`font-semibold text-gray-900 ${included ? '' : 'opacity-50 line-through'}`}>{page.title || 'Untitled Page'}</span>
+                      </div>
+                      <span className="text-xs text-gray-400 font-medium">#{idx + 1}</span>
+                    </div>
+                  );
+                })}
 
-                          <div className="p-5 rounded-2xl border bg-primary/5 border-primary/20 text-primary">
-                            <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">Total Pages to Export</p>
-                            <div className="flex items-center gap-2">
-                              <Layers className="w-5 h-5" />
-                              <span className="font-bold">{diag.totalPages} Total Pages</span>
-                            </div>
-                          </div>
-
-                          <div className={`p-5 rounded-2xl border ${diag.emptyFieldsCount === 0 ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-700' : 'bg-yellow-500/5 border-yellow-500/20 text-yellow-700'}`}>
-                            <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">Content Completeness</p>
-                            <div className="flex items-center gap-2">
-                              {diag.emptyFieldsCount === 0 ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-                              <span className="font-bold">{diag.emptyFieldsCount === 0 ? 'All Fields Populated' : `${diag.emptyFieldsCount} Empty Fields Detected`}</span>
-                            </div>
-                          </div>
-
-                          <div className={`p-5 rounded-2xl border ${diag.placeholderImageCount === 0 ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-700' : 'bg-yellow-500/5 border-yellow-500/20 text-yellow-700'}`}>
-                            <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">Image Readiness</p>
-                            <div className="flex items-center gap-2">
-                              {diag.placeholderImageCount === 0 ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-                              <span className="font-bold">{diag.placeholderImageCount === 0 ? 'No Placeholder Images' : `${diag.placeholderImageCount} Placeholder Images Detected`}</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
+                {/* Zone C */}
+                {zoneC && (
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-500 transition-colors bg-gray-50">
+                    <div className="flex items-center gap-4">
+                      <Lock className="w-5 h-5 text-gray-400" />
+                      <span className="font-semibold text-gray-900">{zoneC.title || 'Untitled Back Page'}</span>
+                    </div>
+                    <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded">Mandatory</span>
                   </div>
-                </div>
-                ) : null}
+                )}
+
+                {!zoneA && !zoneC && (!zoneB || zoneB.length === 0) && (
+                  <div className="py-12 flex flex-col items-center justify-center opacity-50 text-center">
+                    <Loader2 className="w-8 h-8 animate-spin mb-4 text-blue-500" />
+                    <p className="text-sm font-bold text-gray-500">Loading pages...</p>
+                  </div>
+                )}
               </div>
 
-              {/* Global Footer Action */}
-              <div className="p-6 lg:p-8 border-t border-border/5 bg-card/50 shrink-0 z-20 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
+              {/* Export Button */}
+              <div className="pt-4 border-t shrink-0">
                 <button
                   onClick={generatePDFFromSettings}
                   disabled={isCompiling || (!zoneA && !zoneC && zoneB.length === 0)}
-                  className="w-full py-5 bg-primary text-primary-foreground font-black rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest shadow-xl shadow-primary/20"
+                  className="w-full py-4 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-3"
                 >
                   {isCompiling ? (
                     <>
