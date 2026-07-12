@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import ReactECharts from 'echarts-for-react';
-import { ArrowLeft, Loader2, AlertCircle, UploadCloud, Download, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertCircle, UploadCloud, Download, Image as ImageIcon, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 
@@ -484,8 +484,36 @@ export const MagazineEditor: React.FC = () => {
           maxScale={4}
           centerOnInit={true}
           alignmentAnimation={{ animationTime: 0 }}
+          wheel={{ disabled: true }}
+          pinch={{ disabled: true }}
+          doubleClick={{ disabled: true }}
         >
-          <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }}>
+          {({ zoomIn, zoomOut, resetTransform }) => (
+            <>
+              <div className="absolute top-6 right-6 z-20 flex items-center gap-1 bg-white border border-gray-300 rounded-lg shadow-sm p-1">
+                <button 
+                  onClick={() => zoomOut()} 
+                  className="p-1.5 hover:bg-gray-100 rounded text-gray-700 transition-colors"
+                  title="Zoom Out"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => resetTransform()} 
+                  className="p-1.5 hover:bg-gray-100 rounded text-gray-700 transition-colors"
+                  title="Reset Zoom"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => zoomIn()} 
+                  className="p-1.5 hover:bg-gray-100 rounded text-gray-700 transition-colors"
+                  title="Zoom In"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+              </div>
+              <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }}>
             {/* The Locked A4 Canvas Component */}
             <div 
               className="bg-white shadow-2xl shrink-0" 
@@ -557,6 +585,8 @@ export const MagazineEditor: React.FC = () => {
           })}
             </div>
           </TransformComponent>
+          </>
+          )}
         </TransformWrapper>
       </div>
 
