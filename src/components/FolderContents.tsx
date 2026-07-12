@@ -103,6 +103,7 @@ const StagingRenderer = ({ pages }: { pages: any[] }) => {
               marginBottom: '20px'
             }}
           >
+            {layoutJson?.background_url && <img src={layoutJson.background_url} loading="eager" style={{ display: 'none' }} alt="bg-preload" />}
             {(layoutJson.fields || []).map((field: any) => {
               const val = formData[field.id] || '';
               const metadata = field.metadata || {};
@@ -133,16 +134,19 @@ const StagingRenderer = ({ pages }: { pages: any[] }) => {
                   }}
                 >
                   {field.type === 'Image' ? (
-                    <div 
-                      style={{ 
-                        width: '100%', 
-                        height: '100%', 
-                        backgroundImage: val ? `url('${val}')` : 'none', 
-                        backgroundSize: 'cover', 
-                        backgroundPosition: 'center',
-                        backgroundRepeat: 'no-repeat'
-                      }} 
-                    />
+                    <>
+                      {val && <img src={val} loading="eager" style={{ display: 'none' }} alt="preload" />}
+                      <div 
+                        style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          backgroundImage: val ? `url('${val}')` : 'none', 
+                          backgroundSize: 'cover', 
+                          backgroundPosition: 'center',
+                          backgroundRepeat: 'no-repeat'
+                        }} 
+                      />
+                    </>
                   ) : field.type === 'Chart' ? (
                     <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
                       <ReactECharts 
@@ -564,26 +568,15 @@ export function FolderContents() {
 
       root.render(<StagingRenderer pages={compilerPages} />);
 
-      // Step 2: Asynchronous delay to guarantee all components are drawn
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-      const pdfWidth = pdf.internal.pageSize.getWidth();
+      // Give React a brief moment to mount the DOM
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       const pageNodes = Array.from(document.querySelectorAll('.a4-staging-page'));
+      const allEchartsImgCleanups: (() => void)[] = [];
 
-      // Step 3: Iterate sequentially
-      for (let i = 0; i < pageNodes.length; i++) {
-        const pageNode = pageNodes[i] as HTMLElement;
-
-        // Convert ECharts inside this specific page
+      // Phase 1: Convert all ECharts instances to static base64 images synchronously across all pages
+      pageNodes.forEach((pageNode) => {
         const echartContainers = Array.from(pageNode.querySelectorAll('.echarts-for-react'));
-        const originalDisplays: string[] = [];
-
         echartContainers.forEach((container) => {
           const instance = echarts.getInstanceByDom(container as HTMLElement);
           if (instance) {
@@ -597,19 +590,51 @@ export function FolderContents() {
             img.style.top = '0';
             img.style.left = '0';
             img.style.objectFit = 'contain';
+            img.loading = 'eager'; // Bypass lazy loading
             
             const child = container.firstElementChild as HTMLElement;
+            let originalDisplay = '';
             if (child) {
-              originalDisplays.push(child.style.display);
+              originalDisplay = child.style.display;
               child.style.display = 'none';
-            } else {
-              originalDisplays.push('');
             }
             container.appendChild(img);
-          } else {
-            originalDisplays.push('');
+
+            allEchartsImgCleanups.push(() => {
+              img.remove();
+              if (child) child.style.display = originalDisplay;
+            });
           }
         });
+      });
+
+      // Phase 2: Await typography ready barrier
+      await document.fonts.ready;
+
+      // Phase 3: Await all image loads (bypassing lazy rendering)
+      const allImages = Array.from(document.querySelectorAll('#pdf-staging-root img')) as HTMLImageElement[];
+      const imagePromises = allImages.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve; // Resolve on error so pipeline doesn't hang
+        });
+      });
+      await Promise.all(imagePromises);
+
+      // Phase 4: Structural delay for main thread paint and layout recalculation
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+
+      // Step 3: Iterate sequentially
+      for (let i = 0; i < pageNodes.length; i++) {
+        const pageNode = pageNodes[i] as HTMLElement;
 
         // Run html2canvas
         const canvas = await html2canvas(pageNode, { 
@@ -627,15 +652,10 @@ export function FolderContents() {
           pdf.addPage();
         }
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-
-        // Restore ECharts (technically optional since we destroy staging soon, but good practice)
-        echartContainers.forEach((container, idx) => {
-          const img = container.querySelector('.echarts-static-clone');
-          if (img) img.remove();
-          const child = container.firstElementChild as HTMLElement;
-          if (child) child.style.display = originalDisplays[idx];
-        });
       }
+
+      // Restore ECharts
+      allEchartsImgCleanups.forEach(cleanup => cleanup());
 
       // Step 5: Save and cleanup
       pdf.save('Master_Document.pdf');
