@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import ReactECharts from 'echarts-for-react';
 import { ArrowLeft, Loader2, AlertCircle, UploadCloud, Download, Image as ImageIcon } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
 const toTitleCase = (name: string) =>
@@ -240,11 +241,24 @@ export const MagazineEditor: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
   const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
+  const [initialScale, setInitialScale] = useState(1);
 
   const showToast = (message: string, type: 'error' | 'success' = 'error') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 6000);
   };
+
+  useEffect(() => {
+    const handleResize = () => {
+      const h = window.innerHeight;
+      const w = window.innerWidth;
+      const s = Math.min((h - 80) / 1123, (w - 420 - 80) / 794);
+      setInitialScale(s > 0 ? s : 1);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const fetch = async () => {
@@ -449,7 +463,7 @@ export const MagazineEditor: React.FC = () => {
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Right Canvas Workspace (Dedicated Consumer Rendering Engine) */}
-      <div className="flex-1 w-full h-full bg-slate-50 relative flex items-center justify-center overflow-hidden border-l border-gray-200">
+      <div className="flex-1 w-full h-full bg-slate-50 relative flex flex-col justify-center items-center overflow-hidden border-l border-gray-200">
         <button
           onClick={() => navigate(`/folder/${folderId}`)}
           className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:text-gray-900 shadow-sm transition-all z-20"
@@ -464,29 +478,26 @@ export const MagazineEditor: React.FC = () => {
           </span>
         </div>
 
-        {/* Scalable Wrapper */}
-        <div 
-          className="relative flex items-center justify-center"
-          style={{
-            '--scale': 'calc(min((100vh - 64px) / 1123, (100vw - 420px - 64px) / 794))',
-            width: 'calc(794px * var(--scale))',
-            height: 'calc(1123px * var(--scale))'
-          } as React.CSSProperties}
+        <TransformWrapper
+          initialScale={initialScale}
+          minScale={0.1}
+          maxScale={4}
+          centerOnInit={true}
+          alignmentAnimation={{ animationTime: 0 }}
         >
-          {/* The Locked A4 Canvas Component */}
-          <div 
-            className="absolute top-0 left-0 bg-white shadow-2xl overflow-hidden shrink-0" 
-            style={{ 
-              width: '794px', 
-              height: '1123px', 
-              backgroundImage: `url('${layoutJson?.background_url || ''}')`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              transform: 'scale(var(--scale))',
-              transformOrigin: 'top left'
-            }}
-          >
-            {fields.map((field: any) => {
+          <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }}>
+            {/* The Locked A4 Canvas Component */}
+            <div 
+              className="bg-white shadow-2xl shrink-0" 
+              style={{ 
+                width: '794px', 
+                height: '1123px', 
+                backgroundImage: `url('${layoutJson?.background_url || ''}')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            >
+              {fields.map((field: any) => {
             const val = formData[field.id] || '';
             const metadata = field.metadata || {};
 
@@ -544,8 +555,9 @@ export const MagazineEditor: React.FC = () => {
               </div>
             );
           })}
-          </div>
-        </div>
+            </div>
+          </TransformComponent>
+        </TransformWrapper>
       </div>
 
       {/* Left Properties Panel (Data Entry Form) */}
