@@ -506,7 +506,8 @@ export function FolderContents() {
   };
 
   const getDiagnostics = () => {
-    const selectedZoneB = zoneB.filter(p => zoneBIncluded[p.id]);
+    const safeZoneB = zoneB || [];
+    const selectedZoneB = safeZoneB.filter(p => zoneBIncluded[p.id]);
     const finalPages = [];
     if (zoneA) finalPages.push(zoneA);
     finalPages.push(...selectedZoneB);
@@ -946,65 +947,77 @@ export function FolderContents() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto invisible-scrollbar bg-slate-50/50 dark:bg-slate-900/10 relative">
-                
-                {/* Tab 1: Layout */}
-                <div className={`absolute inset-0 p-4 lg:p-8 overflow-y-auto transition-opacity duration-300 ${activeTab === 'layout' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'}`}>
-                  <div className="flex flex-wrap gap-4 lg:gap-8 justify-center lg:justify-start">
-                    
-                    {/* Zone A: Locked Cover */}
-                    {zoneA && (
-                      <div className="relative w-[120px] h-[170px] overflow-hidden bg-white border rounded shadow-sm opacity-90 flex-shrink-0">
-                        <div className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur rounded-md p-0.5 text-primary border border-primary/20 shadow-sm">
-                          <Lock className="w-3.5 h-3.5" />
-                        </div>
-                        <div style={{ width: '794px', height: '1122px', position: 'absolute', top: 0, left: 0, transform: 'scale(0.151)', transformOrigin: 'top left', pointerEvents: 'none' }}>
-                          <PagePreview page={zoneA} isThumbnail={true} />
-                        </div>
-                        <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-border/10 p-1 text-center">
-                          <h4 className="text-[10px] font-bold text-foreground truncate px-1">Zone A: Cover</h4>
-                        </div>
-                      </div>
-                    )}
+              <div className="w-full min-h-[600px] max-h-[80vh] overflow-y-auto flex flex-col p-4 bg-slate-50/50 dark:bg-slate-900/10">
+                {activeTab === 'layout' ? (
+                  <div className="flex-1 w-full p-4 lg:p-8 animate-in fade-in duration-300">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 place-items-center w-full">
+                      {(() => {
+                        const safeZoneB = zoneB || [];
+                        if (!zoneA && !zoneC && safeZoneB.length === 0) {
+                          return (
+                            <div className="col-span-full py-12 flex flex-col items-center justify-center opacity-50 text-center">
+                              <Loader2 className="w-8 h-8 animate-spin mb-4 text-primary mx-auto" />
+                              <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Loading pages...</p>
+                            </div>
+                          );
+                        }
+                        return (
+                          <>
+                            {/* Zone A: Locked Cover */}
+                            {zoneA && (
+                              <div className="relative w-[120px] h-[170px] overflow-hidden bg-white border rounded shadow-sm opacity-90 flex-shrink-0">
+                                <div className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur rounded-md p-0.5 text-primary border border-primary/20 shadow-sm">
+                                  <Lock className="w-3.5 h-3.5" />
+                                </div>
+                                <div style={{ width: '794px', height: '1122px', position: 'absolute', top: 0, left: 0, transform: 'scale(0.151)', transformOrigin: 'top left', pointerEvents: 'none' }}>
+                                  <PagePreview page={zoneA} isThumbnail={true} />
+                                </div>
+                                <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-border/10 p-1 text-center">
+                                  <h4 className="text-[10px] font-bold text-foreground truncate px-1">Zone A: Cover</h4>
+                                </div>
+                              </div>
+                            )}
 
-                    {/* Zone B: Sortable Contents */}
-                    <DndContext 
-                      sensors={sensors} 
-                      collisionDetection={closestCenter} 
-                      onDragEnd={handleDragEndSettings}
-                    >
-                      <SortableContext items={zoneB.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                        {zoneB.map((page) => (
-                          <SortableGridItem 
-                            key={page.id}
-                            page={page} 
-                            included={zoneBIncluded[page.id] ?? true}
-                            onToggle={() => setZoneBIncluded(prev => ({ ...prev, [page.id]: !prev[page.id] }))}
-                            isCompiling={isCompiling} 
-                          />
-                        ))}
-                      </SortableContext>
-                    </DndContext>
+                            {/* Zone B: Sortable Contents */}
+                            <DndContext 
+                              sensors={sensors} 
+                              collisionDetection={closestCenter} 
+                              onDragEnd={handleDragEndSettings}
+                            >
+                              <SortableContext items={safeZoneB.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                                {safeZoneB.map((page) => (
+                                  <SortableGridItem 
+                                    key={page.id}
+                                    page={page} 
+                                    included={zoneBIncluded[page.id] ?? true}
+                                    onToggle={() => setZoneBIncluded(prev => ({ ...prev, [page.id]: !prev[page.id] }))}
+                                    isCompiling={isCompiling} 
+                                  />
+                                ))}
+                              </SortableContext>
+                            </DndContext>
 
-                    {/* Zone C: Locked Back Page */}
-                    {zoneC && (
-                      <div className="relative w-[120px] h-[170px] overflow-hidden bg-white border rounded shadow-sm opacity-90 flex-shrink-0">
-                        <div className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur rounded-md p-0.5 text-primary border border-primary/20 shadow-sm">
-                          <Lock className="w-3.5 h-3.5" />
-                        </div>
-                        <div style={{ width: '794px', height: '1122px', position: 'absolute', top: 0, left: 0, transform: 'scale(0.151)', transformOrigin: 'top left', pointerEvents: 'none' }}>
-                          <PagePreview page={zoneC} isThumbnail={true} />
-                        </div>
-                        <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-border/10 p-1 text-center">
-                          <h4 className="text-[10px] font-bold text-foreground truncate px-1">Zone C: Back Page</h4>
-                        </div>
-                      </div>
-                    )}
+                            {/* Zone C: Locked Back Page */}
+                            {zoneC && (
+                              <div className="relative w-[120px] h-[170px] overflow-hidden bg-white border rounded shadow-sm opacity-90 flex-shrink-0">
+                                <div className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur rounded-md p-0.5 text-primary border border-primary/20 shadow-sm">
+                                  <Lock className="w-3.5 h-3.5" />
+                                </div>
+                                <div style={{ width: '794px', height: '1122px', position: 'absolute', top: 0, left: 0, transform: 'scale(0.151)', transformOrigin: 'top left', pointerEvents: 'none' }}>
+                                  <PagePreview page={zoneC} isThumbnail={true} />
+                                </div>
+                                <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-border/10 p-1 text-center">
+                                  <h4 className="text-[10px] font-bold text-foreground truncate px-1">Zone C: Back Page</h4>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
                   </div>
-                </div>
-
-                {/* Tab 2: Diagnostics */}
-                <div className={`absolute inset-0 p-4 lg:p-8 overflow-y-auto transition-opacity duration-300 ${activeTab === 'diagnostics' ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'}`}>
+                ) : activeTab === 'diagnostics' ? (
+                  <div className="flex-1 w-full p-4 lg:p-8 animate-in fade-in duration-300">
                   <div className="max-w-3xl mx-auto space-y-6">
                     <h3 className="text-lg font-black uppercase tracking-widest text-foreground">Pre-Flight Diagnostics</h3>
                     {(() => {
@@ -1062,7 +1075,7 @@ export function FolderContents() {
                       );
                     })()}
                   </div>
-                </div>
+                ) : null}
               </div>
 
               {/* Global Footer Action */}
