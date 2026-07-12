@@ -100,7 +100,7 @@ const urlToBase64 = async (url: string): Promise<string> => {
 
 const StagingRenderer = ({ pages }: { pages: any[] }) => {
   return (
-    <div id="pdf-staging-root" style={{ position: 'absolute', left: 0, top: 0, opacity: 1, display: 'block', zIndex: -9999 }}>
+    <div id="pdf-staging-root" className="absolute top-0 left-0 opacity-0 pointer-events-none -z-50 origin-top-left w-[1200px]">
       {pages.map((page, idx) => {
         const layoutJson = page.templates?.layout_json || { fields: [] };
         const formData = page.data || {};
@@ -275,6 +275,7 @@ export function FolderContents() {
   const [isMounted, setIsMounted] = useState(false);
   const [isCompilerOpen, setIsCompilerOpen] = useState(false);
   const [compilerPages, setCompilerPages] = useState<Page[]>([]);
+  const [stagingPages, setStagingPages] = useState<any[] | null>(null);
   const [isCompiling, setIsCompiling] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -591,15 +592,11 @@ export function FolderContents() {
         }
       }
 
-      // Step 1: Create a staging DOM element
-      const stagingDiv = document.createElement('div');
-      document.body.appendChild(stagingDiv);
-      const root = createRoot(stagingDiv);
-
-      root.render(<StagingRenderer pages={preprocessedPages} />);
+      // Render inline directly in the React tree so we inherit all CSS classes/contexts
+      setStagingPages(preprocessedPages);
 
       // Give React a brief moment to mount the DOM
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const stagingRoot = document.getElementById('pdf-staging-root');
       if (stagingRoot) {
@@ -676,6 +673,8 @@ export function FolderContents() {
         const canvas = await html2canvas(pageNode, { 
           scale: 2, 
           useCORS: true,
+          windowWidth: 1200,
+          windowHeight: 1600,
           logging: false 
         });
 
@@ -696,8 +695,7 @@ export function FolderContents() {
       // Step 5: Save and cleanup
       pdf.save('Master_Document.pdf');
       
-      root.unmount();
-      document.body.removeChild(stagingDiv);
+      setStagingPages(null);
 
       showNotification('success', 'Master PDF compiled and downloaded');
       setIsCompilerOpen(false);
@@ -707,12 +705,7 @@ export function FolderContents() {
       showNotification('error', `Compilation failed: ${error.message}`);
     } finally {
       setIsCompiling(false);
-      // Clean up in case of failure
-      const stagingRoot = document.getElementById('pdf-staging-root');
-      if (stagingRoot && stagingRoot.parentElement) {
-        // try to unmount if possible, or just remove the node
-        stagingRoot.parentElement.remove();
-      }
+      setStagingPages(null);
     }
   };
 
@@ -752,6 +745,7 @@ export function FolderContents() {
 
   return (
     <WorkspaceLayout company={company || { id: 'none', name: 'Workspace' }}>
+      {stagingPages && <StagingRenderer pages={stagingPages} />}
       <div className="w-full px-2 lg:px-10 xl:px-16 py-6 lg:py-16 text-foreground relative font-sans">
         {notification && (
           <div className={`fixed top-8 right-8 z-[100] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right-8 duration-300 ${notification.type === 'success' ? 'bg-foreground text-background' : 'bg-destructive text-destructive-foreground'}`}>
