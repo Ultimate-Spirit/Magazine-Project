@@ -6,6 +6,7 @@ import * as echarts from 'echarts';
 import { ArrowLeft, Loader2, AlertCircle, UploadCloud, Download, Image as ImageIcon, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+import Papa from 'papaparse';
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
 const toTitleCase = (name: string) =>
@@ -446,6 +447,90 @@ export const MagazineEditor: React.FC = () => {
 
   const fields = layoutJson?.fields || [];
 
+  const handleDownloadTemplate = () => {
+    const csvData: any[] = [];
+    csvData.push(['Template Key', 'Label / X-Axis', 'Data (Y-Axis 1)', 'Data (Y-Axis 2)']);
+    
+    fields.forEach((field: any) => {
+      if (field.type === 'Chart') {
+        csvData.push([field.id, 'Label 1', '100', '150']);
+        csvData.push([field.id, 'Label 2', '200', '250']);
+      } else {
+        csvData.push([field.id, formData[field.id] || 'Your text here', '', '']);
+      }
+    });
+
+    const csvStr = Papa.unparse(csvData, { header: false });
+    const blob = new Blob([csvStr], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${pageTitle || 'Template'}_CSV_Format.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    Papa.parse(file, {
+      header: false,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const rows = results.data as string[][];
+        if (rows.length === 0) return;
+        
+        const dataRows = rows.slice(1);
+        const updates: Record<string, any> = {};
+        const chartGroups: Record<string, { labels: string[], series1: number[], series2: number[] }> = {};
+
+        dataRows.forEach(row => {
+          if (row.length < 2) return;
+          const key = row[0];
+          if (!key) return;
+          
+          const label = row[1];
+          const rawData1 = row[2] || '';
+          const rawData2 = row[3] || '';
+          
+          const sanitize = (val: string) => {
+            if (!val || val.trim() === '') return 0;
+            const stripped = val.replace(/[^\d.-]/g, '');
+            const parsed = parseFloat(stripped);
+            return isNaN(parsed) ? 0 : parsed;
+          };
+
+          const field = fields.find((f: any) => f.id === key);
+          if (!field) return;
+
+          if (field.type === 'Chart') {
+            if (!chartGroups[key]) chartGroups[key] = { labels: [], series1: [], series2: [] };
+            chartGroups[key].labels.push(label);
+            chartGroups[key].series1.push(sanitize(rawData1));
+            chartGroups[key].series2.push(sanitize(rawData2));
+          } else {
+            updates[key] = label;
+          }
+        });
+        
+        Object.keys(chartGroups).forEach(key => {
+          const group = chartGroups[key];
+          updates[key] = JSON.stringify({
+            labels: group.labels,
+            series: group.series1,
+            series2: group.series2
+          });
+        });
+
+        setFormData(prev => ({ ...prev, ...updates }));
+        showToast('CSV Data imported successfully!', 'success');
+      }
+    });
+    
+    if (e.target) e.target.value = '';
+  };
+
   return (
     <div className="flex h-screen w-full bg-white text-gray-900 overflow-hidden flex-row-reverse">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
@@ -594,9 +679,35 @@ export const MagazineEditor: React.FC = () => {
         
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold text-gray-900">Properties</h2>
-            <p className="text-sm text-gray-500">Edit template fields below</p>
+          <div className="space-y-4 mb-2">
+            <div className="space-y-1">
+              <h2 className="text-lg font-semibold text-gray-900">Properties</h2>
+              <p className="text-sm text-gray-500">Edit template fields below</p>
+            </div>
+            
+            {fields.length > 0 && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDownloadTemplate}
+                  className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors border border-gray-200"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  CSV Template
+                </button>
+                <div className="flex-1 relative">
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleCSVUpload}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors border border-blue-200">
+                    <UploadCloud className="w-3.5 h-3.5" />
+                    Upload Data
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {fields.length === 0 ? (
