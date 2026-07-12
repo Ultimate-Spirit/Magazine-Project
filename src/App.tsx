@@ -114,6 +114,7 @@ function App() {
                   <CompanySelection onSelect={handleCompanySelect} />
                 </WorkspaceLayout>
               )}
+            </ProtectedRoute>
           } 
         />
 

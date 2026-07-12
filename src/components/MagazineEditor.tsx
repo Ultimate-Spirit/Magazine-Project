@@ -6,8 +6,6 @@ import * as echarts from 'echarts';
 import { ArrowLeft, Loader2, AlertCircle, UploadCloud, Download, Image as ImageIcon, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
 const toTitleCase = (name: string) =>
@@ -381,97 +379,39 @@ export const MagazineEditor: React.FC = () => {
   };
 
   const handleDownloadPdf = async () => {
-    if (!transformRef.current) return;
-    
-    // Fallback getter for react-zoom-pan-pinch state
-    const currentState = transformRef.current.instance.transformState || (transformRef.current as any).state || { scale: 1, positionX: 0, positionY: 0 };
-    const cachedState = { ...currentState };
-
-    const echartContainers = Array.from(document.querySelectorAll('.echarts-for-react'));
-    const originalDisplays: string[] = [];
+    if (!page) return;
 
     try {
-      showToast('Generating PDF, please wait...', 'success');
-      
-      // Step 1: Programmatically iterate over ECharts and replace with static base64 images
-      echartContainers.forEach((container) => {
-        const instance = echarts.getInstanceByDom(container as HTMLElement);
-        if (instance) {
-          const dataUrl = instance.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: 'transparent' });
-          const img = document.createElement('img');
-          img.src = dataUrl;
-          img.className = 'echarts-static-clone';
-          img.style.width = '100%';
-          img.style.height = '100%';
-          img.style.position = 'absolute';
-          img.style.top = '0';
-          img.style.left = '0';
-          img.style.objectFit = 'contain';
-          
-          const child = container.firstElementChild as HTMLElement;
-          if (child) {
-            originalDisplays.push(child.style.display);
-            child.style.display = 'none';
-          } else {
-            originalDisplays.push('');
-          }
-          container.appendChild(img);
-        } else {
-          originalDisplays.push('');
-        }
+      showToast('Generating PDF on Server, please wait...', 'success');
+
+      // Send single page as compiler pages array
+      const response = await fetch('/api/generate-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ pages: [page] }),
       });
-      
-      // Step 2: Cache zoom state, temporarily force to scale: 1, x:0, y:0
-      transformRef.current.setTransform(0, 0, 1, 0);
-      
-      // Await DOM update
-      await new Promise(resolve => setTimeout(resolve, 150));
-      
-      const node = document.getElementById('a4-canvas-container');
-      if (!node) throw new Error('Canvas not found');
-      
-      // Step 3: Execute html2canvas on the A4 container
-      const canvas = await html2canvas(node, { 
-        scale: 2, 
-        useCORS: true,
-        logging: false
-      });
-      
-      // Step 4: Inject the image into jsPDF using mathematical aspect ratio preservation
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const imgProps = pdf.getImageProperties(imgData);
-      
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save('document.pdf');
-      
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server Error ${response.status}: ${errorText}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${page.title || 'document'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
       showToast('PDF downloaded successfully!', 'success');
     } catch (error: any) {
       alert('PDF Export Failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
       showToast('Failed to generate PDF.', 'error');
-    } finally {
-      // Step 5: Restore ECharts canvas elements and user zoom/pan state
-      echartContainers.forEach((container, i) => {
-        const img = container.querySelector('.echarts-static-clone');
-        if (img) img.remove();
-        
-        const child = container.firstElementChild as HTMLElement;
-        if (child) {
-          child.style.display = originalDisplays[i];
-        }
-      });
-      
-      if (cachedState && cachedState.scale !== undefined) {
-        transformRef.current.setTransform(cachedState.positionX || 0, cachedState.positionY || 0, cachedState.scale || 1, 0);
-      }
     }
   };
 
