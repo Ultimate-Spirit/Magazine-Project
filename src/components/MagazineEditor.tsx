@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import ReactECharts from 'echarts-for-react';
 import { ArrowLeft, Loader2, AlertCircle, UploadCloud, Download, Image as ImageIcon } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
 const toTitleCase = (name: string) =>
@@ -24,41 +25,178 @@ const extractVarsFromLayout = (layout: any): string[] => {
   return layout.fields.map((f: any) => f.name);
 };
 
-const getChartOptions = (chartType: string) => {
+const getChartOptions = (chartType: string, chartDataStr?: string) => {
+  let labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  let series = [120, 200, 150, 80, 70, 110, 130];
+  try {
+    if (chartDataStr) {
+      const parsed = JSON.parse(chartDataStr);
+      if (parsed.labels) labels = parsed.labels;
+      if (parsed.series) series = parsed.series;
+    }
+  } catch (e) {}
+
   const baseOptions = {
     tooltip: { trigger: 'axis' },
-    xAxis: { type: 'category', data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] },
+    xAxis: { type: 'category', data: labels },
     yAxis: { type: 'value' },
-    series: [{ data: [120, 200, 150, 80, 70, 110, 130], type: 'bar' }]
+    series: [{ data: series, type: 'bar' }]
   };
 
   switch (chartType) {
     case 'pie':
       return {
         tooltip: { trigger: 'item' },
-        series: [{ type: 'pie', radius: '50%', data: [{ value: 1048, name: 'A' }, { value: 735, name: 'B' }, { value: 580, name: 'C' }] }]
+        series: [{ type: 'pie', radius: '50%', data: labels.map((l, i) => ({ name: l, value: series[i] || 0 })) }]
       };
     case 'line':
-      return { ...baseOptions, series: [{ data: [120, 200, 150, 80, 70, 110, 130], type: 'line', smooth: true }] };
+      return { ...baseOptions, series: [{ data: series, type: 'line', smooth: true }] };
     case 'scatter':
       return {
         xAxis: {},
         yAxis: {},
-        series: [{ symbolSize: 20, data: [[10.0, 8.04], [8.0, 6.95], [13.0, 7.58], [9.0, 8.81], [11.0, 8.33]], type: 'scatter' }]
+        series: [{ symbolSize: 20, data: series.map((s, i) => [i, s]), type: 'scatter' }]
       };
     case 'radar':
       return {
-        radar: { indicator: [{ name: 'A', max: 100 }, { name: 'B', max: 100 }, { name: 'C', max: 100 }] },
-        series: [{ type: 'radar', data: [{ value: [80, 50, 90], name: 'Data' }] }]
+        radar: { indicator: labels.map(l => ({ name: l, max: Math.max(...series) * 1.2 || 100 })) },
+        series: [{ type: 'radar', data: [{ value: series, name: 'Data' }] }]
       };
     case 'funnel':
       return {
         tooltip: { trigger: 'item' },
-        series: [{ type: 'funnel', left: '10%', width: '80%', data: [{ value: 60, name: 'Visit' }, { value: 40, name: 'Inquiry' }, { value: 20, name: 'Order' }, { value: 80, name: 'Click' }, { value: 100, name: 'Show' }] }]
+        series: [{ type: 'funnel', left: '10%', width: '80%', data: labels.map((l, i) => ({ name: l, value: series[i] || 0 })) }]
       };
     default:
       return baseOptions;
   }
+};
+
+/* ─── Field Components ────────────────────────────────────────── */
+const COMMON_ICONS = [
+  'Smile', 'Heart', 'Star', 'ThumbsUp', 'ThumbsDown', 'Zap', 'Coffee', 'Activity',
+  'AlertCircle', 'AlertTriangle', 'ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown',
+  'Bell', 'Bookmark', 'Briefcase', 'Calendar', 'Camera', 'Check', 'CheckCircle',
+  'ChevronDown', 'ChevronUp', 'ChevronLeft', 'ChevronRight', 'Clock', 'Cloud',
+  'Compass', 'Copy', 'CreditCard', 'Download', 'Edit', 'Eye', 'EyeOff', 'File',
+  'FileText', 'Filter', 'Flag', 'Folder', 'Gift', 'Globe', 'Headphones', 'Home',
+  'Image', 'Info', 'Key', 'Layers', 'Layout', 'Link', 'Lock', 'Mail', 'Map',
+  'MapPin', 'MessageCircle', 'MessageSquare', 'Mic', 'Minus', 'Moon', 'MoreHorizontal',
+  'MoreVertical', 'Music', 'Package', 'Paperclip', 'Pause', 'PenTool', 'Phone',
+  'Play', 'Plus', 'PlusCircle', 'Power', 'Printer', 'RefreshCw', 'Repeat',
+  'Save', 'Search', 'Send', 'Settings', 'Share', 'Share2', 'Shield', 'ShoppingBag',
+  'ShoppingCart', 'Shuffle', 'SkipBack', 'SkipForward', 'Slash', 'Sliders',
+  'Smartphone', 'Speaker', 'StarHalf', 'StopCircle', 'Sun', 'Sunrise', 'Sunset',
+  'Tablet', 'Tag', 'Target', 'Terminal', 'Thermometer', 'Trash', 'Trash2',
+  'TrendingDown', 'TrendingUp', 'Tv', 'Type', 'Umbrella', 'Unlock', 'Upload',
+  'UploadCloud', 'User', 'UserCheck', 'UserMinus', 'UserPlus', 'Users', 'Video',
+  'VideoOff', 'Volume', 'Volume1', 'Volume2', 'VolumeX', 'Watch', 'Wifi',
+  'WifiOff', 'Wind', 'X', 'XCircle', 'XSquare', 'Youtube', 'ZapOff', 'ZoomIn',
+  'ZoomOut'
+];
+
+const ChartDataEditor = ({ value, onChange, chartType }: { value: string, onChange: (v: string) => void, chartType: string }) => {
+  let chartData = { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], series: [120, 200, 150, 80, 70, 110, 130] };
+  try {
+    if (value) {
+      chartData = JSON.parse(value);
+    }
+  } catch(e) {}
+
+  return (
+    <div className="flex flex-col gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+      <div className="text-xs font-semibold text-gray-700">Chart Data ({chartType})</div>
+      <div className="flex flex-col gap-2">
+        {chartData.labels.map((lbl: string, idx: number) => (
+          <div key={idx} className="flex gap-2 items-center">
+            <input 
+              type="text"
+              value={lbl}
+              onChange={(e) => {
+                const newData = { ...chartData };
+                newData.labels[idx] = e.target.value;
+                onChange(JSON.stringify(newData));
+              }}
+              className="w-1/2 px-2 py-1.5 text-xs border border-gray-300 rounded focus:border-black outline-none"
+              placeholder="Label"
+            />
+            <input 
+              type="number"
+              value={chartData.series[idx]}
+              onChange={(e) => {
+                const newData = { ...chartData };
+                newData.series[idx] = parseFloat(e.target.value) || 0;
+                onChange(JSON.stringify(newData));
+              }}
+              className="w-1/2 px-2 py-1.5 text-xs border border-gray-300 rounded focus:border-black outline-none"
+              placeholder="Value"
+            />
+            <button 
+              onClick={() => {
+                const newData = { ...chartData };
+                newData.labels.splice(idx, 1);
+                newData.series.splice(idx, 1);
+                onChange(JSON.stringify(newData));
+              }}
+              className="p-1 text-red-500 hover:bg-red-50 rounded"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        <button
+          onClick={() => {
+            const newData = { ...chartData };
+            newData.labels.push(`Item ${newData.labels.length + 1}`);
+            newData.series.push(0);
+            onChange(JSON.stringify(newData));
+          }}
+          className="mt-2 text-xs text-blue-600 hover:text-blue-800 font-medium self-start flex items-center gap-1"
+        >
+          + Add Data Point
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const IconPicker = ({ value, onChange }: { value: string, onChange: (v: string) => void }) => {
+  const [search, setSearch] = useState('');
+  
+  const filtered = COMMON_ICONS.filter(name => name.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div className="flex flex-col gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+      <div className="text-xs font-semibold text-gray-700">Select Icon</div>
+      <input 
+        type="text" 
+        placeholder="Search icons..." 
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:border-black outline-none"
+      />
+      <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1">
+        {filtered.length === 0 ? (
+          <span className="text-xs text-gray-400">No icons found.</span>
+        ) : (
+          filtered.map(name => {
+            const IconCmp = (LucideIcons as any)[name];
+            if (!IconCmp) return null;
+            return (
+              <button
+                key={name}
+                onClick={() => onChange(name)}
+                className={`p-2 rounded-md transition-colors ${value === name ? 'bg-black text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'}`}
+                title={name}
+              >
+                <IconCmp className="w-5 h-5" />
+              </button>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
 };
 
 /* ─── Toast ────────────────────────────────────────────────────── */
@@ -132,7 +270,19 @@ export const MagazineEditor: React.FC = () => {
             if (dbData[v]) {
               initialState[v] = dbData[v];
             } else {
-              initialState[v] = isImageVar(v) ? UNSPLASH_PLACEHOLDER : toTitleCase(v);
+              const fieldDef = layout.fields?.find((f: any) => f.name === v);
+              if (fieldDef?.type === 'Icon') {
+                initialState[v] = 'Smile';
+              } else if (fieldDef?.type === 'Chart') {
+                initialState[v] = JSON.stringify({
+                  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                  series: [120, 200, 150, 80, 70, 110, 130]
+                });
+              } else if (isImageVar(v)) {
+                initialState[v] = UNSPLASH_PLACEHOLDER;
+              } else {
+                initialState[v] = toTitleCase(v);
+              }
             }
           });
           
@@ -352,13 +502,16 @@ export const MagazineEditor: React.FC = () => {
                 ) : field.type === 'Chart' ? (
                   <div style={{ width: '100%', height: '100%' }}>
                     <ReactECharts 
-                      option={getChartOptions(metadata.chartType || 'bar')} 
+                      option={getChartOptions(metadata.chartType || 'bar', val)} 
                       style={{ height: '100%', width: '100%' }}
                       opts={{ renderer: 'svg' }}
                     />
                   </div>
                 ) : field.type === 'Icon' ? (
-                  <ImageIcon className="w-full h-full opacity-50" />
+                  (() => {
+                    const IconCmp = (LucideIcons as any)[val || 'Smile'] || LucideIcons.Smile;
+                    return <IconCmp className="w-full h-full" />;
+                  })()
                 ) : (
                   <span style={{ width: '100%' }}>{val}</span>
                 )}
@@ -431,13 +584,16 @@ export const MagazineEditor: React.FC = () => {
                       </div>
                     </div>
                   ) : field.type === 'Chart' ? (
-                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-md text-xs text-gray-500">
-                      Chart visualization ({field.metadata?.chartType || 'bar'}) is auto-generated on the canvas.
-                    </div>
+                    <ChartDataEditor 
+                      chartType={field.metadata?.chartType || 'bar'}
+                      value={formData[variable] || ''}
+                      onChange={(v) => setFormData({ ...formData, [variable]: v })}
+                    />
                   ) : field.type === 'Icon' ? (
-                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-md text-xs text-gray-500">
-                      Icon is locked in layout.
-                    </div>
+                    <IconPicker 
+                      value={formData[variable] || 'Smile'}
+                      onChange={(v) => setFormData({ ...formData, [variable]: v })}
+                    />
                   ) : (
                     <textarea
                       value={formData[variable] || ''}
