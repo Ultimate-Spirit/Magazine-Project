@@ -451,7 +451,12 @@ export const MagazineEditor: React.FC = () => {
     const csvData: any[] = [];
     csvData.push(['Field Description', 'Your Text / Chart X-Axis', 'Chart Data 1', 'Chart Data 2']);
     
-    fields.forEach((field: any) => {
+    const dataFields = fields.filter((f: any) => {
+      const t = f.type?.toLowerCase() || '';
+      return !['image', 'icon', 'svg'].includes(t);
+    });
+
+    dataFields.forEach((field: any) => {
       const friendlyName = toTitleCase(field.name);
       if (field.type === 'Chart') {
         csvData.push([friendlyName, 'Label 1', '100', '150']);
