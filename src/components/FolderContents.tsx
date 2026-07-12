@@ -609,7 +609,7 @@ export function FolderContents() {
     <WorkspaceLayout company={company || { id: 'none', name: 'Workspace' }}>
       <div className="w-full px-2 lg:px-10 xl:px-16 py-6 lg:py-16 text-foreground relative font-sans">
         {notification && (
-          <div className={`fixed top-8 right-8 z-[100] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right-8 duration-300 ${notification.type === 'success' ? 'bg-foreground text-background' : 'bg-destructive text-destructive-foreground'}`}>
+          <div className={`fixed top-8 right-8 !z-[9999] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right-8 duration-300 ${notification.type === 'success' ? 'bg-foreground text-background' : 'bg-destructive text-destructive-foreground'}`}>
             {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <AlertCircle className="w-5 h-5" />}
             <p className="font-bold text-sm">{notification.message}</p>
           </div>
@@ -834,9 +834,6 @@ export function FolderContents() {
                   {/* Zone A: Locked Cover */}
                   {zoneA && (
                     <div className="flex flex-col gap-2 p-2 rounded-xl shadow-sm border border-border/10 bg-card opacity-90 w-[140px]">
-                      <div className="absolute top-4 right-4 z-10 bg-white/80 rounded-md p-1 backdrop-blur text-primary border border-primary/20 shadow-sm">
-                        <Lock className="w-3.5 h-3.5" />
-                      </div>
                       <div className="relative w-full aspect-[1/1.414] overflow-hidden bg-slate-100 rounded-lg border border-transparent pointer-events-none">
                         <div className="absolute top-0 left-0 transform scale-[0.15] origin-top-left pointer-events-none" style={{ width: '794px', height: '1123px' }}>
                           <PagePreview page={zoneA} />
@@ -871,9 +868,6 @@ export function FolderContents() {
                   {/* Zone C: Locked Back Page */}
                   {zoneC && (
                     <div className="flex flex-col gap-2 p-2 rounded-xl shadow-sm border border-border/10 bg-card opacity-90 w-[140px]">
-                      <div className="absolute top-4 right-4 z-10 bg-white/80 rounded-md p-1 backdrop-blur text-primary border border-primary/20 shadow-sm">
-                        <Lock className="w-3.5 h-3.5" />
-                      </div>
                       <div className="relative w-full aspect-[1/1.414] overflow-hidden bg-slate-100 rounded-lg border border-transparent pointer-events-none">
                         <div className="absolute top-0 left-0 transform scale-[0.15] origin-top-left pointer-events-none" style={{ width: '794px', height: '1123px' }}>
                           <PagePreview page={zoneC} />
