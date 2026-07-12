@@ -36,8 +36,11 @@ const getChartOptions = (chartType: string, chartDataStr?: string) => {
     }
   } catch (e) {}
 
+  const grid = { top: 10, bottom: 20, left: 10, right: 10, containLabel: true };
+
   const baseOptions = {
     tooltip: { trigger: 'axis' },
+    grid,
     xAxis: { type: 'category', data: labels },
     yAxis: { type: 'value' },
     series: [{ data: series, type: 'bar' }]
@@ -47,25 +50,26 @@ const getChartOptions = (chartType: string, chartDataStr?: string) => {
     case 'pie':
       return {
         tooltip: { trigger: 'item' },
-        series: [{ type: 'pie', radius: '50%', data: labels.map((l, i) => ({ name: l, value: series[i] || 0 })) }]
+        series: [{ type: 'pie', radius: '75%', center: ['50%', '50%'], data: labels.map((l, i) => ({ name: l, value: series[i] || 0 })) }]
       };
     case 'line':
       return { ...baseOptions, series: [{ data: series, type: 'line', smooth: true }] };
     case 'scatter':
       return {
+        grid,
         xAxis: {},
         yAxis: {},
-        series: [{ symbolSize: 20, data: series.map((s, i) => [i, s]), type: 'scatter' }]
+        series: [{ symbolSize: 10, data: series.map((s, i) => [i, s]), type: 'scatter' }]
       };
     case 'radar':
       return {
-        radar: { indicator: labels.map(l => ({ name: l, max: Math.max(...series) * 1.2 || 100 })) },
+        radar: { indicator: labels.map(l => ({ name: l, max: Math.max(...series) * 1.2 || 100 })), center: ['50%', '50%'], radius: '70%' },
         series: [{ type: 'radar', data: [{ value: series, name: 'Data' }] }]
       };
     case 'funnel':
       return {
         tooltip: { trigger: 'item' },
-        series: [{ type: 'funnel', left: '10%', width: '80%', data: labels.map((l, i) => ({ name: l, value: series[i] || 0 })) }]
+        series: [{ type: 'funnel', left: '10%', width: '80%', height: '80%', data: labels.map((l, i) => ({ name: l, value: series[i] || 0 })) }]
       };
     default:
       return baseOptions;
@@ -235,6 +239,7 @@ export const MagazineEditor: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
+  const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
 
   const showToast = (message: string, type: 'error' | 'success' = 'error') => {
     setToast({ message, type });
@@ -261,30 +266,31 @@ export const MagazineEditor: React.FC = () => {
           const layout = tpl.layout_json;
           setLayoutJson(layout);
           
-          const vars = extractVarsFromLayout(layout);
-          
           const dbData = pageData.data || {};
           const initialState: Record<string, string> = {};
           
-          vars.forEach(v => {
-            if (dbData[v]) {
-              initialState[v] = dbData[v];
-            } else {
-              const fieldDef = layout.fields?.find((f: any) => f.name === v);
-              if (fieldDef?.type === 'Icon') {
-                initialState[v] = 'Smile';
-              } else if (fieldDef?.type === 'Chart') {
-                initialState[v] = JSON.stringify({
-                  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                  series: [120, 200, 150, 80, 70, 110, 130]
-                });
-              } else if (isImageVar(v)) {
-                initialState[v] = UNSPLASH_PLACEHOLDER;
+          if (layout.fields) {
+            layout.fields.forEach((field: any) => {
+              const v = field.id;
+              const dbVal = dbData[field.id] || dbData[field.name];
+              if (dbVal) {
+                initialState[v] = dbVal;
               } else {
-                initialState[v] = toTitleCase(v);
+                if (field.type === 'Icon') {
+                  initialState[v] = 'Smile';
+                } else if (field.type === 'Chart') {
+                  initialState[v] = JSON.stringify({
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    series: [120, 200, 150, 80, 70, 110, 130]
+                  });
+                } else if (isImageVar(field.name)) {
+                  initialState[v] = UNSPLASH_PLACEHOLDER;
+                } else {
+                  initialState[v] = toTitleCase(field.name);
+                }
               }
-            }
-          });
+            });
+          }
           
           setFormData(initialState);
         } else {
@@ -305,8 +311,10 @@ export const MagazineEditor: React.FC = () => {
     const fonts = new Set<string>();
     layoutJson.fields.forEach((f: any) => {
       if (f.type === 'Text' && f.metadata?.fontFamily) {
-        const match = f.metadata.fontFamily.match(/^'([^']+)'/);
-        if (match) fonts.add(match[1]);
+        let family = f.metadata.fontFamily;
+        if (family.includes(',')) family = family.split(',')[0];
+        family = family.replace(/['"]/g, '').trim();
+        if (family) fonts.add(family);
       }
     });
 
@@ -361,7 +369,7 @@ export const MagazineEditor: React.FC = () => {
       let html = `<div style="position: relative; width: 100%; height: 100%; background-image: url('${layoutJson?.background_url || ''}'); background-size: cover; background-position: center; overflow: hidden;">`;
       if (layoutJson?.fields) {
         layoutJson.fields.forEach((field: any) => {
-          const val = formData[field.name] || '';
+          const val = formData[field.id] || '';
           html += `<div style="position: absolute; top: ${field.top}%; left: ${field.left}%; width: ${field.width}%; height: ${field.height}%;">`;
           if (field.type === 'Image') {
             html += `<img src="${val}" style="width: 100%; height: 100%; object-fit: cover;" />`;
@@ -470,12 +478,14 @@ export const MagazineEditor: React.FC = () => {
           }}
         >
           {fields.map((field: any) => {
-            const val = formData[field.name] || '';
+            const val = formData[field.id] || '';
             const metadata = field.metadata || {};
 
             return (
               <div 
                 key={field.id}
+                onMouseEnter={() => setActiveFieldId(field.id)}
+                onMouseLeave={() => setActiveFieldId(null)}
                 style={{
                   position: 'absolute',
                   top: `${field.top}%`,
@@ -489,18 +499,25 @@ export const MagazineEditor: React.FC = () => {
                   justifyContent: metadata.textAlign === 'left' ? 'flex-start' : metadata.textAlign === 'right' ? 'flex-end' : 'center',
                   color: metadata.fontColor || 'inherit',
                   fontFamily: metadata.fontFamily || 'inherit',
+                  fontSize: metadata.fontSize ? `${metadata.fontSize}px` : '16px',
+                  lineHeight: metadata.lineHeight || '1.5',
                   fontWeight: metadata.fontWeight || 'normal',
                   fontStyle: metadata.fontStyle || 'normal',
                   textDecoration: metadata.textDecoration || 'none',
                   textAlign: metadata.textAlign || 'center',
                   wordBreak: 'break-word',
-                  whiteSpace: 'pre-wrap'
+                  whiteSpace: 'pre-wrap',
+                  border: activeFieldId === field.id ? '2px solid #3b82f6' : 'none',
+                  boxShadow: activeFieldId === field.id ? '0 0 0 4px rgba(59, 130, 246, 0.2)' : 'none',
+                  zIndex: activeFieldId === field.id ? 50 : 10,
+                  transition: 'all 0.2s ease',
+                  backgroundColor: activeFieldId === field.id ? 'rgba(59, 130, 246, 0.05)' : 'transparent'
                 }}
               >
                 {field.type === 'Image' ? (
                   <img src={val} alt={field.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : field.type === 'Chart' ? (
-                  <div style={{ width: '100%', height: '100%' }}>
+                  <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
                     <ReactECharts 
                       option={getChartOptions(metadata.chartType || 'bar', val)} 
                       style={{ height: '100%', width: '100%' }}
@@ -535,13 +552,20 @@ export const MagazineEditor: React.FC = () => {
             <p className="text-xs text-gray-400 text-center max-w-[18ch]">This template has no dynamic variables.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3">
             {fields.map((field: any) => {
-              const variable = field.name;
+              const variable = field.id;
               return (
-                <div key={field.id} className="flex flex-col gap-2">
+                <div 
+                  key={field.id} 
+                  className={`flex flex-col gap-2 p-3 -mx-3 rounded-lg transition-colors border ${activeFieldId === field.id ? 'border-blue-400 bg-blue-50/30' : 'border-transparent hover:bg-gray-50'}`}
+                  onMouseEnter={() => setActiveFieldId(field.id)}
+                  onMouseLeave={() => setActiveFieldId(null)}
+                  onFocus={() => setActiveFieldId(field.id)}
+                  onBlur={() => setActiveFieldId(null)}
+                >
                   <label className="text-xs font-medium text-gray-700 flex justify-between">
-                    <span>{toTitleCase(variable)}</span>
+                    <span>{toTitleCase(field.name)}</span>
                     {field.type === 'Text' && field.metadata?.maxChars && (
                       <span className="text-gray-400">
                         {(formData[variable] || '').length} / {field.metadata.maxChars}
@@ -603,7 +627,7 @@ export const MagazineEditor: React.FC = () => {
                         setFormData({ ...formData, [variable]: val });
                       }}
                       maxLength={field.metadata?.maxChars || undefined}
-                      placeholder={`Enter ${toTitleCase(variable).toLowerCase()}`}
+                      placeholder={`Enter ${toTitleCase(field.name).toLowerCase()}`}
                       className="bg-white border border-gray-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all w-full resize-none min-h-[80px]"
                     />
                   )}
