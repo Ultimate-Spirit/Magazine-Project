@@ -5,7 +5,7 @@ import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
 import { ArrowLeft, Loader2, AlertCircle, UploadCloud, Download, Image as ImageIcon, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
-import { TransformWrapper, TransformComponent, ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
@@ -245,7 +245,7 @@ export const MagazineEditor: React.FC = () => {
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
   const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
   const [initialScale, setInitialScale] = useState(1);
-  const transformRef = useRef<ReactZoomPanPinchRef>(null);
+  const transformRef = useRef<any>(null);
 
   const showToast = (message: string, type: 'error' | 'success' = 'error') => {
     setToast({ message, type });
