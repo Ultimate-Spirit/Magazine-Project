@@ -23,6 +23,151 @@ import {
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { useAuth } from '../contexts/AuthContext';
+import { createRoot } from 'react-dom/client';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+import ReactECharts from 'echarts-for-react';
+import * as echarts from 'echarts';
+import * as LucideIcons from 'lucide-react';
+
+const getChartOptions = (chartType: string, chartDataStr?: string) => {
+  let labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  let series = [120, 200, 150, 80, 70, 110, 130];
+  try {
+    if (chartDataStr) {
+      const parsed = JSON.parse(chartDataStr);
+      if (parsed.labels) labels = parsed.labels;
+      if (parsed.series) series = parsed.series;
+    }
+  } catch (e) {}
+
+  const grid = { top: 10, bottom: 20, left: 10, right: 10, containLabel: true };
+
+  const baseOptions = {
+    tooltip: { trigger: 'axis' },
+    grid,
+    xAxis: { type: 'category', data: labels },
+    yAxis: { type: 'value' },
+    series: [{ data: series, type: 'bar' }]
+  };
+
+  switch (chartType) {
+    case 'pie':
+      return {
+        tooltip: { trigger: 'item' },
+        series: [{ type: 'pie', radius: '75%', center: ['50%', '50%'], data: labels.map((l, i) => ({ name: l, value: series[i] || 0 })) }]
+      };
+    case 'line':
+      return { ...baseOptions, series: [{ data: series, type: 'line', smooth: true }] };
+    case 'scatter':
+      return {
+        grid,
+        xAxis: {},
+        yAxis: {},
+        series: [{ symbolSize: 10, data: series.map((s, i) => [i, s]), type: 'scatter' }]
+      };
+    case 'radar':
+      return {
+        radar: { indicator: labels.map(l => ({ name: l, max: Math.max(...series) * 1.2 || 100 })), center: ['50%', '50%'], radius: '70%' },
+        series: [{ type: 'radar', data: [{ value: series, name: 'Data' }] }]
+      };
+    case 'funnel':
+      return {
+        tooltip: { trigger: 'item' },
+        series: [{ type: 'funnel', left: '10%', width: '80%', height: '80%', data: labels.map((l, i) => ({ name: l, value: series[i] || 0 })) }]
+      };
+    default:
+      return baseOptions;
+  }
+};
+
+const StagingRenderer = ({ pages }: { pages: any[] }) => {
+  return (
+    <div id="pdf-staging-root" style={{ position: 'fixed', left: '-9999px', top: 0, opacity: 1, display: 'block', zIndex: -100 }}>
+      {pages.map((page, idx) => {
+        const layoutJson = page.templates?.layout_json || { fields: [] };
+        const formData = page.data || {};
+        return (
+          <div 
+            key={idx} 
+            className="a4-staging-page"
+            style={{ 
+              width: '794px', 
+              height: '1123px', 
+              position: 'relative', 
+              overflow: 'hidden', 
+              backgroundColor: 'white',
+              backgroundImage: layoutJson?.background_url ? `url('${layoutJson.background_url}')` : 'none',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              marginBottom: '20px'
+            }}
+          >
+            {(layoutJson.fields || []).map((field: any) => {
+              const val = formData[field.id] || '';
+              const metadata = field.metadata || {};
+              return (
+                <div 
+                  key={field.id}
+                  style={{
+                    position: 'absolute',
+                    top: `${field.top}%`,
+                    left: `${field.left}%`,
+                    width: `${field.width}%`,
+                    height: `${field.height}%`,
+                    borderRadius: metadata.borderRadius ? `${metadata.borderRadius}px` : undefined,
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: metadata.textAlign === 'left' ? 'flex-start' : metadata.textAlign === 'right' ? 'flex-end' : 'center',
+                    justifyContent: metadata.textAlign === 'left' ? 'flex-start' : metadata.textAlign === 'right' ? 'flex-end' : 'center',
+                    color: metadata.fontColor || 'inherit',
+                    fontFamily: metadata.fontFamily || 'inherit',
+                    fontSize: metadata.fontSize ? `${metadata.fontSize}px` : '16px',
+                    lineHeight: metadata.lineHeight || '1.5',
+                    fontWeight: metadata.fontWeight || 'normal',
+                    fontStyle: metadata.fontStyle || 'normal',
+                    textDecoration: metadata.textDecoration || 'none',
+                    textAlign: metadata.textAlign || 'center',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {field.type === 'Image' ? (
+                    <div 
+                      style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        backgroundImage: val ? `url('${val}')` : 'none', 
+                        backgroundSize: 'cover', 
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat'
+                      }} 
+                    />
+                  ) : field.type === 'Chart' ? (
+                    <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
+                      <ReactECharts 
+                        option={getChartOptions(metadata.chartType || 'bar', val)} 
+                        style={{ height: '100%', width: '100%' }}
+                        opts={{ renderer: 'svg' }}
+                      />
+                    </div>
+                  ) : field.type === 'Icon' ? (
+                    (() => {
+                      const IconCmp = (LucideIcons as any)[val || 'Smile'] || LucideIcons.Smile;
+                      return <IconCmp style={{ width: '100%', height: '100%' }} />;
+                    })()
+                  ) : (
+                    <span style={{ width: '100%' }}>{val}</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 import { ConfirmModal } from './common/ConfirmModal';
 import { logActivity } from '../lib/activityLogger';
 import type { Page, Folder, Company, Template } from '../types';
@@ -411,45 +556,93 @@ export function FolderContents() {
     setIsCompiling(true);
     try {
       showNotification('success', 'Building Master PDF, please wait...');
-      
-      let fullHtmlStr = '';
-      
-      compilerPages.forEach((page, index) => {
-        let html = '';
-        const formData = page.data || {};
-        const vars = Object.keys(formData);
-        vars.forEach(key => {
-          const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
-          html = html.replace(regex, formData[key] || '');
+
+      // Step 1: Create a staging DOM element
+      const stagingDiv = document.createElement('div');
+      document.body.appendChild(stagingDiv);
+      const root = createRoot(stagingDiv);
+
+      root.render(<StagingRenderer pages={compilerPages} />);
+
+      // Step 2: Asynchronous delay to guarantee all components are drawn
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+
+      const pageNodes = Array.from(document.querySelectorAll('.a4-staging-page'));
+
+      // Step 3: Iterate sequentially
+      for (let i = 0; i < pageNodes.length; i++) {
+        const pageNode = pageNodes[i] as HTMLElement;
+
+        // Convert ECharts inside this specific page
+        const echartContainers = Array.from(pageNode.querySelectorAll('.echarts-for-react'));
+        const originalDisplays: string[] = [];
+
+        echartContainers.forEach((container) => {
+          const instance = echarts.getInstanceByDom(container as HTMLElement);
+          if (instance) {
+            const dataUrl = instance.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: 'transparent' });
+            const img = document.createElement('img');
+            img.src = dataUrl;
+            img.className = 'echarts-static-clone';
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.position = 'absolute';
+            img.style.top = '0';
+            img.style.left = '0';
+            img.style.objectFit = 'contain';
+            
+            const child = container.firstElementChild as HTMLElement;
+            if (child) {
+              originalDisplays.push(child.style.display);
+              child.style.display = 'none';
+            } else {
+              originalDisplays.push('');
+            }
+            container.appendChild(img);
+          } else {
+            originalDisplays.push('');
+          }
         });
-        
-        const cleanHtml = html.replace(/<\/?(?:html|head|body|!DOCTYPE)[^>]*>/gi, '');
-        fullHtmlStr += `<div class="a4-wrapper" style="width: 794px; height: 1123px; position: relative; overflow: hidden; page-break-after: always; display: flex; flex-direction: column; background-color: white;">${cleanHtml}</div>`;
-      });
-      
-      const fullHTML = `<!DOCTYPE html><html lang="en"><head><script src="https://cdn.tailwindcss.com"></script><style> @page { size: A4 portrait; margin: 0; } body { margin: 0; padding: 0; background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; display: block !important; } .a4-wrapper > div { width: 100% !important; height: 100% !important; max-width: none !important; aspect-ratio: auto !important; margin: 0 !important; padding: 0 !important; } </style></head><body>${fullHtmlStr}</body></html>`;
 
-      const response = await fetch('/api/generate-pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html: fullHTML }),
-      });
+        // Run html2canvas
+        const canvas = await html2canvas(pageNode, { 
+          scale: 2, 
+          useCORS: true,
+          logging: false 
+        });
 
-      if (!response.ok) {
-        const err = await response.text();
-        throw new Error(err);
+        // Step 4: Inject into jsPDF
+        const imgData = canvas.toDataURL('image/png');
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+        if (i > 0) {
+          pdf.addPage();
+        }
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+        // Restore ECharts (technically optional since we destroy staging soon, but good practice)
+        echartContainers.forEach((container, idx) => {
+          const img = container.querySelector('.echarts-static-clone');
+          if (img) img.remove();
+          const child = container.firstElementChild as HTMLElement;
+          if (child) child.style.display = originalDisplays[idx];
+        });
       }
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'Corporate_Bundle.pdf';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
+      // Step 5: Save and cleanup
+      pdf.save('Master_Document.pdf');
       
+      root.unmount();
+      document.body.removeChild(stagingDiv);
+
       showNotification('success', 'Master PDF compiled and downloaded');
       setIsCompilerOpen(false);
     } catch (error: any) {
@@ -458,6 +651,12 @@ export function FolderContents() {
       showNotification('error', `Compilation failed: ${error.message}`);
     } finally {
       setIsCompiling(false);
+      // Clean up in case of failure
+      const stagingRoot = document.getElementById('pdf-staging-root');
+      if (stagingRoot && stagingRoot.parentElement) {
+        // try to unmount if possible, or just remove the node
+        stagingRoot.parentElement.remove();
+      }
     }
   };
 
