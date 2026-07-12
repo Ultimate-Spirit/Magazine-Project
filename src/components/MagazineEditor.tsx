@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import { A4Preview } from './A4Preview';
-import { ArrowLeft, Loader2, AlertCircle, UploadCloud, Download } from 'lucide-react';
+import ReactECharts from 'echarts-for-react';
+import { ArrowLeft, Loader2, AlertCircle, UploadCloud, Download, Image as ImageIcon } from 'lucide-react';
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
 const toTitleCase = (name: string) =>
@@ -22,6 +22,43 @@ const UNSPLASH_PLACEHOLDER =
 const extractVarsFromLayout = (layout: any): string[] => {
   if (!layout || !layout.fields) return [];
   return layout.fields.map((f: any) => f.name);
+};
+
+const getChartOptions = (chartType: string) => {
+  const baseOptions = {
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] },
+    yAxis: { type: 'value' },
+    series: [{ data: [120, 200, 150, 80, 70, 110, 130], type: 'bar' }]
+  };
+
+  switch (chartType) {
+    case 'pie':
+      return {
+        tooltip: { trigger: 'item' },
+        series: [{ type: 'pie', radius: '50%', data: [{ value: 1048, name: 'A' }, { value: 735, name: 'B' }, { value: 580, name: 'C' }] }]
+      };
+    case 'line':
+      return { ...baseOptions, series: [{ data: [120, 200, 150, 80, 70, 110, 130], type: 'line', smooth: true }] };
+    case 'scatter':
+      return {
+        xAxis: {},
+        yAxis: {},
+        series: [{ symbolSize: 20, data: [[10.0, 8.04], [8.0, 6.95], [13.0, 7.58], [9.0, 8.81], [11.0, 8.33]], type: 'scatter' }]
+      };
+    case 'radar':
+      return {
+        radar: { indicator: [{ name: 'A', max: 100 }, { name: 'B', max: 100 }, { name: 'C', max: 100 }] },
+        series: [{ type: 'radar', data: [{ value: [80, 50, 90], name: 'Data' }] }]
+      };
+    case 'funnel':
+      return {
+        tooltip: { trigger: 'item' },
+        series: [{ type: 'funnel', left: '10%', width: '80%', data: [{ value: 60, name: 'Visit' }, { value: 40, name: 'Inquiry' }, { value: 20, name: 'Order' }, { value: 80, name: 'Click' }, { value: 100, name: 'Show' }] }]
+      };
+    default:
+      return baseOptions;
+  }
 };
 
 /* ─── Toast ────────────────────────────────────────────────────── */
@@ -55,7 +92,6 @@ export const MagazineEditor: React.FC = () => {
 
   const [pageTitle, setPageTitle] = useState('');
   const [layoutJson, setLayoutJson] = useState<any>(null);
-  const [templateVariables, setTemplateVariables] = useState<string[]>([]);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [uploadingVars, setUploadingVars] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
@@ -88,7 +124,6 @@ export const MagazineEditor: React.FC = () => {
           setLayoutJson(layout);
           
           const vars = extractVarsFromLayout(layout);
-          setTemplateVariables(vars);
           
           const dbData = pageData.data || {};
           const initialState: Record<string, string> = {};
@@ -114,9 +149,28 @@ export const MagazineEditor: React.FC = () => {
     fetch();
   }, [folderId, pageId]);
 
-  const handleInputChange = (variable: string, value: string) => {
-    setFormData(prev => ({ ...prev, [variable]: value }));
-  };
+  // Inject Google Fonts from metadata
+  useEffect(() => {
+    if (!layoutJson?.fields) return;
+    const fonts = new Set<string>();
+    layoutJson.fields.forEach((f: any) => {
+      if (f.type === 'Text' && f.metadata?.fontFamily) {
+        const match = f.metadata.fontFamily.match(/^'([^']+)'/);
+        if (match) fonts.add(match[1]);
+      }
+    });
+
+    fonts.forEach(font => {
+      const linkId = `google-font-${font.replace(/\s+/g, '-')}`;
+      if (!document.getElementById(linkId)) {
+        const link = document.createElement('link');
+        link.id = linkId;
+        link.rel = 'stylesheet';
+        link.href = `https://fonts.googleapis.com/css2?family=${font.replace(/\s+/g, '+')}:ital,wght@0,400;0,700;1,400;1,700&display=swap`;
+        document.head.appendChild(link);
+      }
+    });
+  }, [layoutJson]);
 
   const handleFileUpload = async (variable: string, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -150,35 +204,26 @@ export const MagazineEditor: React.FC = () => {
     }
   };
 
-  const liveHtml = useMemo(() => {
-    if (!layoutJson) return '';
-    const { background_url, fields } = layoutJson;
-    let html = `<div style="position: relative; width: 100%; height: 100%; background-image: url('${background_url || ''}'); background-size: cover; background-position: center; overflow: hidden;">`;
-    
-    if (fields && Array.isArray(fields)) {
-      fields.forEach((field: any) => {
-        const val = formData[field.name] || '';
-        html += `<div style="position: absolute; top: ${field.top}%; left: ${field.left}%; width: ${field.width}%; height: ${field.height}%;">`;
-        if (field.type === 'Image') {
-          html += `<img src="${val}" style="width: 100%; height: 100%; object-fit: cover;" />`;
-        } else {
-          // Fallback for Text, Chart, Icon for now
-          html += `<div style="width: 100%; height: 100%; word-break: break-word;">${val}</div>`;
-        }
-        html += `</div>`;
-      });
-    }
-    
-    html += `</div>`;
-    return html;
-  }, [layoutJson, formData]);
-
   const handleDownloadPdf = async () => {
     try {
       showToast('Generating PDF, please wait...', 'success');
       
-      const cleanHtml = liveHtml.replace(/<\/?(?:html|head|body|!DOCTYPE)[^>]*>/gi, '');
-      const wrappedHtml = `<div class="a4-wrapper" style="width: 794px; height: 1123px; position: relative; overflow: hidden; page-break-after: always; display: flex; flex-direction: column; background-color: white;">${cleanHtml}</div>`;
+      let html = `<div style="position: relative; width: 100%; height: 100%; background-image: url('${layoutJson?.background_url || ''}'); background-size: cover; background-position: center; overflow: hidden;">`;
+      if (layoutJson?.fields) {
+        layoutJson.fields.forEach((field: any) => {
+          const val = formData[field.name] || '';
+          html += `<div style="position: absolute; top: ${field.top}%; left: ${field.left}%; width: ${field.width}%; height: ${field.height}%;">`;
+          if (field.type === 'Image') {
+            html += `<img src="${val}" style="width: 100%; height: 100%; object-fit: cover;" />`;
+          } else {
+            html += `<div style="width: 100%; height: 100%; word-break: break-word;">${val}</div>`;
+          }
+          html += `</div>`;
+        });
+      }
+      html += `</div>`;
+
+      const wrappedHtml = `<div class="a4-wrapper" style="width: 794px; height: 1123px; position: relative; overflow: hidden; page-break-after: always; display: flex; flex-direction: column; background-color: white;">${html}</div>`;
       
       const fullHTML = `<!DOCTYPE html><html lang="en"><head><script src="https://cdn.tailwindcss.com"></script><style> @page { size: A4 portrait; margin: 0; } body { margin: 0; padding: 0; background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; display: block !important; } .a4-wrapper > div { width: 100% !important; height: 100% !important; max-width: none !important; aspect-ratio: auto !important; margin: 0 !important; padding: 0 !important; } </style></head><body>${wrappedHtml}</body></html>`;
 
@@ -239,14 +284,14 @@ export const MagazineEditor: React.FC = () => {
     );
   }
 
+  const fields = layoutJson?.fields || [];
+
   return (
-    <div className="flex h-screen w-full bg-white text-gray-900 overflow-hidden">
+    <div className="flex h-screen w-full bg-white text-gray-900 overflow-hidden flex-row-reverse">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      {/* Left Canvas Workspace */}
-      <div className="flex-1 w-full h-full bg-white relative">
-        <A4Preview htmlContent={liveHtml} />
-        
+      {/* Right Canvas Workspace (Dedicated Consumer Rendering Engine) */}
+      <div className="flex-1 w-full h-full bg-slate-50 relative flex items-center justify-center overflow-auto p-8 border-l border-gray-200">
         <button
           onClick={() => navigate(`/folder/${folderId}`)}
           className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:text-gray-900 shadow-sm transition-all z-20"
@@ -260,16 +305,77 @@ export const MagazineEditor: React.FC = () => {
             {pageTitle}
           </span>
         </div>
+
+        {/* The Locked A4 Canvas Component */}
+        <div 
+          className="relative bg-white shadow-2xl overflow-hidden shrink-0" 
+          style={{ 
+            width: '794px', 
+            height: '1123px', 
+            backgroundImage: `url('${layoutJson?.background_url || ''}')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            transform: 'scale(calc(min(1, (100vh - 64px) / 1123)))',
+            transformOrigin: 'center center'
+          }}
+        >
+          {fields.map((field: any) => {
+            const val = formData[field.name] || '';
+            const metadata = field.metadata || {};
+
+            return (
+              <div 
+                key={field.id}
+                style={{
+                  position: 'absolute',
+                  top: `${field.top}%`,
+                  left: `${field.left}%`,
+                  width: `${field.width}%`,
+                  height: `${field.height}%`,
+                  borderRadius: metadata.borderRadius ? `${metadata.borderRadius}px` : undefined,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: metadata.textAlign === 'left' ? 'flex-start' : metadata.textAlign === 'right' ? 'flex-end' : 'center',
+                  justifyContent: metadata.textAlign === 'left' ? 'flex-start' : metadata.textAlign === 'right' ? 'flex-end' : 'center',
+                  color: metadata.fontColor || 'inherit',
+                  fontFamily: metadata.fontFamily || 'inherit',
+                  fontWeight: metadata.fontWeight || 'normal',
+                  fontStyle: metadata.fontStyle || 'normal',
+                  textDecoration: metadata.textDecoration || 'none',
+                  textAlign: metadata.textAlign || 'center',
+                  wordBreak: 'break-word',
+                  whiteSpace: 'pre-wrap'
+                }}
+              >
+                {field.type === 'Image' ? (
+                  <img src={val} alt={field.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : field.type === 'Chart' ? (
+                  <div style={{ width: '100%', height: '100%' }}>
+                    <ReactECharts 
+                      option={getChartOptions(metadata.chartType || 'bar')} 
+                      style={{ height: '100%', width: '100%' }}
+                      opts={{ renderer: 'svg' }}
+                    />
+                  </div>
+                ) : field.type === 'Icon' ? (
+                  <ImageIcon className="w-full h-full opacity-50" />
+                ) : (
+                  <span style={{ width: '100%' }}>{val}</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Right Properties Panel */}
-      <div className="w-[420px] flex-shrink-0 bg-white border-l border-gray-200 p-6 flex flex-col gap-6 overflow-y-auto">
+      {/* Left Properties Panel (Data Entry Form) */}
+      <div className="w-[420px] flex-shrink-0 bg-white p-6 flex flex-col gap-6 overflow-y-auto">
         <div className="space-y-1">
           <h2 className="text-lg font-semibold text-gray-900">Properties</h2>
           <p className="text-sm text-gray-500">Edit template fields below</p>
         </div>
 
-        {templateVariables.length === 0 ? (
+        {fields.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center border border-dashed border-gray-200 rounded-xl py-16 gap-3">
             <span className="text-2xl">📄</span>
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">No Fields Found</p>
@@ -277,57 +383,77 @@ export const MagazineEditor: React.FC = () => {
           </div>
         ) : (
           <div className="flex flex-col gap-6">
-            {templateVariables.map(variable => (
-              <div key={variable} className="flex flex-col gap-2">
-                <label className="text-xs font-medium text-gray-700">
-                  {toTitleCase(variable)}
-                </label>
-
-                {isImageVar(variable) ? (
-                  <div className="relative flex flex-col items-center justify-center w-full h-32 rounded-lg border border-dashed border-gray-300 bg-white hover:bg-gray-50 transition-colors overflow-hidden group">
-                    <input 
-                      type="file" 
-                      accept=".jpg,.jpeg,.png" 
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
-                      onChange={(e) => handleFileUpload(variable, e)}
-                      disabled={uploadingVars[variable]}
-                    />
-                    
-                    {formData[variable] && formData[variable] !== UNSPLASH_PLACEHOLDER && (
-                      <img
-                        src={formData[variable]}
-                        alt={variable}
-                        className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity"
-                      />
+            {fields.map((field: any) => {
+              const variable = field.name;
+              return (
+                <div key={field.id} className="flex flex-col gap-2">
+                  <label className="text-xs font-medium text-gray-700 flex justify-between">
+                    <span>{toTitleCase(variable)}</span>
+                    {field.type === 'Text' && field.metadata?.maxChars && (
+                      <span className="text-gray-400">
+                        {(formData[variable] || '').length} / {field.metadata.maxChars}
+                      </span>
                     )}
+                  </label>
 
-                    <div className="relative z-0 flex flex-col items-center gap-2">
-                      {uploadingVars[variable] ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin text-gray-900" />
-                          <span className="text-xs font-medium text-gray-900">Uploading...</span>
-                        </>
-                      ) : (
-                        <>
-                          <UploadCloud className="w-5 h-5 text-gray-500 group-hover:text-gray-700" />
-                          <span className="text-xs font-medium text-gray-600">
-                            {formData[variable] && formData[variable] !== UNSPLASH_PLACEHOLDER ? 'Replace Image' : 'Upload Image'}
-                          </span>
-                        </>
+                  {field.type === 'Image' ? (
+                    <div className="relative flex flex-col items-center justify-center w-full h-32 rounded-lg border border-dashed border-gray-300 bg-white hover:bg-gray-50 transition-colors overflow-hidden group">
+                      <input 
+                        type="file" 
+                        accept=".jpg,.jpeg,.png,.svg" 
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                        onChange={(e) => handleFileUpload(variable, e)}
+                        disabled={uploadingVars[variable]}
+                      />
+                      
+                      {formData[variable] && formData[variable] !== UNSPLASH_PLACEHOLDER && (
+                        <img
+                          src={formData[variable]}
+                          alt={variable}
+                          className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity"
+                        />
                       )}
+
+                      <div className="relative z-0 flex flex-col items-center gap-2">
+                        {uploadingVars[variable] ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin text-gray-900" />
+                            <span className="text-xs font-medium text-gray-900">Uploading...</span>
+                          </>
+                        ) : (
+                          <>
+                            <UploadCloud className="w-5 h-5 text-gray-500 group-hover:text-gray-700" />
+                            <span className="text-xs font-medium text-gray-600">
+                              {formData[variable] && formData[variable] !== UNSPLASH_PLACEHOLDER ? 'Replace Image' : 'Upload Image'}
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <input
-                    type="text"
-                    value={formData[variable] || ''}
-                    onChange={(e) => setFormData({ ...formData, [variable]: e.target.value })}
-                    placeholder={`Enter ${toTitleCase(variable).toLowerCase()}`}
-                    className="bg-white border border-gray-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all w-full"
-                  />
-                )}
-              </div>
-            ))}
+                  ) : field.type === 'Chart' ? (
+                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-md text-xs text-gray-500">
+                      Chart visualization ({field.metadata?.chartType || 'bar'}) is auto-generated on the canvas.
+                    </div>
+                  ) : field.type === 'Icon' ? (
+                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-md text-xs text-gray-500">
+                      Icon is locked in layout.
+                    </div>
+                  ) : (
+                    <textarea
+                      value={formData[variable] || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (field.metadata?.maxChars && val.length > field.metadata.maxChars) return;
+                        setFormData({ ...formData, [variable]: val });
+                      }}
+                      maxLength={field.metadata?.maxChars || undefined}
+                      placeholder={`Enter ${toTitleCase(variable).toLowerCase()}`}
+                      className="bg-white border border-gray-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all w-full resize-none min-h-[80px]"
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -359,3 +485,4 @@ export const MagazineEditor: React.FC = () => {
     </div>
   );
 };
+
