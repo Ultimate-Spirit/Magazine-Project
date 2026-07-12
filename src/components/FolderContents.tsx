@@ -26,6 +26,7 @@ import { useAuth } from '../contexts/AuthContext';
 import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
 import * as LucideIcons from 'lucide-react';
+import { Settings, Lock } from 'lucide-react'; // Added Lock and Settings
 
 const getChartOptions = (chartType: string, chartDataStr?: string) => {
   let labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -99,16 +100,84 @@ const SELECT_STYLES = {
   input: () => '!text-foreground'
 };
 
-interface SortablePageItemProps {
+const PagePreview = ({ page }: { page: Page }) => {
+  const layoutJson = page.templates?.layout_json;
+  const fields = layoutJson?.fields || [];
+  const formData = page.data || {};
+  
+  return (
+    <div 
+      className="bg-white shadow-sm shrink-0 overflow-hidden" 
+      style={{ 
+        width: '794px', 
+        height: '1123px', 
+        backgroundImage: `url('${layoutJson?.background_url || ''}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      {fields.map((field: any) => {
+        const val = formData[field.id] || formData[field.name] || '';
+        const metadata = field.metadata || {};
+        
+        return (
+          <div 
+            key={field.id}
+            style={{
+              position: 'absolute',
+              top: `${field.top}%`,
+              left: `${field.left}%`,
+              width: `${field.width}%`,
+              height: `${field.height}%`,
+              borderRadius: metadata.borderRadius ? `${metadata.borderRadius}px` : undefined,
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: metadata.textAlign === 'left' ? 'flex-start' : metadata.textAlign === 'right' ? 'flex-end' : 'center',
+              justifyContent: metadata.textAlign === 'left' ? 'flex-start' : metadata.textAlign === 'right' ? 'flex-end' : 'center',
+              color: metadata.fontColor || 'inherit',
+              fontFamily: metadata.fontFamily || 'inherit',
+              fontSize: metadata.fontSize ? `${metadata.fontSize}px` : '16px',
+              lineHeight: metadata.lineHeight || '1.5',
+              fontWeight: metadata.fontWeight || 'normal',
+              fontStyle: metadata.fontStyle || 'normal',
+              textDecoration: metadata.textDecoration || 'none',
+              textAlign: metadata.textAlign || 'center',
+              wordBreak: 'break-word',
+              whiteSpace: 'pre-wrap',
+            }}
+          >
+            {field.type === 'Image' ? (
+              <div style={{ width: '100%', height: '100%', backgroundImage: val ? `url('${val}')` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} />
+            ) : field.type === 'Chart' ? (
+              <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
+                <ReactECharts option={getChartOptions(metadata.chartType || 'bar', val)} style={{ height: '100%', width: '100%' }} opts={{ renderer: 'svg' }} />
+              </div>
+            ) : field.type === 'Icon' ? (
+              (() => {
+                const IconCmp = (LucideIcons as any)[val || 'Smile'] || LucideIcons.Smile;
+                return <IconCmp className="w-full h-full" />;
+              })()
+            ) : (
+              <span style={{ width: '100%' }}>{val}</span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+interface SortableGridItemProps {
   page: Page;
-  isAnchor: boolean;
+  included: boolean;
+  onToggle: () => void;
   isCompiling: boolean;
 }
 
-function SortablePageItem({ page, isAnchor, isCompiling }: SortablePageItemProps) {
+function SortableGridItem({ page, included, onToggle, isCompiling }: SortableGridItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: page.id,
-    disabled: isAnchor || isCompiling
+    disabled: isCompiling
   });
 
   const style = {
@@ -120,27 +189,32 @@ function SortablePageItem({ page, isAnchor, isCompiling }: SortablePageItemProps
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-4 p-4 rounded-2xl border ${isAnchor ? 'bg-primary/5 border-primary/20' : 'bg-card border-border/10'} ${isDragging ? 'shadow-xl scale-[1.02] border-primary/40 z-50' : 'shadow-sm'} transition-all`}
+      className={`relative flex flex-col gap-2 p-2 rounded-xl border ${isDragging ? 'shadow-xl scale-105 border-primary z-50 bg-card' : 'shadow-sm border-border/10 bg-card'} transition-all`}
     >
+      <div className="absolute top-4 right-4 z-10 bg-white rounded-md shadow-sm p-0.5 border border-gray-200">
+        <input 
+          type="checkbox" 
+          checked={included} 
+          onChange={(e) => {
+            e.stopPropagation();
+            onToggle();
+          }}
+          disabled={isCompiling}
+          className="w-4 h-4 rounded border-gray-300 text-primary cursor-pointer"
+          onPointerDown={(e) => e.stopPropagation()}
+        />
+      </div>
       <div 
         {...attributes}
         {...listeners}
-        className={`shrink-0 ${isAnchor ? 'opacity-20 cursor-not-allowed' : 'opacity-50 hover:opacity-100 cursor-grab active:cursor-grabbing text-foreground'}`}
+        className={`relative w-full aspect-[1/1.414] overflow-hidden bg-slate-100 rounded-lg cursor-grab active:cursor-grabbing border ${included ? 'border-transparent' : 'border-dashed border-gray-300 opacity-50'}`}
       >
-        {isAnchor ? <Layout className="w-5 h-5" /> : <GripVertical className="w-5 h-5" />}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <h4 className="text-sm font-black text-foreground truncate">{page.title || 'Untitled'}</h4>
-          {isAnchor && (
-            <span className="px-2 py-0.5 rounded bg-primary/20 text-primary text-[8px] font-black uppercase tracking-widest">
-              Anchor: {page.templates?.category}
-            </span>
-          )}
+        <div className="absolute top-0 left-0 transform scale-[0.15] origin-top-left pointer-events-none" style={{ width: '794px', height: '1123px' }}>
+          <PagePreview page={page} />
         </div>
-        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest truncate">
-          Source: {page.templates?.template_name || 'Custom Definition'}
-        </p>
+      </div>
+      <div className="text-center">
+        <h4 className="text-xs font-bold text-foreground truncate px-1">{page.title || 'Untitled'}</h4>
       </div>
     </div>
   );
@@ -172,6 +246,13 @@ export function FolderContents() {
   const [isMounted, setIsMounted] = useState(false);
   const [isCompilerOpen, setIsCompilerOpen] = useState(false);
   const [compilerPages, setCompilerPages] = useState<Page[]>([]);
+  
+  const [isExportSettingsOpen, setIsExportSettingsOpen] = useState(false);
+  const [zoneA, setZoneA] = useState<Page | null>(null);
+  const [zoneB, setZoneB] = useState<Page[]>([]);
+  const [zoneC, setZoneC] = useState<Page | null>(null);
+  const [zoneBIncluded, setZoneBIncluded] = useState<Record<string, boolean>>({});
+
   const [isCompiling, setIsCompiling] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -399,81 +480,126 @@ export function FolderContents() {
     }
   };
 
-  const openCompiler = () => {
-    const sorted = [...(pages || [])].sort((a, b) => {
-      const orderA = a.data?._order_index;
-      const orderB = b.data?._order_index;
-      if (orderA !== undefined && orderB !== undefined) {
-        return orderA - orderB;
-      }
-      const weightA = a.templates?.weight ?? 10;
-      const weightB = b.templates?.weight ?? 10;
-      return weightA - weightB;
+  const openExportSettings = () => {
+    const cover = pages.find(p => p.templates?.category === 'Cover') || null;
+    const lastPage = pages.find(p => p.templates?.category === 'Last Page') || null;
+    const contents = pages.filter(p => p.templates?.category !== 'Cover' && p.templates?.category !== 'Last Page').sort((a, b) => {
+      const orderA = a.data?._order_index ?? a.templates?.weight ?? 10;
+      const orderB = b.data?._order_index ?? b.templates?.weight ?? 10;
+      return orderA - orderB;
     });
-    setCompilerPages(sorted);
-    setIsCompilerOpen(true);
+
+    setZoneA(cover);
+    setZoneC(lastPage);
+    setZoneB(contents);
+
+    const initialIncluded: Record<string, boolean> = {};
+    contents.forEach(p => initialIncluded[p.id] = true);
+    setZoneBIncluded(initialIncluded);
+
+    setIsExportSettingsOpen(true);
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEndSettings = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndex = compilerPages.findIndex(p => p.id === active.id);
-    const newIndex = compilerPages.findIndex(p => p.id === over.id);
+    const oldIndex = zoneB.findIndex(p => p.id === active.id);
+    const newIndex = zoneB.findIndex(p => p.id === over.id);
     
     if (oldIndex === -1 || newIndex === -1) return;
 
-    const draggedPage = compilerPages[oldIndex];
-    if (draggedPage?.templates?.category === 'Cover' || draggedPage?.templates?.category === 'Last Page') return;
-
-    const destPage = compilerPages[newIndex];
-    if (destPage?.templates?.category === 'Cover') return;
-    if (destPage?.templates?.category === 'Last Page' && newIndex === compilerPages.length - 1) return;
-
-    const newPages = arrayMove(compilerPages, oldIndex, newIndex);
-    
-    const items = [...newPages];
-    const coverIndex = items.findIndex(p => p.templates?.category === 'Cover');
-    if (coverIndex > 0) {
-      const cover = items.splice(coverIndex, 1)[0];
-      items.unshift(cover);
-    }
-    const lastPageIndex = items.findIndex(p => p.templates?.category === 'Last Page');
-    if (lastPageIndex !== -1 && lastPageIndex !== items.length - 1) {
-      const lastP = items.splice(lastPageIndex, 1)[0];
-      items.push(lastP);
-    }
-
-    setCompilerPages(items);
+    const newZoneB = arrayMove(zoneB, oldIndex, newIndex);
+    setZoneB(newZoneB);
 
     try {
-      const updates = items.map((p, idx) => ({
+      const updates = newZoneB.map((p, idx) => ({
         id: p.id,
         data: { ...(p.data || {}), _order_index: idx }
       }));
 
       for (const update of updates) {
-        const { error } = await supabase.from('pages').update({ data: update.data }).eq('id', update.id);
-        if (error) throw error;
+        await supabase.from('pages').update({ data: update.data }).eq('id', update.id);
       }
     } catch (err: any) {
       console.error('Failed to persist order', err);
-      showNotification('error', err.message || 'Failed to persist new order. Changes are temporary.');
     }
   };
 
-  const generatePDF = async () => {
-    if (!compilerPages || compilerPages.length === 0) return;
+  const generatePDFFromSettings = async () => {
     setIsCompiling(true);
     try {
       showNotification('success', 'Building Master PDF on Server, please wait...');
+
+      const selectedZoneB = zoneB.filter(p => zoneBIncluded[p.id]);
+      const finalPages = [];
+      if (zoneA) finalPages.push(zoneA);
+      finalPages.push(...selectedZoneB);
+      if (zoneC) finalPages.push(zoneC);
 
       const response = await fetch('/api/generate-pdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ pages: compilerPages }),
+        body: JSON.stringify({ pages: finalPages }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server Error ${response.status}: ${errorText}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Master_Document.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      showNotification('success', 'Master PDF compiled and downloaded');
+      setIsExportSettingsOpen(false);
+    } catch (error: any) {
+      console.error(error);
+      alert('PDF Export Failed: ' + (error instanceof Error ? error.message : 'Unknown server error'));
+      showNotification('error', `Compilation failed: ${error.message}`);
+    } finally {
+      setIsCompiling(false);
+    }
+  };
+
+  const generatePDF = async () => {
+    const sorted = [...(pages || [])].sort((a, b) => {
+      const orderA = a.data?._order_index ?? a.templates?.weight ?? 10;
+      const orderB = b.data?._order_index ?? b.templates?.weight ?? 10;
+      return orderA - orderB;
+    });
+    
+    setIsCompiling(true);
+    try {
+      showNotification('success', 'Building Master PDF on Server, please wait...');
+
+      const items = [...sorted];
+      const coverIndex = items.findIndex(p => p.templates?.category === 'Cover');
+      if (coverIndex > 0) {
+        const cover = items.splice(coverIndex, 1)[0];
+        items.unshift(cover);
+      }
+      const lastPageIndex = items.findIndex(p => p.templates?.category === 'Last Page');
+      if (lastPageIndex !== -1 && lastPageIndex !== items.length - 1) {
+        const lastP = items.splice(lastPageIndex, 1)[0];
+        items.push(lastP);
+      }
+
+      const response = await fetch('/api/generate-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ pages: items }),
       });
 
       if (!response.ok) {
@@ -493,7 +619,6 @@ export function FolderContents() {
       window.URL.revokeObjectURL(url);
 
       showNotification('success', 'Master PDF compiled and downloaded');
-      setIsCompilerOpen(false);
     } catch (error: any) {
       console.error(error);
       alert('PDF Export Failed: ' + (error instanceof Error ? error.message : 'Unknown server error'));
@@ -580,13 +705,22 @@ export function FolderContents() {
               <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
             {(pages && pages.length > 0) && (
-              <button 
-                onClick={openCompiler}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 bg-foreground text-background font-black rounded-2xl hover:opacity-90 transition-all uppercase tracking-widest text-[10px] shadow-lg"
-              >
-                <Printer className="w-4 h-4" />
-                Assemble Master PDF
-              </button>
+              <div className="flex flex-1 md:flex-none items-center gap-2">
+                <button 
+                  onClick={openExportSettings}
+                  className="flex items-center justify-center gap-2 px-6 py-4 bg-secondary text-foreground font-black rounded-2xl hover:bg-muted transition-all uppercase tracking-widest text-[10px] shadow-sm"
+                >
+                  <Settings className="w-4 h-4" />
+                  Export Settings
+                </button>
+                <button 
+                  onClick={generatePDF}
+                  className="flex items-center justify-center gap-2 px-8 py-4 bg-foreground text-background font-black rounded-2xl hover:opacity-90 transition-all uppercase tracking-widest text-[10px] shadow-lg"
+                >
+                  <Printer className="w-4 h-4" />
+                  Export PDF
+                </button>
+              </div>
             )}
           </div>
         </header>
@@ -739,18 +873,18 @@ export function FolderContents() {
           )}
         </div>
 
-        {/* PDF Pre-Flight Compiler Modal */}
-        {isMounted && isCompilerOpen && (
+        {/* Export Settings Modal */}
+        {isMounted && isExportSettingsOpen && (
           <div className="fixed inset-0 z-[100] flex flex-col justify-end lg:justify-center items-center p-4 pb-0 lg:p-10 animate-in fade-in duration-300">
-            <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md" onClick={() => !isCompiling && setIsCompilerOpen(false)} />
-            <div className="relative w-full max-w-2xl bg-white dark:bg-slate-950 border border-border/10 rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl flex flex-col max-h-[85vh] lg:max-h-[80vh] overflow-hidden animate-in slide-in-from-bottom-8">
+            <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md" onClick={() => !isCompiling && setIsExportSettingsOpen(false)} />
+            <div className="relative w-full max-w-5xl bg-white dark:bg-slate-950 border border-border/10 rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] lg:max-h-[85vh] overflow-hidden animate-in slide-in-from-bottom-8">
               <div className="p-6 lg:p-8 border-b border-border/5 flex items-center justify-between bg-card/30 shrink-0">
                 <div>
-                  <h2 className="text-2xl font-black text-foreground tracking-tight">Pre-Flight PDF Compiler</h2>
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">Drag to adjust assembly order</p>
+                  <h2 className="text-2xl font-black text-foreground tracking-tight">Export Settings</h2>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">Select pages and adjust order for PDF generation</p>
                 </div>
                 <button 
-                  onClick={() => setIsCompilerOpen(false)}
+                  onClick={() => setIsExportSettingsOpen(false)}
                   disabled={isCompiling}
                   className="p-2 hover:bg-secondary rounded-full text-muted-foreground transition-all disabled:opacity-50"
                 >
@@ -759,39 +893,80 @@ export function FolderContents() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 lg:p-8 invisible-scrollbar bg-slate-50/50 dark:bg-slate-900/10">
-                <DndContext 
-                  sensors={sensors} 
-                  collisionDetection={closestCenter} 
-                  onDragEnd={handleDragEnd}
-                >
-                  <SortableContext items={compilerPages.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                    <div className="space-y-3">
-                      {compilerPages.map((page) => {
-                        const isAnchor = page.templates?.category === 'Cover' || page.templates?.category === 'Last Page';
-                        return (
-                          <SortablePageItem key={page.id} page={page} isAnchor={isAnchor} isCompiling={isCompiling} />
-                        );
-                      })}
+                <div className="flex flex-wrap gap-4 lg:gap-8 justify-center lg:justify-start">
+                  
+                  {/* Zone A: Locked Cover */}
+                  {zoneA && (
+                    <div className="flex flex-col gap-2 p-2 rounded-xl shadow-sm border border-border/10 bg-card opacity-90 w-[140px]">
+                      <div className="absolute top-4 right-4 z-10 bg-white/80 rounded-md p-1 backdrop-blur text-primary border border-primary/20 shadow-sm">
+                        <Lock className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="relative w-full aspect-[1/1.414] overflow-hidden bg-slate-100 rounded-lg border border-transparent pointer-events-none">
+                        <div className="absolute top-0 left-0 transform scale-[0.15] origin-top-left pointer-events-none" style={{ width: '794px', height: '1123px' }}>
+                          <PagePreview page={zoneA} />
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <h4 className="text-xs font-bold text-foreground truncate px-1">Zone A: Cover</h4>
+                      </div>
                     </div>
-                  </SortableContext>
-                </DndContext>
+                  )}
+
+                  {/* Zone B: Sortable Contents */}
+                  <DndContext 
+                    sensors={sensors} 
+                    collisionDetection={closestCenter} 
+                    onDragEnd={handleDragEndSettings}
+                  >
+                    <SortableContext items={zoneB.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                      {zoneB.map((page) => (
+                        <div key={page.id} className="w-[140px]">
+                          <SortableGridItem 
+                            page={page} 
+                            included={zoneBIncluded[page.id] ?? true}
+                            onToggle={() => setZoneBIncluded(prev => ({ ...prev, [page.id]: !prev[page.id] }))}
+                            isCompiling={isCompiling} 
+                          />
+                        </div>
+                      ))}
+                    </SortableContext>
+                  </DndContext>
+
+                  {/* Zone C: Locked Back Page */}
+                  {zoneC && (
+                    <div className="flex flex-col gap-2 p-2 rounded-xl shadow-sm border border-border/10 bg-card opacity-90 w-[140px]">
+                      <div className="absolute top-4 right-4 z-10 bg-white/80 rounded-md p-1 backdrop-blur text-primary border border-primary/20 shadow-sm">
+                        <Lock className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="relative w-full aspect-[1/1.414] overflow-hidden bg-slate-100 rounded-lg border border-transparent pointer-events-none">
+                        <div className="absolute top-0 left-0 transform scale-[0.15] origin-top-left pointer-events-none" style={{ width: '794px', height: '1123px' }}>
+                          <PagePreview page={zoneC} />
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <h4 className="text-xs font-bold text-foreground truncate px-1">Zone C: Back Page</h4>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
               </div>
 
               <div className="p-6 lg:p-8 border-t border-border/5 bg-card/50 shrink-0">
                 <button
-                  onClick={generatePDF}
-                  disabled={isCompiling || !compilerPages || compilerPages.length === 0}
+                  onClick={generatePDFFromSettings}
+                  disabled={isCompiling || (!zoneA && !zoneC && zoneB.length === 0)}
                   className="w-full py-5 bg-primary text-primary-foreground font-black rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest shadow-xl shadow-primary/20"
                 >
                   {isCompiling ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Compiling Architecture...
+                      Generating Server PDF...
                     </>
                   ) : (
                     <>
                       <Printer className="w-5 h-5" />
-                      Generate Master PDF
+                      Generate PDF
                     </>
                   )}
                 </button>
