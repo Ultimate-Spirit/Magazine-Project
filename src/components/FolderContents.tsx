@@ -571,63 +571,6 @@ export function FolderContents() {
     }
   };
 
-  const generatePDF = async () => {
-    const sorted = [...(pages || [])].sort((a, b) => {
-      const orderA = a.data?._order_index ?? a.templates?.weight ?? 10;
-      const orderB = b.data?._order_index ?? b.templates?.weight ?? 10;
-      return orderA - orderB;
-    });
-    
-    setIsCompiling(true);
-    try {
-      showNotification('success', 'Building Master PDF on Server, please wait...');
-
-      const items = [...sorted];
-      const coverIndex = items.findIndex(p => p.templates?.category === 'Cover');
-      if (coverIndex > 0) {
-        const cover = items.splice(coverIndex, 1)[0];
-        items.unshift(cover);
-      }
-      const lastPageIndex = items.findIndex(p => p.templates?.category === 'Last Page');
-      if (lastPageIndex !== -1 && lastPageIndex !== items.length - 1) {
-        const lastP = items.splice(lastPageIndex, 1)[0];
-        items.push(lastP);
-      }
-
-      const response = await fetch('/api/generate-pdf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ pages: items }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Server Error ${response.status}: ${errorText}`);
-      }
-
-      // Receive the PDF blob
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'Master_Document.pdf';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-
-      showNotification('success', 'Master PDF compiled and downloaded');
-    } catch (error: any) {
-      console.error(error);
-      alert('PDF Export Failed: ' + (error instanceof Error ? error.message : 'Unknown server error'));
-      showNotification('error', `Compilation failed: ${error.message}`);
-    } finally {
-      setIsCompiling(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -708,13 +651,6 @@ export function FolderContents() {
               <div className="flex flex-1 md:flex-none items-center gap-2">
                 <button 
                   onClick={openExportSettings}
-                  className="flex items-center justify-center gap-2 px-6 py-4 bg-secondary text-foreground font-black rounded-2xl hover:bg-muted transition-all uppercase tracking-widest text-[10px] shadow-sm"
-                >
-                  <Settings className="w-4 h-4" />
-                  Export Settings
-                </button>
-                <button 
-                  onClick={generatePDF}
                   className="flex items-center justify-center gap-2 px-8 py-4 bg-foreground text-background font-black rounded-2xl hover:opacity-90 transition-all uppercase tracking-widest text-[10px] shadow-lg"
                 >
                   <Printer className="w-4 h-4" />
