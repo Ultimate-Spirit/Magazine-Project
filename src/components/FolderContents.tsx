@@ -24,6 +24,7 @@ import {
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { createRoot } from 'react-dom/client';
+import { createPortal } from 'react-dom';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import ReactECharts from 'echarts-for-react';
@@ -100,7 +101,7 @@ const urlToBase64 = async (url: string): Promise<string> => {
 
 const StagingRenderer = ({ pages }: { pages: any[] }) => {
   return (
-    <div id="pdf-staging-root" className="absolute top-0 left-0 opacity-0 pointer-events-none -z-50 origin-top-left w-[1200px]">
+    <div id="pdf-staging-root" className="fixed top-[200vh] left-[200vw] w-[1200px] pointer-events-none bg-white text-black font-sans">
       {pages.map((page, idx) => {
         const layoutJson = page.templates?.layout_json || { fields: [] };
         const formData = page.data || {};
@@ -656,7 +657,8 @@ export function FolderContents() {
       await Promise.all(imagePromises);
 
       // Phase 4: Structural delay for main thread paint and layout recalculation
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Brute-forces the browser to paint the custom fonts and image boundaries in the off-screen portal
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       const pdf = new jsPDF({
         orientation: 'portrait',
@@ -745,7 +747,7 @@ export function FolderContents() {
 
   return (
     <WorkspaceLayout company={company || { id: 'none', name: 'Workspace' }}>
-      {stagingPages && <StagingRenderer pages={stagingPages} />}
+      {stagingPages && createPortal(<StagingRenderer pages={stagingPages} />, document.body)}
       <div className="w-full px-2 lg:px-10 xl:px-16 py-6 lg:py-16 text-foreground relative font-sans">
         {notification && (
           <div className={`fixed top-8 right-8 z-[100] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right-8 duration-300 ${notification.type === 'success' ? 'bg-foreground text-background' : 'bg-destructive text-destructive-foreground'}`}>
