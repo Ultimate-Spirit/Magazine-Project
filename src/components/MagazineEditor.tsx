@@ -591,13 +591,16 @@ export const MagazineEditor: React.FC = () => {
       </div>
 
       {/* Left Properties Panel (Data Entry Form) */}
-      <div className="w-[420px] flex-shrink-0 bg-white p-6 flex flex-col gap-6 overflow-y-auto">
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold text-gray-900">Properties</h2>
-          <p className="text-sm text-gray-500">Edit template fields below</p>
-        </div>
+      <div className="w-[420px] flex-shrink-0 bg-white flex flex-col h-full z-10 shadow-[4px_0_24px_rgba(0,0,0,0.04)]">
+        
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+          <div className="space-y-1">
+            <h2 className="text-lg font-semibold text-gray-900">Properties</h2>
+            <p className="text-sm text-gray-500">Edit template fields below</p>
+          </div>
 
-        {fields.length === 0 ? (
+          {fields.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center border border-dashed border-gray-200 rounded-xl py-16 gap-3">
             <span className="text-2xl">📄</span>
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">No Fields Found</p>
@@ -688,8 +691,10 @@ export const MagazineEditor: React.FC = () => {
             })}
           </div>
         )}
+        </div>
 
-        <div className="mt-auto pt-6 border-t border-gray-100 flex flex-col gap-3">
+        {/* Docked Footer (Action Buttons) */}
+        <div className="p-6 border-t border-gray-100 bg-white/95 backdrop-blur shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] flex flex-col gap-3">
           <button
             onClick={handleDownloadPdf}
             disabled={saving}
