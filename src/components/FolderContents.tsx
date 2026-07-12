@@ -189,9 +189,11 @@ function SortableGridItem({ page, included, onToggle, isCompiling }: SortableGri
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative flex flex-col gap-2 p-2 rounded-xl border ${isDragging ? 'shadow-xl scale-105 border-primary z-50 bg-card' : 'shadow-sm border-border/10 bg-card'} transition-all`}
+      {...attributes}
+      {...listeners}
+      className={`relative w-[120px] h-[170px] overflow-hidden bg-white border rounded shadow cursor-grab active:cursor-grabbing flex-shrink-0 ${isDragging ? 'shadow-xl scale-105 border-primary z-50' : 'shadow-sm border-border/10'} ${included ? '' : 'opacity-50'}`}
     >
-      <div className="absolute top-4 right-4 z-10 bg-white rounded-md shadow-sm p-0.5 border border-gray-200">
+      <div className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur rounded-md shadow-sm p-0.5 border border-gray-200">
         <input 
           type="checkbox" 
           checked={included} 
@@ -204,17 +206,13 @@ function SortableGridItem({ page, included, onToggle, isCompiling }: SortableGri
           onPointerDown={(e) => e.stopPropagation()}
         />
       </div>
-      <div 
-        {...attributes}
-        {...listeners}
-        className={`relative w-full aspect-[1/1.414] overflow-hidden bg-slate-100 rounded-lg cursor-grab active:cursor-grabbing border ${included ? 'border-transparent' : 'border-dashed border-gray-300 opacity-50'}`}
-      >
-        <div className="absolute top-0 left-0 transform scale-[0.15] origin-top-left pointer-events-none" style={{ width: '794px', height: '1123px' }}>
-          <PagePreview page={page} />
-        </div>
+      
+      <div className="absolute top-0 left-0 w-[794px] h-[1122px] origin-top-left scale-[0.15] pointer-events-none">
+        <PagePreview page={page} />
       </div>
-      <div className="text-center">
-        <h4 className="text-xs font-bold text-foreground truncate px-1">{page.title || 'Untitled'}</h4>
+
+      <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-border/10 p-1 text-center">
+        <h4 className="text-[10px] font-bold text-foreground truncate px-1">{page.title || 'Untitled'}</h4>
       </div>
     </div>
   );
@@ -950,17 +948,15 @@ export function FolderContents() {
                     
                     {/* Zone A: Locked Cover */}
                     {zoneA && (
-                      <div className="flex flex-col gap-2 p-2 rounded-xl shadow-sm border border-border/10 bg-card opacity-90 w-[140px]">
-                        <div className="absolute top-4 right-4 z-10 bg-white/80 rounded-md p-1 backdrop-blur text-primary border border-primary/20 shadow-sm">
+                      <div className="relative w-[120px] h-[170px] overflow-hidden bg-white border rounded shadow-sm opacity-90 flex-shrink-0">
+                        <div className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur rounded-md p-0.5 text-primary border border-primary/20 shadow-sm">
                           <Lock className="w-3.5 h-3.5" />
                         </div>
-                        <div className="relative w-full aspect-[1/1.414] overflow-hidden bg-slate-100 rounded-lg border border-transparent pointer-events-none">
-                          <div className="absolute top-0 left-0 transform scale-[0.15] origin-top-left pointer-events-none" style={{ width: '794px', height: '1123px' }}>
-                            <PagePreview page={zoneA} />
-                          </div>
+                        <div className="absolute top-0 left-0 w-[794px] h-[1122px] origin-top-left scale-[0.15] pointer-events-none">
+                          <PagePreview page={zoneA} />
                         </div>
-                        <div className="text-center">
-                          <h4 className="text-xs font-bold text-foreground truncate px-1">Zone A: Cover</h4>
+                        <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-border/10 p-1 text-center">
+                          <h4 className="text-[10px] font-bold text-foreground truncate px-1">Zone A: Cover</h4>
                         </div>
                       </div>
                     )}
@@ -973,31 +969,28 @@ export function FolderContents() {
                     >
                       <SortableContext items={zoneB.map(p => p.id)} strategy={verticalListSortingStrategy}>
                         {zoneB.map((page) => (
-                          <div key={page.id} className="w-[140px]">
-                            <SortableGridItem 
-                              page={page} 
-                              included={zoneBIncluded[page.id] ?? true}
-                              onToggle={() => setZoneBIncluded(prev => ({ ...prev, [page.id]: !prev[page.id] }))}
-                              isCompiling={isCompiling} 
-                            />
-                          </div>
+                          <SortableGridItem 
+                            key={page.id}
+                            page={page} 
+                            included={zoneBIncluded[page.id] ?? true}
+                            onToggle={() => setZoneBIncluded(prev => ({ ...prev, [page.id]: !prev[page.id] }))}
+                            isCompiling={isCompiling} 
+                          />
                         ))}
                       </SortableContext>
                     </DndContext>
 
                     {/* Zone C: Locked Back Page */}
                     {zoneC && (
-                      <div className="flex flex-col gap-2 p-2 rounded-xl shadow-sm border border-border/10 bg-card opacity-90 w-[140px]">
-                        <div className="absolute top-4 right-4 z-10 bg-white/80 rounded-md p-1 backdrop-blur text-primary border border-primary/20 shadow-sm">
+                      <div className="relative w-[120px] h-[170px] overflow-hidden bg-white border rounded shadow-sm opacity-90 flex-shrink-0">
+                        <div className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur rounded-md p-0.5 text-primary border border-primary/20 shadow-sm">
                           <Lock className="w-3.5 h-3.5" />
                         </div>
-                        <div className="relative w-full aspect-[1/1.414] overflow-hidden bg-slate-100 rounded-lg border border-transparent pointer-events-none">
-                          <div className="absolute top-0 left-0 transform scale-[0.15] origin-top-left pointer-events-none" style={{ width: '794px', height: '1123px' }}>
-                            <PagePreview page={zoneC} />
-                          </div>
+                        <div className="absolute top-0 left-0 w-[794px] h-[1122px] origin-top-left scale-[0.15] pointer-events-none">
+                          <PagePreview page={zoneC} />
                         </div>
-                        <div className="text-center">
-                          <h4 className="text-xs font-bold text-foreground truncate px-1">Zone C: Back Page</h4>
+                        <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-border/10 p-1 text-center">
+                          <h4 className="text-[10px] font-bold text-foreground truncate px-1">Zone C: Back Page</h4>
                         </div>
                       </div>
                     )}
