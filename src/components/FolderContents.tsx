@@ -23,13 +23,66 @@ import {
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { useAuth } from '../contexts/AuthContext';
+import ReactECharts from 'echarts-for-react';
+import * as echarts from 'echarts';
+import * as LucideIcons from 'lucide-react';
+import { Settings, Lock, X } from 'lucide-react'; // Added Lock, Settings, X
+
+const getChartOptions = (chartType: string, chartDataStr?: string) => {
+  let labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  let series = [120, 200, 150, 80, 70, 110, 130];
+  try {
+    if (chartDataStr) {
+      const parsed = JSON.parse(chartDataStr);
+      if (parsed.labels) labels = parsed.labels;
+      if (parsed.series) series = parsed.series;
+    }
+  } catch (e) {}
+
+  const grid = { top: 10, bottom: 20, left: 10, right: 10, containLabel: true };
+
+  const baseOptions = {
+    tooltip: { trigger: 'axis' },
+    grid,
+    xAxis: { type: 'category', data: labels },
+    yAxis: { type: 'value' },
+    series: [{ data: series, type: 'bar' }]
+  };
+
+  switch (chartType) {
+    case 'pie':
+      return {
+        tooltip: { trigger: 'item' },
+        series: [{ type: 'pie', radius: '75%', center: ['50%', '50%'], data: labels.map((l, i) => ({ name: l, value: series[i] || 0 })) }]
+      };
+    case 'line':
+      return { ...baseOptions, series: [{ data: series, type: 'line', smooth: true }] };
+    case 'scatter':
+      return {
+        grid,
+        xAxis: {},
+        yAxis: {},
+        series: [{ symbolSize: 10, data: series.map((s, i) => [i, s]), type: 'scatter' }]
+      };
+    case 'radar':
+      return {
+        radar: { indicator: labels.map(l => ({ name: l, max: Math.max(...series) * 1.2 || 100 })), center: ['50%', '50%'], radius: '70%' },
+        series: [{ type: 'radar', data: [{ value: series, name: 'Data' }] }]
+      };
+    case 'funnel':
+      return {
+        tooltip: { trigger: 'item' },
+        series: [{ type: 'funnel', left: '10%', width: '80%', height: '80%', data: labels.map((l, i) => ({ name: l, value: series[i] || 0 })) }]
+      };
+    default:
+      return baseOptions;
+  }
+};
+
+// StagingRenderer is removed as it will be handled by the headless browser on a dedicated route
 import { ConfirmModal } from './common/ConfirmModal';
 import { logActivity } from '../lib/activityLogger';
 import type { Page, Folder, Company, Template } from '../types';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { PrintTemplate } from './PrintTemplate';
 
 import React from 'react';
@@ -43,52 +96,80 @@ const SELECT_STYLES = {
   input: () => '!text-foreground'
 };
 
-interface SortablePageItemProps {
-  page: Page;
-  isAnchor: boolean;
-  isCompiling: boolean;
-}
-
-function SortablePageItem({ page, isAnchor, isCompiling }: SortablePageItemProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: page.id,
-    disabled: isAnchor || isCompiling
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
+const PagePreview = ({ page, isThumbnail = false }: { page: Page, isThumbnail?: boolean }) => {
+  const layoutJson = page.templates?.layout_json;
+  const fields = layoutJson?.fields || [];
+  const formData = page.data || {};
+  
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`flex items-center gap-4 p-4 rounded-2xl border ${isAnchor ? 'bg-primary/5 border-primary/20' : 'bg-card border-border/10'} ${isDragging ? 'shadow-xl scale-[1.02] border-primary/40 z-50' : 'shadow-sm'} transition-all`}
+    <div 
+      className="bg-white shadow-sm shrink-0 overflow-hidden" 
+      style={{ 
+        width: '794px', 
+        height: '1123px', 
+        backgroundImage: `url('${layoutJson?.background_url || ''}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
     >
-      <div 
-        {...attributes}
-        {...listeners}
-        className={`shrink-0 ${isAnchor ? 'opacity-20 cursor-not-allowed' : 'opacity-50 hover:opacity-100 cursor-grab active:cursor-grabbing text-foreground'}`}
-      >
-        {isAnchor ? <Layout className="w-5 h-5" /> : <GripVertical className="w-5 h-5" />}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <h4 className="text-sm font-black text-foreground truncate">{page.title || 'Untitled'}</h4>
-          {isAnchor && (
-            <span className="px-2 py-0.5 rounded bg-primary/20 text-primary text-[8px] font-black uppercase tracking-widest">
-              Anchor: {page.templates?.category}
-            </span>
-          )}
-        </div>
-        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest truncate">
-          Source: {page.templates?.template_name || 'Custom Definition'}
-        </p>
-      </div>
+      {fields.map((field: any) => {
+        const val = formData[field.id] || formData[field.name] || '';
+        const metadata = field.metadata || {};
+        
+        return (
+          <div 
+            key={field.id}
+            style={{
+              position: 'absolute',
+              top: `${field.top}%`,
+              left: `${field.left}%`,
+              width: `${field.width}%`,
+              height: `${field.height}%`,
+              borderRadius: metadata.borderRadius ? `${metadata.borderRadius}px` : undefined,
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: metadata.textAlign === 'left' ? 'flex-start' : metadata.textAlign === 'right' ? 'flex-end' : 'center',
+              justifyContent: metadata.textAlign === 'left' ? 'flex-start' : metadata.textAlign === 'right' ? 'flex-end' : 'center',
+              color: metadata.fontColor || 'inherit',
+              fontFamily: metadata.fontFamily || 'inherit',
+              fontSize: metadata.fontSize ? `${metadata.fontSize}px` : '16px',
+              lineHeight: metadata.lineHeight || '1.5',
+              fontWeight: metadata.fontWeight || 'normal',
+              fontStyle: metadata.fontStyle || 'normal',
+              textDecoration: metadata.textDecoration || 'none',
+              textAlign: metadata.textAlign || 'center',
+              wordBreak: 'break-word',
+              whiteSpace: 'pre-wrap',
+            }}
+          >
+            {field.type === 'Image' ? (
+              <div style={{ width: '100%', height: '100%', backgroundImage: val ? `url('${val}')` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} />
+            ) : field.type === 'Chart' ? (
+              <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
+                {isThumbnail ? (
+                  <div className="w-full h-full bg-slate-100 flex items-center justify-center border border-border/10 rounded">
+                    <Layout className="w-8 h-8 text-muted-foreground/30" />
+                  </div>
+                ) : (
+                  <ReactECharts option={getChartOptions(metadata.chartType || 'bar', val)} style={{ height: '100%', width: '100%' }} opts={{ renderer: 'svg' }} />
+                )}
+              </div>
+            ) : field.type === 'Icon' ? (
+              (() => {
+                const IconCmp = (LucideIcons as any)[val || 'Smile'] || LucideIcons.Smile;
+                return <IconCmp className="w-full h-full" />;
+              })()
+            ) : (
+              <span style={{ width: '100%' }}>{val}</span>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
-}
+};
+
+
 
 export function FolderContents() {
   const { folderId } = useParams<{ folderId: string }>();
@@ -116,15 +197,15 @@ export function FolderContents() {
   const [isMounted, setIsMounted] = useState(false);
   const [isCompilerOpen, setIsCompilerOpen] = useState(false);
   const [compilerPages, setCompilerPages] = useState<Page[]>([]);
+  
+  const [isExportSettingsOpen, setIsExportSettingsOpen] = useState(false);
+  const [zoneA, setZoneA] = useState<Page | null>(null);
+  const [zoneB, setZoneB] = useState<Page[]>([]);
+  const [zoneC, setZoneC] = useState<Page | null>(null);
+  const [zoneBIncluded, setZoneBIncluded] = useState<Record<string, boolean>>({});
+
   const [isCompiling, setIsCompiling] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
 
   useEffect(() => {
     setIsMounted(true);
@@ -343,115 +424,151 @@ export function FolderContents() {
     }
   };
 
-  const openCompiler = () => {
-    const sorted = [...(pages || [])].sort((a, b) => {
-      const orderA = a.data?._order_index;
-      const orderB = b.data?._order_index;
-      if (orderA !== undefined && orderB !== undefined) {
-        return orderA - orderB;
-      }
-      const weightA = a.templates?.weight ?? 10;
-      const weightB = b.templates?.weight ?? 10;
-      return weightA - weightB;
+  const openExportSettings = () => {
+    const cover = pages.find(p => p.templates?.category === 'Cover') || null;
+    const lastPage = pages.find(p => p.templates?.category === 'Last Page') || null;
+    const contents = pages.filter(p => p.templates?.category !== 'Cover' && p.templates?.category !== 'Last Page').sort((a, b) => {
+      const orderA = a.data?._order_index ?? a.templates?.weight ?? 10;
+      const orderB = b.data?._order_index ?? b.templates?.weight ?? 10;
+      return orderA - orderB;
     });
-    setCompilerPages(sorted);
-    setIsCompilerOpen(true);
+
+    setZoneA(cover);
+    setZoneC(lastPage);
+    setZoneB(contents);
+
+    const initialIncluded: Record<string, boolean> = {};
+    contents.forEach(p => initialIncluded[p.id] = true);
+    setZoneBIncluded(initialIncluded);
+    setIsExportSettingsOpen(true);
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
+  const getDiagnostics = () => {
+    const safeZoneB = zoneB || [];
+    const selectedZoneB = safeZoneB.filter(p => zoneBIncluded[p.id]);
+    const finalPages = [];
+    if (zoneA) finalPages.push(zoneA);
+    finalPages.push(...selectedZoneB);
+    if (zoneC) finalPages.push(zoneC);
 
-    const oldIndex = compilerPages.findIndex(p => p.id === active.id);
-    const newIndex = compilerPages.findIndex(p => p.id === over.id);
-    
-    if (oldIndex === -1 || newIndex === -1) return;
+    const totalPages = finalPages.length;
+    const hasCover = !!zoneA;
+    const hasBack = !!zoneC;
+    const contentCount = selectedZoneB.length;
 
-    const draggedPage = compilerPages[oldIndex];
-    if (draggedPage?.templates?.category === 'Cover' || draggedPage?.templates?.category === 'Last Page') return;
+    let emptyFieldsCount = 0;
+    let placeholderImageCount = 0;
 
-    const destPage = compilerPages[newIndex];
-    if (destPage?.templates?.category === 'Cover') return;
-    if (destPage?.templates?.category === 'Last Page' && newIndex === compilerPages.length - 1) return;
+    finalPages.forEach(p => {
+      const fields = p.templates?.layout_json?.fields || [];
+      fields.forEach((f: any) => {
+         const val = p.data?.[f.id] || p.data?.[f.name];
+         if (!val) {
+           emptyFieldsCount++;
+         } else if (f.type === 'Image' && typeof val === 'string' && val.includes('unsplash.com')) {
+           placeholderImageCount++;
+         }
+      });
+    });
 
-    const newPages = arrayMove(compilerPages, oldIndex, newIndex);
-    
-    const items = [...newPages];
-    const coverIndex = items.findIndex(p => p.templates?.category === 'Cover');
-    if (coverIndex > 0) {
-      const cover = items.splice(coverIndex, 1)[0];
-      items.unshift(cover);
-    }
-    const lastPageIndex = items.findIndex(p => p.templates?.category === 'Last Page');
-    if (lastPageIndex !== -1 && lastPageIndex !== items.length - 1) {
-      const lastP = items.splice(lastPageIndex, 1)[0];
-      items.push(lastP);
-    }
-
-    setCompilerPages(items);
-
-    try {
-      const updates = items.map((p, idx) => ({
-        id: p.id,
-        data: { ...(p.data || {}), _order_index: idx }
-      }));
-
-      for (const update of updates) {
-        const { error } = await supabase.from('pages').update({ data: update.data }).eq('id', update.id);
-        if (error) throw error;
-      }
-    } catch (err: any) {
-      console.error('Failed to persist order', err);
-      showNotification('error', err.message || 'Failed to persist new order. Changes are temporary.');
-    }
+    return { totalPages, hasCover, hasBack, contentCount, emptyFieldsCount, placeholderImageCount, finalPages };
   };
 
-  const generatePDF = async () => {
-    if (!compilerPages || compilerPages.length === 0) return;
+
+
+  const generatePDFFromSettings = async () => {
     setIsCompiling(true);
     try {
-      showNotification('success', 'Building Master PDF, please wait...');
-      
-      let fullHtmlStr = '';
-      
-      compilerPages.forEach((page, index) => {
-        let html = '';
-        const formData = page.data || {};
-        const vars = Object.keys(formData);
-        vars.forEach(key => {
-          const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
-          html = html.replace(regex, formData[key] || '');
-        });
-        
-        const cleanHtml = html.replace(/<\/?(?:html|head|body|!DOCTYPE)[^>]*>/gi, '');
-        fullHtmlStr += `<div class="a4-wrapper" style="width: 794px; height: 1123px; position: relative; overflow: hidden; page-break-after: always; display: flex; flex-direction: column; background-color: white;">${cleanHtml}</div>`;
-      });
-      
-      const fullHTML = `<!DOCTYPE html><html lang="en"><head><script src="https://cdn.tailwindcss.com"></script><style> @page { size: A4 portrait; margin: 0; } body { margin: 0; padding: 0; background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; display: block !important; } .a4-wrapper > div { width: 100% !important; height: 100% !important; max-width: none !important; aspect-ratio: auto !important; margin: 0 !important; padding: 0 !important; } </style></head><body>${fullHtmlStr}</body></html>`;
+      showNotification('success', 'Building Master PDF on Server, please wait...');
+
+      const selectedZoneB = zoneB.filter(p => zoneBIncluded[p.id]);
+      const finalPages = [];
+      if (zoneA) finalPages.push(zoneA);
+      finalPages.push(...selectedZoneB);
+      if (zoneC) finalPages.push(zoneC);
 
       const response = await fetch('/api/generate-pdf', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html: fullHTML }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ pages: finalPages }),
       });
 
       if (!response.ok) {
-        const err = await response.text();
-        throw new Error(err);
+        const errorText = await response.text();
+        throw new Error(`Server Error ${response.status}: ${errorText}`);
       }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'Corporate_Bundle.pdf';
+      a.download = 'Master_Document.pdf';
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      
+
       showNotification('success', 'Master PDF compiled and downloaded');
-      setIsCompilerOpen(false);
+      setIsExportSettingsOpen(false);
+    } catch (error: any) {
+      console.error(error);
+      alert('PDF Export Failed: ' + (error instanceof Error ? error.message : 'Unknown server error'));
+      showNotification('error', `Compilation failed: ${error.message}`);
+    } finally {
+      setIsCompiling(false);
+    }
+  };
+
+  const generatePDF = async () => {
+    const sorted = [...(pages || [])].sort((a, b) => {
+      const orderA = a.data?._order_index ?? a.templates?.weight ?? 10;
+      const orderB = b.data?._order_index ?? b.templates?.weight ?? 10;
+      return orderA - orderB;
+    });
+    
+    setIsCompiling(true);
+    try {
+      showNotification('success', 'Building Master PDF on Server, please wait...');
+
+      const items = [...sorted];
+      const coverIndex = items.findIndex(p => p.templates?.category === 'Cover');
+      if (coverIndex > 0) {
+        const cover = items.splice(coverIndex, 1)[0];
+        items.unshift(cover);
+      }
+      const lastPageIndex = items.findIndex(p => p.templates?.category === 'Last Page');
+      if (lastPageIndex !== -1 && lastPageIndex !== items.length - 1) {
+        const lastP = items.splice(lastPageIndex, 1)[0];
+        items.push(lastP);
+      }
+
+      const response = await fetch('/api/generate-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ pages: items }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server Error ${response.status}: ${errorText}`);
+      }
+
+      // Receive the PDF blob
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Master_Document.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      showNotification('success', 'Master PDF compiled and downloaded');
     } catch (error: any) {
       console.error(error);
       alert('PDF Export Failed: ' + (error instanceof Error ? error.message : 'Unknown server error'));
@@ -538,13 +655,22 @@ export function FolderContents() {
               <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
             {(pages && pages.length > 0) && (
-              <button 
-                onClick={openCompiler}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 bg-foreground text-background font-black rounded-2xl hover:opacity-90 transition-all uppercase tracking-widest text-[10px] shadow-lg"
-              >
-                <Printer className="w-4 h-4" />
-                Assemble Master PDF
-              </button>
+              <div className="flex flex-1 md:flex-none items-center gap-2">
+                <button 
+                  onClick={openExportSettings}
+                  className="flex items-center justify-center gap-2 px-6 py-4 bg-secondary text-foreground font-black rounded-2xl hover:bg-muted transition-all uppercase tracking-widest text-[10px] shadow-sm"
+                >
+                  <Settings className="w-4 h-4" />
+                  Export Settings
+                </button>
+                <button 
+                  onClick={generatePDF}
+                  className="flex items-center justify-center gap-2 px-8 py-4 bg-foreground text-background font-black rounded-2xl hover:opacity-90 transition-all uppercase tracking-widest text-[10px] shadow-lg"
+                >
+                  <Printer className="w-4 h-4" />
+                  Export PDF
+                </button>
+              </div>
             )}
           </div>
         </header>
@@ -697,54 +823,87 @@ export function FolderContents() {
           )}
         </div>
 
-        {/* PDF Pre-Flight Compiler Modal */}
-        {isMounted && isCompilerOpen && (
-          <div className="fixed inset-0 z-[100] flex flex-col justify-end lg:justify-center items-center p-4 pb-0 lg:p-10 animate-in fade-in duration-300">
-            <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md" onClick={() => !isCompiling && setIsCompilerOpen(false)} />
-            <div className="relative w-full max-w-2xl bg-white dark:bg-slate-950 border border-border/10 rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl flex flex-col max-h-[85vh] lg:max-h-[80vh] overflow-hidden animate-in slide-in-from-bottom-8">
-              <div className="p-6 lg:p-8 border-b border-border/5 flex items-center justify-between bg-card/30 shrink-0">
-                <div>
-                  <h2 className="text-2xl font-black text-foreground tracking-tight">Pre-Flight PDF Compiler</h2>
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">Drag to adjust assembly order</p>
-                </div>
+        {/* Export Manager Modal */}
+        {isMounted && isExportSettingsOpen && (
+          <div className="fixed inset-0 z-[100] flex justify-center items-center p-4 bg-slate-950/40 backdrop-blur-sm">
+            <div className="w-full max-w-2xl p-6 bg-white rounded-xl shadow-2xl flex flex-col gap-6 max-h-[90vh] overflow-hidden">
+              
+              <div className="flex items-center justify-between border-b pb-4 shrink-0">
+                <h2 className="text-xl font-bold text-gray-900">Export Settings: Select Pages</h2>
                 <button 
-                  onClick={() => setIsCompilerOpen(false)}
+                  onClick={() => setIsExportSettingsOpen(false)}
                   disabled={isCompiling}
-                  className="p-2 hover:bg-secondary rounded-full text-muted-foreground transition-all disabled:opacity-50"
+                  className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors disabled:opacity-50"
                 >
-                  <ArrowLeft className="w-5 h-5 rotate-180" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 lg:p-8 invisible-scrollbar bg-slate-50/50 dark:bg-slate-900/10">
-                <DndContext 
-                  sensors={sensors} 
-                  collisionDetection={closestCenter} 
-                  onDragEnd={handleDragEnd}
-                >
-                  <SortableContext items={compilerPages.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                    <div className="space-y-3">
-                      {compilerPages.map((page) => {
-                        const isAnchor = page.templates?.category === 'Cover' || page.templates?.category === 'Last Page';
-                        return (
-                          <SortablePageItem key={page.id} page={page} isAnchor={isAnchor} isCompiling={isCompiling} />
-                        );
-                      })}
+              <div className="flex-1 overflow-y-auto space-y-3">
+                {/* Zone A */}
+                {zoneA && (
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-500 transition-colors bg-gray-50">
+                    <div className="flex items-center gap-4">
+                      <Lock className="w-5 h-5 text-gray-400" />
+                      <span className="font-semibold text-gray-900">{zoneA.title || 'Untitled Cover'}</span>
                     </div>
-                  </SortableContext>
-                </DndContext>
+                    <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded">Mandatory</span>
+                  </div>
+                )}
+
+                {/* Zone B */}
+                {(zoneB || []).map((page, idx) => {
+                  const included = zoneBIncluded[page.id] ?? true;
+                  return (
+                    <div 
+                      key={page.id} 
+                      onClick={() => !isCompiling && setZoneBIncluded(prev => ({ ...prev, [page.id]: !prev[page.id] }))}
+                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-500 transition-colors bg-gray-50 cursor-pointer"
+                    >
+                      <div className="flex items-center gap-4">
+                        <input 
+                          type="checkbox"
+                          checked={included}
+                          readOnly
+                          className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 pointer-events-none"
+                        />
+                        <span className={`font-semibold text-gray-900 ${included ? '' : 'opacity-50 line-through'}`}>{page.title || 'Untitled Page'}</span>
+                      </div>
+                      <span className="text-xs text-gray-400 font-medium">#{idx + 1}</span>
+                    </div>
+                  );
+                })}
+
+                {/* Zone C */}
+                {zoneC && (
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-500 transition-colors bg-gray-50">
+                    <div className="flex items-center gap-4">
+                      <Lock className="w-5 h-5 text-gray-400" />
+                      <span className="font-semibold text-gray-900">{zoneC.title || 'Untitled Back Page'}</span>
+                    </div>
+                    <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded">Mandatory</span>
+                  </div>
+                )}
+
+                {!zoneA && !zoneC && (!zoneB || zoneB.length === 0) && (
+                  <div className="py-12 flex flex-col items-center justify-center opacity-50 text-center">
+                    <Loader2 className="w-8 h-8 animate-spin mb-4 text-blue-500" />
+                    <p className="text-sm font-bold text-gray-500">Loading pages...</p>
+                  </div>
+                )}
               </div>
 
-              <div className="p-6 lg:p-8 border-t border-border/5 bg-card/50 shrink-0">
+              {/* Export Button */}
+              <div className="pt-4 border-t shrink-0">
                 <button
-                  onClick={generatePDF}
-                  disabled={isCompiling || !compilerPages || compilerPages.length === 0}
-                  className="w-full py-5 bg-primary text-primary-foreground font-black rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest shadow-xl shadow-primary/20"
+                  onClick={generatePDFFromSettings}
+                  disabled={isCompiling || (!zoneA && !zoneC && zoneB.length === 0)}
+                  className="w-full py-4 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-3"
                 >
                   {isCompiling ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Compiling Architecture...
+                      Generating Server PDF...
                     </>
                   ) : (
                     <>

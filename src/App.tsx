@@ -17,6 +17,7 @@ import { ContentBundlesManager } from './components/admin/ContentBundlesManager'
 import { StandaloneTemplateManager } from './components/admin/StandaloneTemplateManager';
 import { UpdatePassword } from './components/UpdatePassword';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { PrintRender } from './components/PrintRender';
 import type { Company } from './types';
 
 function App() {
@@ -116,6 +117,8 @@ function App() {
             </ProtectedRoute>
           } 
         />
+
+        <Route path="/print-render" element={<PrintRender />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

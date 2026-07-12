@@ -2,8 +2,10 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import ReactECharts from 'echarts-for-react';
-import { ArrowLeft, Loader2, AlertCircle, UploadCloud, Download, Image as ImageIcon } from 'lucide-react';
+import * as echarts from 'echarts';
+import { ArrowLeft, Loader2, AlertCircle, UploadCloud, Download, Image as ImageIcon, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
 const toTitleCase = (name: string) =>
@@ -240,11 +242,25 @@ export const MagazineEditor: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
   const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
+  const [initialScale, setInitialScale] = useState(1);
+  const transformRef = useRef<any>(null);
 
   const showToast = (message: string, type: 'error' | 'success' = 'error') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 6000);
   };
+
+  useEffect(() => {
+    const handleResize = () => {
+      const h = window.innerHeight;
+      const w = window.innerWidth;
+      const s = Math.min((h - 80) / 1123, (w - 420 - 80) / 794);
+      setInitialScale(s > 0 ? s : 1);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const fetch = async () => {
@@ -363,44 +379,30 @@ export const MagazineEditor: React.FC = () => {
   };
 
   const handleDownloadPdf = async () => {
+    if (!page) return;
+
     try {
-      showToast('Generating PDF, please wait...', 'success');
-      
-      let html = `<div style="position: relative; width: 100%; height: 100%; background-image: url('${layoutJson?.background_url || ''}'); background-size: cover; background-position: center; overflow: hidden;">`;
-      if (layoutJson?.fields) {
-        layoutJson.fields.forEach((field: any) => {
-          const val = formData[field.id] || '';
-          html += `<div style="position: absolute; top: ${field.top}%; left: ${field.left}%; width: ${field.width}%; height: ${field.height}%;">`;
-          if (field.type === 'Image') {
-            html += `<img src="${val}" style="width: 100%; height: 100%; object-fit: cover;" />`;
-          } else {
-            html += `<div style="width: 100%; height: 100%; word-break: break-word;">${val}</div>`;
-          }
-          html += `</div>`;
-        });
-      }
-      html += `</div>`;
+      showToast('Generating PDF on Server, please wait...', 'success');
 
-      const wrappedHtml = `<div class="a4-wrapper" style="width: 794px; height: 1123px; position: relative; overflow: hidden; page-break-after: always; display: flex; flex-direction: column; background-color: white;">${html}</div>`;
-      
-      const fullHTML = `<!DOCTYPE html><html lang="en"><head><script src="https://cdn.tailwindcss.com"></script><style> @page { size: A4 portrait; margin: 0; } body { margin: 0; padding: 0; background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; display: block !important; } .a4-wrapper > div { width: 100% !important; height: 100% !important; max-width: none !important; aspect-ratio: auto !important; margin: 0 !important; padding: 0 !important; } </style></head><body>${wrappedHtml}</body></html>`;
-
+      // Send single page as compiler pages array
       const response = await fetch('/api/generate-pdf', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html: fullHTML }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ pages: [page] }),
       });
 
       if (!response.ok) {
-        const err = await response.text();
-        throw new Error(err);
+        const errorText = await response.text();
+        throw new Error(`Server Error ${response.status}: ${errorText}`);
       }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'document.pdf';
+      a.download = `${page.title || 'document'}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -408,7 +410,7 @@ export const MagazineEditor: React.FC = () => {
 
       showToast('PDF downloaded successfully!', 'success');
     } catch (error: any) {
-      alert('PDF Export Failed: ' + (error instanceof Error ? error.message : 'Unknown server error'));
+      alert('PDF Export Failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
       showToast('Failed to generate PDF.', 'error');
     }
   };
@@ -449,7 +451,7 @@ export const MagazineEditor: React.FC = () => {
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Right Canvas Workspace (Dedicated Consumer Rendering Engine) */}
-      <div className="flex-1 w-full h-full bg-slate-50 relative flex items-center justify-center overflow-hidden border-l border-gray-200">
+      <div className="flex-1 w-full h-full bg-slate-50 relative flex flex-col justify-center items-center overflow-hidden border-l border-gray-200">
         <button
           onClick={() => navigate(`/folder/${folderId}`)}
           className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:text-gray-900 shadow-sm transition-all z-20"
@@ -464,29 +466,56 @@ export const MagazineEditor: React.FC = () => {
           </span>
         </div>
 
-        {/* Scalable Wrapper */}
-        <div 
-          className="relative flex items-center justify-center"
-          style={{
-            '--scale': 'calc(min((100vh - 64px) / 1123, (100vw - 420px - 64px) / 794))',
-            width: 'calc(794px * var(--scale))',
-            height: 'calc(1123px * var(--scale))'
-          } as React.CSSProperties}
+        <TransformWrapper
+          ref={transformRef}
+          initialScale={initialScale}
+          minScale={0.1}
+          maxScale={4}
+          centerOnInit={true}
+          alignmentAnimation={{ animationTime: 0 }}
+          wheel={{ disabled: true }}
+          pinch={{ disabled: true }}
+          doubleClick={{ disabled: true }}
         >
-          {/* The Locked A4 Canvas Component */}
-          <div 
-            className="absolute top-0 left-0 bg-white shadow-2xl overflow-hidden shrink-0" 
-            style={{ 
-              width: '794px', 
-              height: '1123px', 
-              backgroundImage: `url('${layoutJson?.background_url || ''}')`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              transform: 'scale(var(--scale))',
-              transformOrigin: 'top left'
-            }}
-          >
-            {fields.map((field: any) => {
+          {({ zoomIn, zoomOut, resetTransform }) => (
+            <>
+              <div className="absolute top-6 right-6 z-20 flex items-center gap-1 bg-white border border-gray-300 rounded-lg shadow-sm p-1">
+                <button 
+                  onClick={() => zoomOut()} 
+                  className="p-1.5 hover:bg-gray-100 rounded text-gray-700 transition-colors"
+                  title="Zoom Out"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => resetTransform()} 
+                  className="p-1.5 hover:bg-gray-100 rounded text-gray-700 transition-colors"
+                  title="Reset Zoom"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => zoomIn()} 
+                  className="p-1.5 hover:bg-gray-100 rounded text-gray-700 transition-colors"
+                  title="Zoom In"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+              </div>
+              <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }}>
+            {/* The Locked A4 Canvas Component */}
+            <div 
+              id="a4-canvas-container"
+              className="bg-white shadow-2xl shrink-0" 
+              style={{ 
+                width: '794px', 
+                height: '1123px', 
+                backgroundImage: `url('${layoutJson?.background_url || ''}')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            >
+              {fields.map((field: any) => {
             const val = formData[field.id] || '';
             const metadata = field.metadata || {};
 
@@ -524,7 +553,16 @@ export const MagazineEditor: React.FC = () => {
                 }}
               >
                 {field.type === 'Image' ? (
-                  <img src={val} alt={field.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div 
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      backgroundImage: val ? `url('${val}')` : 'none', 
+                      backgroundSize: 'cover', 
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat'
+                    }} 
+                  />
                 ) : field.type === 'Chart' ? (
                   <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
                     <ReactECharts 
@@ -544,18 +582,24 @@ export const MagazineEditor: React.FC = () => {
               </div>
             );
           })}
-          </div>
-        </div>
+            </div>
+          </TransformComponent>
+          </>
+          )}
+        </TransformWrapper>
       </div>
 
       {/* Left Properties Panel (Data Entry Form) */}
-      <div className="w-[420px] flex-shrink-0 bg-white p-6 flex flex-col gap-6 overflow-y-auto">
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold text-gray-900">Properties</h2>
-          <p className="text-sm text-gray-500">Edit template fields below</p>
-        </div>
+      <div className="w-[420px] flex-shrink-0 bg-white flex flex-col h-full z-10 shadow-[4px_0_24px_rgba(0,0,0,0.04)]">
+        
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+          <div className="space-y-1">
+            <h2 className="text-lg font-semibold text-gray-900">Properties</h2>
+            <p className="text-sm text-gray-500">Edit template fields below</p>
+          </div>
 
-        {fields.length === 0 ? (
+          {fields.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center border border-dashed border-gray-200 rounded-xl py-16 gap-3">
             <span className="text-2xl">📄</span>
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">No Fields Found</p>
@@ -646,8 +690,10 @@ export const MagazineEditor: React.FC = () => {
             })}
           </div>
         )}
+        </div>
 
-        <div className="mt-auto pt-6 border-t border-gray-100 flex flex-col gap-3">
+        {/* Docked Footer (Action Buttons) */}
+        <div className="p-6 border-t border-gray-100 bg-white/95 backdrop-blur shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] flex flex-col gap-3">
           <button
             onClick={handleDownloadPdf}
             disabled={saving}
