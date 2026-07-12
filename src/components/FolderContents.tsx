@@ -1075,6 +1075,7 @@ export function FolderContents() {
                       );
                     })()}
                   </div>
+                </div>
                 ) : null}
               </div>
 
