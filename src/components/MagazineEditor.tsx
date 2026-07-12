@@ -4,7 +4,9 @@ import { supabase } from '../lib/supabaseClient';
 import ReactECharts from 'echarts-for-react';
 import { ArrowLeft, Loader2, AlertCircle, UploadCloud, Download, Image as ImageIcon, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
-import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+import { TransformWrapper, TransformComponent, ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
 const toTitleCase = (name: string) =>
@@ -242,6 +244,7 @@ export const MagazineEditor: React.FC = () => {
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
   const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
   const [initialScale, setInitialScale] = useState(1);
+  const transformRef = useRef<ReactZoomPanPinchRef>(null);
 
   const showToast = (message: string, type: 'error' | 'success' = 'error') => {
     setToast({ message, type });
@@ -377,53 +380,45 @@ export const MagazineEditor: React.FC = () => {
   };
 
   const handleDownloadPdf = async () => {
+    if (!transformRef.current) return;
+    const { state, setTransform } = transformRef.current.instance.transformState ? transformRef.current : { ...transformRef.current, state: transformRef.current.instance.transformState };
+    // Wait, the state in v4 is accessed via transformRef.current.state. Let's just use it safely.
+    const currentState = transformRef.current.instance.transformState;
+    const cachedState = { ...currentState };
+
     try {
       showToast('Generating PDF, please wait...', 'success');
       
-      let html = `<div style="position: relative; width: 100%; height: 100%; background-image: url('${layoutJson?.background_url || ''}'); background-size: cover; background-position: center; overflow: hidden;">`;
-      if (layoutJson?.fields) {
-        layoutJson.fields.forEach((field: any) => {
-          const val = formData[field.id] || '';
-          html += `<div style="position: absolute; top: ${field.top}%; left: ${field.left}%; width: ${field.width}%; height: ${field.height}%;">`;
-          if (field.type === 'Image') {
-            html += `<img src="${val}" style="width: 100%; height: 100%; object-fit: cover;" />`;
-          } else {
-            html += `<div style="width: 100%; height: 100%; word-break: break-word;">${val}</div>`;
-          }
-          html += `</div>`;
-        });
-      }
-      html += `</div>`;
-
-      const wrappedHtml = `<div class="a4-wrapper" style="width: 794px; height: 1123px; position: relative; overflow: hidden; page-break-after: always; display: flex; flex-direction: column; background-color: white;">${html}</div>`;
+      // Step 1: Programmatically cache zoom state, force scale to 1 (100%), x:0, y:0
+      transformRef.current.setTransform(0, 0, 1, 0);
       
-      const fullHTML = `<!DOCTYPE html><html lang="en"><head><script src="https://cdn.tailwindcss.com"></script><style> @page { size: A4 portrait; margin: 0; } body { margin: 0; padding: 0; background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; display: block !important; } .a4-wrapper > div { width: 100% !important; height: 100% !important; max-width: none !important; aspect-ratio: auto !important; margin: 0 !important; padding: 0 !important; } </style></head><body>${wrappedHtml}</body></html>`;
-
-      const response = await fetch('/api/generate-pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html: fullHTML }),
+      // Wait for React and DOM to fully render the reset state
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      const node = document.getElementById('a4-canvas-container');
+      if (!node) throw new Error('Canvas not found');
+      
+      // Step 2: Configure html2canvas to target strictly the A4 template container node
+      const canvas = await html2canvas(node, { scale: 2, useCORS: true });
+      
+      // Step 3: Convert captured canvas to image and inject into jsPDF
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
       });
-
-      if (!response.ok) {
-        const err = await response.text();
-        throw new Error(err);
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'document.pdf';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+      pdf.save('document.pdf');
+      
       showToast('PDF downloaded successfully!', 'success');
     } catch (error: any) {
-      alert('PDF Export Failed: ' + (error instanceof Error ? error.message : 'Unknown server error'));
+      alert('PDF Export Failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
       showToast('Failed to generate PDF.', 'error');
+    } finally {
+      // Step 4: Immediately restore cached zoom and pan state
+      transformRef.current.setTransform(cachedState.positionX, cachedState.positionY, cachedState.scale, 0);
     }
   };
 
@@ -479,6 +474,7 @@ export const MagazineEditor: React.FC = () => {
         </div>
 
         <TransformWrapper
+          ref={transformRef}
           initialScale={initialScale}
           minScale={0.1}
           maxScale={4}
@@ -516,6 +512,7 @@ export const MagazineEditor: React.FC = () => {
               <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }}>
             {/* The Locked A4 Canvas Component */}
             <div 
+              id="a4-canvas-container"
               className="bg-white shadow-2xl shrink-0" 
               style={{ 
                 width: '794px', 
