@@ -23,10 +23,6 @@ import {
 } from 'lucide-react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { useAuth } from '../contexts/AuthContext';
-import { createRoot } from 'react-dom/client';
-import { createPortal } from 'react-dom';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
 import * as LucideIcons from 'lucide-react';
@@ -82,107 +78,7 @@ const getChartOptions = (chartType: string, chartDataStr?: string) => {
   }
 };
 
-const urlToBase64 = async (url: string): Promise<string> => {
-  if (!url || url.startsWith('data:')) return url;
-  try {
-    const response = await fetch(url, { mode: 'cors' });
-    const blob = await response.blob();
-    return await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  } catch (err) {
-    console.error('Failed to convert image to base64:', url, err);
-    return url;
-  }
-};
-
-const StagingRenderer = ({ pages }: { pages: any[] }) => {
-  return (
-    <div id="pdf-staging-root" className="fixed top-[200vh] left-[200vw] w-[1200px] pointer-events-none bg-white text-black font-sans">
-      {pages.map((page, idx) => {
-        const layoutJson = page.templates?.layout_json || { fields: [] };
-        const formData = page.data || {};
-        return (
-          <div 
-            key={idx} 
-            className="a4-staging-page"
-            style={{ 
-              width: '794px', 
-              height: '1123px', 
-              position: 'relative', 
-              overflow: 'hidden', 
-              backgroundColor: 'white',
-              marginBottom: '20px'
-            }}
-          >
-            {layoutJson?.background_url && (
-              <img 
-                src={layoutJson.background_url} 
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }} 
-                alt="bg" 
-              />
-            )}
-            <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
-              {(layoutJson.fields || []).map((field: any) => {
-                const val = formData[field.id] || '';
-                const metadata = field.metadata || {};
-                return (
-                  <div 
-                    key={field.id}
-                    style={{
-                      position: 'absolute',
-                      top: `${field.top}%`,
-                      left: `${field.left}%`,
-                      width: `${field.width}%`,
-                      height: `${field.height}%`,
-                      borderRadius: metadata.borderRadius ? `${metadata.borderRadius}px` : undefined,
-                      overflow: 'hidden',
-                      display: 'flex',
-                      alignItems: metadata.textAlign === 'left' ? 'flex-start' : metadata.textAlign === 'right' ? 'flex-end' : 'center',
-                      justifyContent: metadata.textAlign === 'left' ? 'flex-start' : metadata.textAlign === 'right' ? 'flex-end' : 'center',
-                      color: metadata.fontColor || 'inherit',
-                      fontFamily: metadata.fontFamily || 'inherit',
-                      fontSize: metadata.fontSize ? `${metadata.fontSize}px` : '16px',
-                      lineHeight: metadata.lineHeight || '1.5',
-                      fontWeight: metadata.fontWeight || 'normal',
-                      fontStyle: metadata.fontStyle || 'normal',
-                      textDecoration: metadata.textDecoration || 'none',
-                      textAlign: metadata.textAlign || 'center',
-                      wordBreak: 'break-word',
-                      whiteSpace: 'pre-wrap',
-                    }}
-                  >
-                    {field.type === 'Image' ? (
-                      val ? <img src={val} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="img" /> : <div style={{ width: '100%', height: '100%' }} />
-                    ) : field.type === 'Chart' ? (
-                      <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
-                        <ReactECharts 
-                          option={getChartOptions(metadata.chartType || 'bar', val)} 
-                          style={{ height: '100%', width: '100%' }}
-                          opts={{ renderer: 'svg' }}
-                        />
-                      </div>
-                    ) : field.type === 'Icon' ? (
-                      (() => {
-                        const IconCmp = (LucideIcons as any)[val || 'Smile'] || LucideIcons.Smile;
-                        return <IconCmp style={{ width: '100%', height: '100%' }} />;
-                      })()
-                    ) : (
-                      <span style={{ width: '100%' }}>{val}</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
+// StagingRenderer is removed as it will be handled by the headless browser on a dedicated route
 import { ConfirmModal } from './common/ConfirmModal';
 import { logActivity } from '../lib/activityLogger';
 import type { Page, Folder, Company, Template } from '../types';
@@ -276,7 +172,6 @@ export function FolderContents() {
   const [isMounted, setIsMounted] = useState(false);
   const [isCompilerOpen, setIsCompilerOpen] = useState(false);
   const [compilerPages, setCompilerPages] = useState<Page[]>([]);
-  const [stagingPages, setStagingPages] = useState<any[] | null>(null);
   const [isCompiling, setIsCompiling] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -571,133 +466,31 @@ export function FolderContents() {
     if (!compilerPages || compilerPages.length === 0) return;
     setIsCompiling(true);
     try {
-      showNotification('success', 'Building Master PDF, please wait...');
+      showNotification('success', 'Building Master PDF on Server, please wait...');
 
-      // Pre-process images to base64
-      const preprocessedPages = JSON.parse(JSON.stringify(compilerPages));
-      for (const page of preprocessedPages) {
-        const layoutJson = page.templates?.layout_json;
-        if (layoutJson?.background_url) {
-          layoutJson.background_url = await urlToBase64(layoutJson.background_url);
-        }
-        
-        if (layoutJson?.fields) {
-          for (const field of layoutJson.fields) {
-            if (field.type === 'Image') {
-              const val = page.data?.[field.id];
-              if (val && typeof val === 'string' && !val.startsWith('data:')) {
-                page.data[field.id] = await urlToBase64(val);
-              }
-            }
-          }
-        }
-      }
-
-      // Render inline directly in the React tree so we inherit all CSS classes/contexts
-      setStagingPages(preprocessedPages);
-
-      // Give React a brief moment to mount the DOM
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const stagingRoot = document.getElementById('pdf-staging-root');
-      if (stagingRoot) {
-        // Layout thrashing to force synchronous paint
-        const forceLayout = stagingRoot.offsetHeight;
-      }
-
-      const pageNodes = Array.from(document.querySelectorAll('.a4-staging-page'));
-      const allEchartsImgCleanups: (() => void)[] = [];
-
-      // Phase 1: Convert all ECharts instances to static base64 images synchronously across all pages
-      pageNodes.forEach((pageNode) => {
-        const echartContainers = Array.from(pageNode.querySelectorAll('.echarts-for-react'));
-        echartContainers.forEach((container) => {
-          const instance = echarts.getInstanceByDom(container as HTMLElement);
-          if (instance) {
-            const dataUrl = instance.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: 'transparent' });
-            const img = document.createElement('img');
-            img.src = dataUrl;
-            img.className = 'echarts-static-clone';
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.position = 'absolute';
-            img.style.top = '0';
-            img.style.left = '0';
-            img.style.objectFit = 'contain';
-            img.loading = 'eager'; // Bypass lazy loading
-            
-            const child = container.firstElementChild as HTMLElement;
-            let originalDisplay = '';
-            if (child) {
-              originalDisplay = child.style.display;
-              child.style.display = 'none';
-            }
-            container.appendChild(img);
-
-            allEchartsImgCleanups.push(() => {
-              img.remove();
-              if (child) child.style.display = originalDisplay;
-            });
-          }
-        });
+      const response = await fetch('/api/generate-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ pages: compilerPages }),
       });
 
-      // Phase 2: Await typography ready barrier
-      await document.fonts.ready;
-
-      // Phase 3: Await all image loads (bypassing lazy rendering)
-      const allImages = Array.from(document.querySelectorAll('#pdf-staging-root img')) as HTMLImageElement[];
-      const imagePromises = allImages.map(img => {
-        if (img.complete) return Promise.resolve();
-        return new Promise((resolve) => {
-          img.onload = resolve;
-          img.onerror = resolve; // Resolve on error so pipeline doesn't hang
-        });
-      });
-      await Promise.all(imagePromises);
-
-      // Phase 4: Structural delay for main thread paint and layout recalculation
-      // Brute-forces the browser to paint the custom fonts and image boundaries in the off-screen portal
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-
-      // Step 3: Iterate sequentially
-      for (let i = 0; i < pageNodes.length; i++) {
-        const pageNode = pageNodes[i] as HTMLElement;
-
-        // Run html2canvas
-        const canvas = await html2canvas(pageNode, { 
-          scale: 2, 
-          useCORS: true,
-          windowWidth: 1200,
-          windowHeight: 1600,
-          logging: false 
-        });
-
-        // Step 4: Inject into jsPDF
-        const imgData = canvas.toDataURL('image/png');
-        const imgProps = pdf.getImageProperties(imgData);
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-        if (i > 0) {
-          pdf.addPage();
-        }
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server Error ${response.status}: ${errorText}`);
       }
 
-      // Restore ECharts
-      allEchartsImgCleanups.forEach(cleanup => cleanup());
-
-      // Step 5: Save and cleanup
-      pdf.save('Master_Document.pdf');
-      
-      setStagingPages(null);
+      // Receive the PDF blob
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Master_Document.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
 
       showNotification('success', 'Master PDF compiled and downloaded');
       setIsCompilerOpen(false);
@@ -707,7 +500,6 @@ export function FolderContents() {
       showNotification('error', `Compilation failed: ${error.message}`);
     } finally {
       setIsCompiling(false);
-      setStagingPages(null);
     }
   };
 
@@ -747,7 +539,6 @@ export function FolderContents() {
 
   return (
     <WorkspaceLayout company={company || { id: 'none', name: 'Workspace' }}>
-      {stagingPages && createPortal(<StagingRenderer pages={stagingPages} />, document.body)}
       <div className="w-full px-2 lg:px-10 xl:px-16 py-6 lg:py-16 text-foreground relative font-sans">
         {notification && (
           <div className={`fixed top-8 right-8 z-[100] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right-8 duration-300 ${notification.type === 'success' ? 'bg-foreground text-background' : 'bg-destructive text-destructive-foreground'}`}>
