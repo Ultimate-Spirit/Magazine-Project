@@ -613,7 +613,16 @@ export const MagazineEditor: React.FC = () => {
                 }}
               >
                 {field.type === 'Image' ? (
-                  <img src={val} alt={field.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div 
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      backgroundImage: val ? `url('${val}')` : 'none', 
+                      backgroundSize: 'cover', 
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat'
+                    }} 
+                  />
                 ) : field.type === 'Chart' ? (
                   <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
                     <ReactECharts 
