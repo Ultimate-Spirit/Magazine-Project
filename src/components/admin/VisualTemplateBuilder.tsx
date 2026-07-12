@@ -423,6 +423,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                               style={{
                                 color: field.metadata?.fontColor || 'hsl(var(--primary))',
                                 fontFamily: field.metadata?.fontFamily || undefined,
+                                fontSize: field.metadata?.fontSize ? `${field.metadata.fontSize}px` : undefined,
                                 fontWeight: field.metadata?.fontWeight || 'normal',
                                 fontStyle: field.metadata?.fontStyle || 'normal',
                                 textDecoration: field.metadata?.textDecoration || 'none',
@@ -432,9 +433,9 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                             >
                               {field.type === 'Text' && (
                                 field.metadata?.sampleText ? (
-                                  <span className="text-base leading-tight break-all" style={{ width: '100%' }}>{field.metadata.sampleText}</span>
+                                  <span className="leading-tight break-all" style={{ width: '100%', fontSize: 'inherit' }}>{field.metadata.sampleText}</span>
                                 ) : (
-                                  <Type className="w-6 h-6 mb-1 opacity-50" />
+                                  <span className="leading-tight break-all opacity-70" style={{ width: '100%', fontSize: 'inherit' }}>[TEXT]</span>
                                 )
                               )}
                               {field.type === 'Image' && <ImageIcon className="w-6 h-6 mb-1 opacity-50" />}
@@ -560,6 +561,19 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                                   unstyled
                                   isSearchable
                                   menuPlacement="auto"
+                                  menuPortalTarget={document.body}
+                                  styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                                />
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Font Size (px)</label>
+                                <input
+                                  type="number"
+                                  value={field.metadata?.fontSize || 16}
+                                  onChange={(e) => updateField(field.id, { metadata: { ...field.metadata, fontSize: parseInt(e.target.value) || 16 } })}
+                                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                  placeholder="e.g. 16"
                                 />
                               </div>
 
