@@ -124,7 +124,6 @@ const ChartDataEditor = ({ value, onChange, chartType }: { value: string, onChan
                 newData.labels[idx] = e.target.value;
                 onChange(JSON.stringify(newData));
               }}
-              onBlur={onBlur}
               className="w-1/2 px-2 py-1.5 text-xs border border-gray-300 rounded focus:border-black outline-none"
               placeholder="Label"
             />
@@ -136,7 +135,6 @@ const ChartDataEditor = ({ value, onChange, chartType }: { value: string, onChan
                 newData.series[idx] = parseFloat(e.target.value) || 0;
                 onChange(JSON.stringify(newData));
               }}
-              onBlur={onBlur}
               className="w-1/2 px-2 py-1.5 text-xs border border-gray-300 rounded focus:border-black outline-none"
               placeholder="Value"
             />
