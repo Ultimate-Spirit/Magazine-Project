@@ -10,10 +10,9 @@ import { useAuth } from './contexts/AuthContext';
 import { Login } from './components/Login';
 import { AdminLayout } from './components/admin/AdminLayout';
 import { AdminDashboard } from './components/admin/AdminDashboard';
-import { UserManagement } from './components/admin/UserManagement';
 import { CompanyManagement } from './components/admin/CompanyManagement';
-import { RoleManagement } from './components/admin/RoleManagement';
 import { ContentBundlesManager } from './components/admin/ContentBundlesManager';
+import { Configurations } from './components/admin/Configurations';
 import { StandaloneTemplateManager } from './components/admin/StandaloneTemplateManager';
 import { UpdatePassword } from './components/UpdatePassword';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -61,9 +60,8 @@ function App() {
               <Routes>
                 <Route element={<AdminLayout />}>
                   <Route index element={<AdminDashboard />} />
-                  <Route path="users" element={<UserManagement />} />
                   <Route path="companies" element={<CompanyManagement />} />
-                  <Route path="roles" element={<RoleManagement />} />
+                  <Route path="configurations" element={<Configurations />} />
                   <Route path="bundles" element={<ContentBundlesManager />} />
                   <Route path="covers" element={<StandaloneTemplateManager category="Cover" />} />
                   <Route path="last-pages" element={<StandaloneTemplateManager category="Last Page" />} />

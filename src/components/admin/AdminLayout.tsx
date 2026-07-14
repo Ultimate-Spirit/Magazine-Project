@@ -30,8 +30,6 @@ export const AdminLayout: React.FC = () => {
   const navItems = [
     { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
     { to: '/admin/companies', icon: Building2, label: 'Workspaces' },
-    { to: '/admin/users', icon: Users, label: 'User Accounts' },
-    { to: '/admin/roles', icon: Shield, label: 'Access Control' },
     { to: '/admin/bundles', icon: Layers, label: 'Content Bundles' },
     { to: '/admin/covers', icon: LayoutTemplate, label: 'Cover Pages' },
     { to: '/admin/last-pages', icon: LayoutTemplate, label: 'Last Pages' },
@@ -92,10 +90,20 @@ export const AdminLayout: React.FC = () => {
           ))}
           
           <div className="pt-8 pb-4 px-4 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">System</div>
-          <button className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl text-muted-foreground hover:text-foreground font-medium transition-all hover:bg-muted">
+          <NavLink
+            to="/admin/configurations"
+            onClick={() => setIsSidebarOpen(false)}
+            className={({ isActive }) =>
+              `w-full flex items-center gap-3 px-4 py-4 rounded-2xl transition-all ${
+                isActive
+                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 font-bold'
+                  : 'text-muted-foreground hover:text-foreground font-medium hover:bg-muted'
+              }`
+            }
+          >
             <Settings className="w-5 h-5" />
             Configuration
-          </button>
+          </NavLink>
 
           <button 
             onClick={toggleTheme}
