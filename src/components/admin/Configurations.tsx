@@ -8,7 +8,7 @@ export const Configurations: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="flex flex-col lg:flex-row w-full h-full min-h-screen bg-background -m-8 relative">
+    <div className="flex flex-col lg:flex-row w-[calc(100%+4rem)] h-full min-h-screen bg-background -m-8 relative">
       {/* Mobile Backdrop */}
       {isSidebarOpen && (
         <div 
@@ -80,7 +80,7 @@ export const Configurations: React.FC = () => {
           </span>
         </div>
 
-        <div className="flex-1 w-full h-full">
+        <div className="flex-1 w-full min-w-0">
           {activeTab === 'users' && <UserManagement />}
           {activeTab === 'roles' && <RoleManagement />}
         </div>
