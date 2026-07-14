@@ -466,13 +466,15 @@ export const MagazineEditor: React.FC = () => {
       }
     });
 
-    const csvStr = Papa.unparse(csvData, { header: false });
-    const blob = new Blob([csvStr], { type: 'text/csv;charset=utf-8;' });
+    const csvString = Papa.unparse(csvData, { header: false });
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${pageTitle || 'Template'}_CSV_Format.csv`;
-    a.click();
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${pageTitle || 'Template'}_CSV_Format.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
 
@@ -624,6 +626,11 @@ export const MagazineEditor: React.FC = () => {
             return (
               <div 
                 key={field.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveFieldId(field.id);
+                  document.getElementById(`sidebar-item-${field.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }}
                 onMouseEnter={() => setActiveFieldId(field.id)}
                 onMouseLeave={() => setActiveFieldId(null)}
                 style={{
@@ -740,6 +747,7 @@ export const MagazineEditor: React.FC = () => {
               return (
                 <div 
                   key={field.id} 
+                  id={`sidebar-item-${field.id}`}
                   className={`flex flex-col gap-2 p-3 -mx-3 rounded-lg transition-colors border ${activeFieldId === field.id ? 'border-blue-400 bg-blue-50/30' : 'border-transparent hover:bg-gray-50'}`}
                   onMouseEnter={() => setActiveFieldId(field.id)}
                   onMouseLeave={() => setActiveFieldId(null)}
