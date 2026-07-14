@@ -394,19 +394,25 @@ export const MagazineEditor: React.FC = () => {
     try {
       showToast('Generating PDF on Server, please wait...', 'success');
 
-      // Send single page as compiler pages array
+      // Send single page as compiler pages array and ensure no React elements
+      const cleanPayload = JSON.parse(JSON.stringify({ pages: [currentPage] }));
+
       const response = await fetch('/api/generate-pdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ pages: [currentPage] }),
+        body: JSON.stringify(cleanPayload),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        showToast(errorData.error || 'Failed to generate PDF.', 'error');
-        return;
+      const contentType = response.headers.get('content-type');
+      if (!response.ok || !contentType || !contentType.includes('application/pdf')) {
+        let errMessage = 'Invalid file format received';
+        try {
+          const errData = await response.json();
+          if (errData.error) errMessage = errData.error;
+        } catch (e) {}
+        throw new Error(errMessage);
       }
 
       const blob = await response.blob();
@@ -421,8 +427,7 @@ export const MagazineEditor: React.FC = () => {
 
       showToast('PDF downloaded successfully!', 'success');
     } catch (error: any) {
-      alert('PDF Export Failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
-      showToast('Failed to generate PDF.', 'error');
+      showToast(error.message || 'Failed to generate PDF.', 'error');
     }
   };
 

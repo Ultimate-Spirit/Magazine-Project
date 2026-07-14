@@ -537,12 +537,23 @@ export function FolderContents() {
       finalArray.push(...selectedZoneB);
       if (zoneC) finalArray.push(zoneC);
 
-      const response = await fetch('/api/generate-pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pages: finalArray }) });
+      // Ensure no React elements or functions are sent
+      const cleanPayload = JSON.parse(JSON.stringify({ pages: finalArray }));
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        showNotification('error', errorData.error || 'Failed to generate PDF');
-        return;
+      const response = await fetch('/api/generate-pdf', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(cleanPayload) 
+      });
+
+      const contentType = response.headers.get('content-type');
+      if (!response.ok || !contentType || !contentType.includes('application/pdf')) {
+        let errMessage = 'Invalid file format received';
+        try {
+          const errData = await response.json();
+          if (errData.error) errMessage = errData.error;
+        } catch (e) {}
+        throw new Error(errMessage);
       }
 
       const blob = await response.blob();
@@ -557,10 +568,8 @@ export function FolderContents() {
 
       showNotification('success', 'Master PDF compiled and downloaded');
       setIsExportSettingsOpen(false);
-    } catch (error: any) {
-      console.error(error);
-      alert('PDF Export Failed: ' + (error instanceof Error ? error.message : 'Unknown server error'));
-      showNotification('error', `Compilation failed: ${error.message}`);
+    } catch (err: any) {
+      showNotification('error', err.message || 'Failed to generate PDF');
     } finally {
       setIsCompiling(false);
     }
