@@ -305,7 +305,7 @@ export const UserManagement: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-background font-sans">
+    <div className="w-full flex flex-col gap-6 font-sans">
       <header className="h-20 lg:h-24 bg-card/30 backdrop-blur-md flex items-center justify-between px-4 lg:px-12 faint-divider shrink-0 z-10">
         <h1 className="text-2xl lg:text-3xl font-black text-foreground tracking-tight leading-none">User Accounts</h1>
         
