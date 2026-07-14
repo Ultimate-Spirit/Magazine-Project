@@ -83,9 +83,9 @@ export function PageBuilder({ initialPage, onSave, onCancel }: Props) {
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex flex-1 w-full h-full overflow-hidden">
         {/* Tools Sidebar */}
-        <div className="w-16 border-r border-border bg-card flex flex-col items-center py-4 space-y-4 shrink-0">
+        <div className="w-16 flex-shrink-0 h-full border-r border-border bg-card flex flex-col items-center py-4 space-y-4">
           <button className="w-10 h-10 rounded hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-all" title="Layout Grid">
             <LayoutGrid size={18} />
           </button>
@@ -98,7 +98,7 @@ export function PageBuilder({ initialPage, onSave, onCancel }: Props) {
         </div>
 
         {/* Canvas Area */}
-        <div className="flex-1 bg-secondary/50 p-8 overflow-y-auto flex justify-center relative">
+        <div className="flex-1 w-full h-full bg-gray-50 p-8 overflow-y-auto flex justify-center relative">
           
           {/* Data Drop Zone Overlay (when dragging over entire canvas) */}
           <div 

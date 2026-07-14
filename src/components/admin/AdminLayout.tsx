@@ -36,7 +36,7 @@ export const AdminLayout: React.FC = () => {
   ];
 
   return (
-    <div className="flex-1 flex overflow-hidden bg-background text-foreground transition-colors duration-300">
+    <div className="flex w-full h-full overflow-hidden bg-background text-foreground transition-colors duration-300">
       {/* Mobile Backdrop */}
       {isSidebarOpen && (
         <div 
@@ -130,7 +130,7 @@ export const AdminLayout: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 min-w-0 overflow-y-auto h-full p-8 w-full flex flex-col relative pt-20 lg:pt-8">
+      <div className="flex-1 w-full h-full bg-gray-50 overflow-y-auto min-w-0 p-8 flex flex-col relative pt-20 lg:pt-8 dark:bg-background">
         {/* Mobile Header */}
         <header className="fixed top-0 left-0 right-0 h-16 border-b border-slate-200 dark:border-slate-800 flex items-center px-6 lg:hidden bg-white dark:bg-slate-950 z-[40] shrink-0">
           <button 

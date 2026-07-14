@@ -8,7 +8,7 @@ export const Configurations: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] min-h-full bg-background -m-8 relative">
+    <div className="flex w-full h-full overflow-hidden bg-background -m-8 relative">
       {/* Mobile Backdrop */}
       {isSidebarOpen && (
         <div 
@@ -66,7 +66,7 @@ export const Configurations: React.FC = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 min-w-0 overflow-y-auto relative flex flex-col">
+      <div className="flex-1 w-full h-full bg-gray-50 overflow-y-auto min-w-0 relative flex flex-col dark:bg-background">
         {/* Mobile Header for Settings Sidebar */}
         <div className="lg:hidden sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50 h-16 flex items-center px-4">
           <button 
