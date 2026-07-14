@@ -481,7 +481,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                     ) : activities.map((log) => (
                       <div key={log.id} className="flex items-center gap-3 p-2.5 lg:p-3 rounded-xl micro-surface-hover group transition-all duration-300">
                         <div className="w-7 h-7 lg:w-8 lg:h-8 rounded-lg bg-secondary flex items-center justify-center font-black text-[8px] lg:text-[10px] text-muted-foreground/40 group-hover:bg-primary/10 group-hover:text-primary transition-all border border-border/5 shrink-0">
-                          {(log.profiles?.full_name || log.profiles?.email || '?')[0].toUpperCase()}
+                          {((log.profiles?.full_name || log.profiles?.email || '?')[0] || '?').toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-[10px] lg:text-[11px] font-black text-foreground truncate">

@@ -178,7 +178,7 @@ export const AdminDashboard: React.FC = () => {
                 ) : activities.map((log) => (
                   <div key={log.id} className="flex items-center gap-3 lg:gap-4 p-3 lg:p-4 rounded-xl lg:rounded-2xl micro-surface-hover group">
                     <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-lg lg:rounded-xl bg-secondary flex items-center justify-center font-black text-[10px] lg:text-xs text-muted-foreground/40 group-hover:bg-primary/10 group-hover:text-primary transition-all border border-border/5 shrink-0">
-                      {(log.profiles?.full_name || log.profiles?.email || '?')[0].toUpperCase()}
+                      {((log.profiles?.full_name || log.profiles?.email || '?')[0] || '?').toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs lg:text-sm font-black text-foreground truncate">

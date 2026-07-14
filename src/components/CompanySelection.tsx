@@ -183,7 +183,7 @@ export function CompanySelection({ onSelect }: Props) {
         </p>
         <div className="flex items-center gap-4 pt-8 border-t border-black/5 dark:border-white/5">
           <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-primary font-bold">
-            {user?.email?.[0].toUpperCase()}
+            {(user?.email?.[0] || 'U').toUpperCase()}
           </div>
           <div>
             <p className="text-sm font-bold text-foreground">{user?.email || profile?.full_name}</p>

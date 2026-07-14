@@ -74,7 +74,7 @@ export function WorkspaceLayout({ children, company }: Props) {
           <div className="relative group">
             <button className="flex items-center gap-3 p-1 rounded-2xl hover:bg-secondary transition-all">
               <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center font-bold text-primary text-xs">
-                {profile?.email?.[0].toUpperCase()}
+                {(profile?.email?.[0] || 'U').toUpperCase()}
               </div>
               <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
             </button>

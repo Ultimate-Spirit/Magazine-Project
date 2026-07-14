@@ -364,7 +364,7 @@ export const UserManagement: React.FC = () => {
                         <td className="px-4 lg:px-12 py-6 overflow-hidden whitespace-nowrap">
                           <div className="flex items-center gap-4">
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 ${p.is_active === false ? 'bg-secondary text-muted-foreground' : 'bg-primary/10 text-primary'}`}>
-                              {p.email[0].toUpperCase()}
+                              {(p.email?.[0] || 'U').toUpperCase()}
                             </div>
                             <div className="min-w-0">
                               <p className={`font-black truncate ${p.is_active === false ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{p.full_name || 'No Name'}</p>
@@ -387,7 +387,7 @@ export const UserManagement: React.FC = () => {
                                     <img src={c.logoUrl} alt="" className="h-full w-full object-contain p-1" />
                                   ) : (
                                     <div className="h-full w-full flex items-center justify-center text-[8px] font-black text-muted-foreground">
-                                      {c.name.substring(0, 2).toUpperCase()}
+                                      {(c.name?.substring(0, 2) || 'CO').toUpperCase()}
                                     </div>
                                   )}
                                 </div>
