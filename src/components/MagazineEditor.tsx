@@ -380,7 +380,16 @@ export const MagazineEditor: React.FC = () => {
   };
 
   const handleDownloadPdf = async () => {
-    if (!page) return;
+    if (!pageId || !layoutJson) return;
+
+    const currentPage = {
+      id: pageId,
+      title: pageTitle,
+      data: formData,
+      templates: {
+        layout_json: layoutJson
+      }
+    };
 
     try {
       showToast('Generating PDF on Server, please wait...', 'success');
@@ -391,23 +400,24 @@ export const MagazineEditor: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ pages: [page] }),
+        body: JSON.stringify({ pages: [currentPage] }),
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Server Error ${response.status}: ${errorText}`);
+        const errorData = await response.json();
+        showToast(errorData.error || 'Failed to generate PDF.', 'error');
+        return;
       }
 
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${page.title || 'document'}.pdf`;
+      a.download = `${pageTitle || 'document'}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      window.URL.revokeObjectURL(url);
+      URL.revokeObjectURL(url);
 
       showToast('PDF downloaded successfully!', 'success');
     } catch (error: any) {
