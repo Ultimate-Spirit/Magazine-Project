@@ -592,8 +592,6 @@ export const MagazineEditor: React.FC = () => {
           <span className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-500 bg-slate-50 px-2">
             {pageTitle}
           </span>
-
-          </span>
         </div>
 
         <TransformWrapper
@@ -844,7 +842,6 @@ export const MagazineEditor: React.FC = () => {
                         const val = e.target.value;
                         if (field.metadata?.maxChars && val.length > field.metadata.maxChars) return;
                         setLocalFormData({ ...localFormData, [variable]: val });
-                      }}
                       }}
                       maxLength={field.metadata?.maxChars || undefined}
                       placeholder={`Enter ${toTitleCase(field.name).toLowerCase()}`}
