@@ -1,9 +1,48 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Rnd } from 'react-rnd';
 import { supabase } from '../../lib/supabaseClient';
-import { Image as ImageIcon, Type, BarChart2, Smile, UploadCloud, X, Loader2, Plus, Settings, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { Image as ImageIcon, Type, BarChart2, Smile, UploadCloud, X, Loader2, Plus, Settings, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Undo, Redo } from 'lucide-react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import Select from 'react-select';
+
+function useHistory<T>(initialState: T) {
+  const [past, setPast] = useState<T[]>([]);
+  const [present, setPresent] = useState<T>(initialState);
+  const [future, setFuture] = useState<T[]>([]);
+
+  const set = (newState: T) => {
+    setPast((prev) => {
+      const p = [...prev, present];
+      return p.length > 50 ? p.slice(p.length - 50) : p;
+    });
+    setPresent(newState);
+    setFuture([]);
+  };
+
+  const undo = () => {
+    if (past.length === 0) return;
+    const previous = past[past.length - 1];
+    setPast((prev) => prev.slice(0, prev.length - 1));
+    setFuture((prev) => [present, ...prev]);
+    setPresent(previous);
+  };
+
+  const redo = () => {
+    if (future.length === 0) return;
+    const next = future[0];
+    setFuture((prev) => prev.slice(1));
+    setPast((prev) => [...prev, present]);
+    setPresent(next);
+  };
+
+  const reset = (newState: T) => {
+    setPast([]);
+    setPresent(newState);
+    setFuture([]);
+  };
+
+  return { state: present, set, undo, redo, canUndo: past.length > 0, canRedo: future.length > 0, reset };
+}
 
 export interface TemplateField {
   id: string;
@@ -123,11 +162,13 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
   const dragStartPos = useRef({ x: 0, y: 0 });
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
+  const history = useHistory<any[]>([]);
   const [fields, setFields] = useState<any[]>([]);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     if (data === null) {
+      history.reset([]);
       setFields([]);
       setIsReady(true);
       return;
@@ -137,10 +178,45 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
       const safeData = data.layout_json !== undefined ? data : { layout_json: data };
       const layout = safeData?.layout_json; 
       const safeFields = (layout && Array.isArray(layout.fields)) ? layout.fields : []; 
+      history.reset(safeFields);
       setFields(safeFields); 
       setIsReady(true);
     }
   }, [data, isReady]);
+
+  // Sync history state when undo/redo is used
+  useEffect(() => {
+    if (isReady && fields !== history.state) {
+      setFields(history.state);
+      onChange({
+        ...payload,
+        fields: history.state
+      });
+    }
+  }, [history.state]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || '')) {
+        return;
+      }
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          if (e.shiftKey) {
+            history.redo();
+          } else {
+            history.undo();
+          }
+        } else if (e.key.toLowerCase() === 'y') {
+          e.preventDefault();
+          history.redo();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [history]);
 
   const payload = data || { background_url: '', fields: [] };
 
@@ -239,6 +315,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
 
     const newFields = [...fields, newField];
     setFields(newFields);
+    history.set(newFields);
     onChange({
       ...payload,
       fields: newFields
@@ -246,9 +323,12 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
     setSelectedFieldId(newField.id);
   };
 
-  const updateField = (id: string, updates: Partial<TemplateField>) => {
+  const updateField = (id: string, updates: Partial<TemplateField>, commit: boolean = false) => {
     const newFields = fields.map((f) => (f.id === id ? { ...f, ...updates } : f));
     setFields(newFields);
+    if (commit) {
+      history.set(newFields);
+    }
     onChange({
       ...payload,
       fields: newFields
@@ -258,6 +338,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
   const deleteField = (id: string) => {
     const newFields = fields.filter(f => f.id !== id);
     setFields(newFields);
+    history.set(newFields);
     onChange({
       ...payload,
       fields: newFields
@@ -336,6 +417,26 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                   <button onClick={() => resetTransform()} className="text-[10px] font-bold px-2 hover:bg-muted rounded text-muted-foreground uppercase tracking-wider">100%</button>
                 </div>
                 <div className="flex-1"></div>
+                
+                <div className="flex items-center gap-1 bg-background border border-border rounded-lg shadow-sm p-1 mr-2">
+                  <button 
+                    onClick={() => history.undo()} 
+                    disabled={!history.canUndo}
+                    className="p-1.5 hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent rounded text-muted-foreground transition-colors"
+                    title="Undo (Ctrl+Z)"
+                  >
+                    <Undo className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => history.redo()} 
+                    disabled={!history.canRedo}
+                    className="p-1.5 hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent rounded text-muted-foreground transition-colors"
+                    title="Redo (Ctrl+Y)"
+                  >
+                    <Redo className="w-4 h-4" />
+                  </button>
+                </div>
+
                 <button 
                   onClick={() => onChange({ ...payload, background_url: '' })}
                   className="text-xs font-bold text-destructive hover:underline"
@@ -387,7 +488,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                               updateField(field.id, {
                                 left: (d.x / width) * 100,
                                 top: (d.y / height) * 100
-                              });
+                              }, true);
                             }}
                             onResizeStop={(e, direction, ref, delta, position) => {
                               const newWidthPx = parseFloat(ref.style.width);
@@ -398,7 +499,7 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                                 height: (newHeightPx / height) * 100,
                                 left: (position.x / width) * 100,
                                 top: (position.y / height) * 100
-                              });
+                              }, true);
                             }}
                             style={{
                               borderRadius: field.metadata?.borderRadius ? `${field.metadata.borderRadius}px` : undefined,
@@ -458,7 +559,16 @@ export const VisualTemplateBuilder: React.FC<VisualTemplateBuilderProps> = ({ va
                 <div className="space-y-4 max-h-[800px] overflow-auto pr-2">
                   <h3 className="font-bold text-lg border-b border-border pb-2">Field Settings</h3>
                   {selectedFieldId ? (
-                    <div className="space-y-4 pb-12">
+                    <div 
+                      className="space-y-4 pb-12" 
+                      onBlur={(e) => {
+                        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                          if (fields !== history.state) {
+                            history.set(fields);
+                          }
+                        }
+                      }}
+                    >
                       {fields.filter(f => f.id === selectedFieldId).map(field => (
                         <div key={field.id} className="space-y-4">
                           <div className="space-y-2">

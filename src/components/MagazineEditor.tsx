@@ -3,49 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
-import { ArrowLeft, Loader2, AlertCircle, UploadCloud, Download, Image as ImageIcon, ZoomIn, ZoomOut, RefreshCw, Undo, Redo } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertCircle, UploadCloud, Download, Image as ImageIcon, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import Papa from 'papaparse';
-
-function useHistory<T>(initialState: T) {
-  const [past, setPast] = useState<T[]>([]);
-  const [present, setPresent] = useState<T>(initialState);
-  const [future, setFuture] = useState<T[]>([]);
-
-  const set = (newState: T) => {
-    setPast((prev) => {
-      const p = [...prev, present];
-      return p.length > 50 ? p.slice(p.length - 50) : p;
-    });
-    setPresent(newState);
-    setFuture([]);
-  };
-
-  const undo = () => {
-    if (past.length === 0) return;
-    const previous = past[past.length - 1];
-    setPast((prev) => prev.slice(0, prev.length - 1));
-    setFuture((prev) => [present, ...prev]);
-    setPresent(previous);
-  };
-
-  const redo = () => {
-    if (future.length === 0) return;
-    const next = future[0];
-    setFuture((prev) => prev.slice(1));
-    setPast((prev) => [...prev, present]);
-    setPresent(next);
-  };
-
-  const reset = (newState: T) => {
-    setPast([]);
-    setPresent(newState);
-    setFuture([]);
-  };
-
-  return { state: present, set, undo, redo, canUndo: past.length > 0, canRedo: future.length > 0, reset };
-}
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
 const toTitleCase = (name: string) =>
@@ -141,7 +102,7 @@ const COMMON_ICONS = [
   'ZoomOut'
 ];
 
-const ChartDataEditor = ({ value, onChange, onBlur, chartType }: { value: string, onChange: (v: string) => void, onBlur?: () => void, chartType: string }) => {
+const ChartDataEditor = ({ value, onChange, chartType }: { value: string, onChange: (v: string) => void, chartType: string }) => {
   let chartData = { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], series: [120, 200, 150, 80, 70, 110, 130] };
   try {
     if (value) {
@@ -185,7 +146,6 @@ const ChartDataEditor = ({ value, onChange, onBlur, chartType }: { value: string
                 newData.labels.splice(idx, 1);
                 newData.series.splice(idx, 1);
                 onChange(JSON.stringify(newData));
-                if (onBlur) onBlur();
               }}
               className="p-1 text-red-500 hover:bg-red-50 rounded"
             >
@@ -199,7 +159,6 @@ const ChartDataEditor = ({ value, onChange, onBlur, chartType }: { value: string
             newData.labels.push(`Item ${newData.labels.length + 1}`);
             newData.series.push(0);
             onChange(JSON.stringify(newData));
-            if (onBlur) onBlur();
           }}
           className="mt-2 text-xs text-blue-600 hover:text-blue-800 font-medium self-start flex items-center gap-1"
         >
@@ -280,13 +239,7 @@ export const MagazineEditor: React.FC = () => {
 
   const [pageTitle, setPageTitle] = useState('');
   const [layoutJson, setLayoutJson] = useState<any>(null);
-  const history = useHistory<Record<string, string>>({});
   const [localFormData, setLocalFormData] = useState<Record<string, string>>({});
-
-  // Sync local data whenever history jumps (undo/redo)
-  useEffect(() => {
-    setLocalFormData(history.state);
-  }, [history.state]);
 
   const [uploadingVars, setUploadingVars] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
@@ -301,30 +254,7 @@ export const MagazineEditor: React.FC = () => {
     setTimeout(() => setToast(null), 6000);
   };
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Allow native undo/redo if the user is actively typing inside an input/textarea
-      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || '')) {
-        return;
-      }
 
-      if (e.metaKey || e.ctrlKey) {
-        if (e.key.toLowerCase() === 'z') {
-          e.preventDefault();
-          if (e.shiftKey) {
-            history.redo();
-          } else {
-            history.undo();
-          }
-        } else if (e.key.toLowerCase() === 'y') {
-          e.preventDefault();
-          history.redo();
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [history]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -384,7 +314,6 @@ export const MagazineEditor: React.FC = () => {
             });
           }
           
-          history.reset(initialState);
           setLocalFormData(initialState);
         } else {
           showToast('No template is linked to this page.', 'error');
@@ -448,7 +377,6 @@ export const MagazineEditor: React.FC = () => {
 
       const newData = { ...localFormData, [variable]: data.publicUrl };
       setLocalFormData(newData);
-      history.set(newData);
     } catch (err: any) {
       showToast(err.message || 'Unexpected upload error.', 'error');
     } finally {
@@ -463,7 +391,7 @@ export const MagazineEditor: React.FC = () => {
     const currentPage = {
       id: pageId,
       title: pageTitle,
-      data: history.state,
+      data: localFormData,
       templates: {
         layout_json: layoutJson
       }
@@ -515,7 +443,7 @@ export const MagazineEditor: React.FC = () => {
     try {
       const { error } = await supabase
         .from('pages')
-        .update({ data: history.state, updated_at: new Date().toISOString() })
+        .update({ data: localFormData, updated_at: new Date().toISOString() })
         .eq('id', pageId);
       if (error) throw error;
       showToast('Page saved!', 'success');
@@ -637,7 +565,6 @@ export const MagazineEditor: React.FC = () => {
 
         const newData = { ...localFormData, ...updates };
         setLocalFormData(newData);
-        history.set(newData);
         showToast('CSV Data imported successfully!', 'success');
       }
     });
@@ -666,24 +593,7 @@ export const MagazineEditor: React.FC = () => {
             {pageTitle}
           </span>
 
-          <div className="pointer-events-auto flex items-center gap-1 bg-white border border-gray-300 rounded-lg shadow-sm p-1">
-            <button 
-              onClick={() => history.undo()} 
-              disabled={!history.canUndo}
-              className="p-1.5 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent rounded text-gray-700 transition-colors"
-              title="Undo (Ctrl+Z)"
-            >
-              <Undo className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={() => history.redo()} 
-              disabled={!history.canRedo}
-              className="p-1.5 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent rounded text-gray-700 transition-colors"
-              title="Redo (Ctrl+Y)"
-            >
-              <Redo className="w-4 h-4" />
-            </button>
-          </div>
+          </span>
         </div>
 
         <TransformWrapper
@@ -918,11 +828,6 @@ export const MagazineEditor: React.FC = () => {
                       chartType={field.metadata?.chartType || 'bar'}
                       value={localFormData[variable] || ''}
                       onChange={(v) => setLocalFormData({ ...localFormData, [variable]: v })}
-                      onBlur={() => {
-                        if (localFormData[variable] !== history.state[variable]) {
-                          history.set(localFormData);
-                        }
-                      }}
                     />
                   ) : field.type === 'Icon' ? (
                     <IconPicker 
@@ -930,7 +835,6 @@ export const MagazineEditor: React.FC = () => {
                       onChange={(v) => {
                         const newData = { ...localFormData, [variable]: v };
                         setLocalFormData(newData);
-                        history.set(newData);
                       }}
                     />
                   ) : (
@@ -941,10 +845,6 @@ export const MagazineEditor: React.FC = () => {
                         if (field.metadata?.maxChars && val.length > field.metadata.maxChars) return;
                         setLocalFormData({ ...localFormData, [variable]: val });
                       }}
-                      onBlur={() => {
-                        if (localFormData[variable] !== history.state[variable]) {
-                          history.set(localFormData);
-                        }
                       }}
                       maxLength={field.metadata?.maxChars || undefined}
                       placeholder={`Enter ${toTitleCase(field.name).toLowerCase()}`}
