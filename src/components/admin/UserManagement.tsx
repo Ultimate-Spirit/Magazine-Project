@@ -384,7 +384,9 @@ export const UserManagement: React.FC = () => {
                               {assigned.slice(0, 3).map((c, i) => (
                                 <div key={c.id} className="inline-block h-8 w-8 rounded-full border-2 border-card micro-surface overflow-hidden" style={{ zIndex: 10 - i }}>
                                   {c.logoUrl ? (
-                                    <img src={c.logoUrl} alt="" className="h-full w-full object-contain p-1" />
+                                    <div className="bg-white/90 p-1.5 rounded-md h-full w-full">
+                                      <img src={c.logoUrl} alt="" className="h-full w-full object-contain" />
+                                    </div>
                                   ) : (
                                     <div className="h-full w-full flex items-center justify-center text-[8px] font-black text-muted-foreground">
                                       {(c.name?.substring(0, 2) || 'CO').toUpperCase()}
