@@ -36,7 +36,7 @@ export const AdminLayout: React.FC = () => {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-foreground transition-colors duration-300">
+    <div className="flex-1 flex overflow-hidden bg-background text-foreground transition-colors duration-300">
       {/* Mobile Backdrop */}
       {isSidebarOpen && (
         <div 

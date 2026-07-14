@@ -47,7 +47,7 @@ function App() {
   }
 
   return (
-    <div className="relative min-h-screen bg-background text-foreground font-body">
+    <main className="flex flex-col h-screen w-full overflow-hidden bg-background text-foreground font-body">
       <Routes>
         <Route path="/login" element={user && isAuthorized ? <Navigate to="/" replace /> : <Login />} />
         <Route path="/update-password" element={<UpdatePassword />} />
@@ -120,7 +120,7 @@ function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </div>
+    </main>
   );
 }
 

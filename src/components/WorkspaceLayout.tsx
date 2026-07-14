@@ -24,7 +24,7 @@ export function WorkspaceLayout({ children, company }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col transition-colors duration-300">
+    <div className="flex-1 w-full overflow-hidden bg-background flex flex-col transition-colors duration-300">
       <header className={`h-16 md:h-20 px-2 lg:px-10 xl:px-16 flex items-center justify-between sticky top-0 z-[100] bg-background/80 backdrop-blur-xl ${isSelectionPage ? '' : 'faint-divider'}`}>
         <div className="flex items-center gap-4 md:gap-8">
           {isSelectionPage ? (
@@ -110,7 +110,7 @@ export function WorkspaceLayout({ children, company }: Props) {
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col w-full max-w-full overflow-x-hidden">
+      <main className="flex-1 flex flex-col w-full max-w-full overflow-hidden overflow-y-auto">
         {children}
       </main>
     </div>
