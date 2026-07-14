@@ -8,7 +8,7 @@ export const Configurations: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] bg-background -m-8 relative">
+    <div className="flex h-[calc(100vh-4rem)] min-h-full bg-background -m-8 relative">
       {/* Mobile Backdrop */}
       {isSidebarOpen && (
         <div 

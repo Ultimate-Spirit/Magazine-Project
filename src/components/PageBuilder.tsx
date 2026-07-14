@@ -54,7 +54,7 @@ export function PageBuilder({ initialPage, onSave, onCancel }: Props) {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-4rem)] bg-background">
+    <div className="flex-1 flex flex-col min-h-full bg-background">
       {/* Builder Header */}
       <div className="h-14 border-b border-border bg-card flex items-center justify-between px-6 shrink-0">
         <div className="flex items-center space-x-4">

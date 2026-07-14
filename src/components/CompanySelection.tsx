@@ -68,7 +68,7 @@ export function CompanySelection({ onSelect }: Props) {
 
   if (companies.length > 0) {
     return (
-      <div className="min-h-[calc(100vh-5rem)] bg-background flex flex-col px-5 lg:px-10 py-8 lg:py-16 text-foreground">
+      <div className="min-h-full flex-1 bg-background flex flex-col px-5 lg:px-10 py-8 lg:py-16 text-foreground">
         <div className="w-full max-w-full mx-auto flex flex-col">
           <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 lg:gap-12 mb-12 lg:mb-20">
             <div className="space-y-4">
@@ -155,21 +155,6 @@ export function CompanySelection({ onSelect }: Props) {
             </div>
           )}
         </div>
-
-        {/* Premium Branding Footer */}
-        <footer className="mt-auto w-full px-5 lg:px-10 xl:px-16 py-8 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-border/5">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-              <div className="absolute inset-0 w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping opacity-40" />
-            </div>
-            <span className="text-[10px] font-black text-slate-500/60 uppercase tracking-[0.2em]">System Status: Online</span>
-          </div>
-
-          <div className="flex items-center gap-4 opacity-30">
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] whitespace-nowrap text-center">Spirit OS // Internal Access Only</span>
-          </div>
-        </footer>
       </div>
     );
   }
