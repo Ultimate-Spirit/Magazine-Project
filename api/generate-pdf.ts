@@ -4,18 +4,16 @@ export const config = {
   maxDuration: 60, // Set timeout to 60s for Vercel Hobby/Pro
 };
 
-export async function POST(request: Request) {
+export default async function handler(req: any, res: any) {
   try {
     const token = process.env.BROWSERLESS_TOKEN || '2Ui5G7Wh2tHASwS00b5802fc5d89f8c13d2c0d233a2dc1c60';
     if (!token) {
-      return new Response(JSON.stringify({ error: 'Missing BROWSERLESS_TOKEN environment variable' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return res.status(500).json({ error: 'Missing BROWSERLESS_TOKEN environment variable' });
     }
 
-    const requestBody = await request.json();
-    if (!requestBody.pages || requestBody.pages.length === 0) {
+    // req.body is already parsed in Vercel Serverless Functions if it's application/json
+    const requestBody = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    if (!requestBody || !requestBody.pages || requestBody.pages.length === 0) {
       throw new Error('No pages provided in blueprint data');
     }
 
@@ -32,21 +30,21 @@ export async function POST(request: Request) {
     await page.setRequestInterception(true);
     
     // Intercept the /print-data.json request
-    page.on('request', (req) => {
-      if (req.url().endsWith('/print-data.json')) {
-        req.respond({
+    page.on('request', (reqInterception: any) => {
+      if (reqInterception.url().endsWith('/print-data.json')) {
+        reqInterception.respond({
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify(requestBody.pages)
         });
       } else {
-        req.continue();
+        reqInterception.continue();
       }
     });
 
-    // We navigate to the origin of the current request (Vercel production URL or localhost)
-    const url = new URL(request.url);
-    const renderUrl = `${url.protocol}//${url.host}/print-render`;
+    const protocol = req.headers['x-forwarded-proto'] || 'http';
+    const host = req.headers['x-forwarded-host'] || req.headers.host;
+    const renderUrl = `${protocol}://${host}/print-render`;
 
     // Wait until network is idle to ensure all ECharts, fonts, and base64 images are painted
     await page.goto(renderUrl, { waitUntil: 'networkidle0', timeout: 30000 });
@@ -62,19 +60,12 @@ export async function POST(request: Request) {
 
     await browser.close();
 
-    return new Response(pdfBuffer, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="Master_Document.pdf"'
-      }
-    });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="Master_Document.pdf"');
+    return res.status(200).send(pdfBuffer);
 
   } catch (error: any) {
     console.error('PDF Generation Error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: error.message || "Failed to generate PDF" });
   }
 }

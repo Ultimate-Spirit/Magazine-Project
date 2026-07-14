@@ -532,33 +532,28 @@ export function FolderContents() {
       showNotification('success', 'Building Master PDF on Server, please wait...');
 
       const selectedZoneB = zoneB.filter(p => zoneBIncluded[p.id]);
-      const finalPages = [];
-      if (zoneA) finalPages.push(zoneA);
-      finalPages.push(...selectedZoneB);
-      if (zoneC) finalPages.push(zoneC);
+      const finalArray = [];
+      if (zoneA) finalArray.push(zoneA);
+      finalArray.push(...selectedZoneB);
+      if (zoneC) finalArray.push(zoneC);
 
-      const response = await fetch('/api/generate-pdf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ pages: finalPages }),
-      });
+      const response = await fetch('/api/generate-pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pages: finalArray }) });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Server Error ${response.status}: ${errorText}`);
+        const errorData = await response.json();
+        showNotification('error', errorData.error || 'Failed to generate PDF');
+        return;
       }
 
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'Master_Document.pdf';
+      a.download = 'magazine-export.pdf';
       document.body.appendChild(a);
       a.click();
       a.remove();
-      window.URL.revokeObjectURL(url);
+      URL.revokeObjectURL(url);
 
       showNotification('success', 'Master PDF compiled and downloaded');
       setIsExportSettingsOpen(false);
