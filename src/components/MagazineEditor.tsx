@@ -874,7 +874,7 @@ export const MagazineEditor: React.FC = () => {
                     <span>{toTitleCase(field.name)}</span>
                     {field.type === 'Text' && field.metadata?.maxChars && (
                       <span className="text-gray-400">
-                        {(formData[variable] || '').length} / {field.metadata.maxChars}
+                        {(localFormData[variable] || '').length} / {field.metadata.maxChars}
                       </span>
                     )}
                   </label>
