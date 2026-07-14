@@ -80,7 +80,7 @@ export const Configurations: React.FC = () => {
           </span>
         </div>
 
-        <div className="flex-1 w-full max-w-full">
+        <div className="flex-1 w-full h-full">
           {activeTab === 'users' && <UserManagement />}
           {activeTab === 'roles' && <RoleManagement />}
         </div>
