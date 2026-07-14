@@ -62,7 +62,7 @@ export default async function handler(req: any, res: any) {
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="Master_Document.pdf"');
-    return res.status(200).send(pdfBuffer);
+    return res.status(200).send(Buffer.from(pdfBuffer));
 
   } catch (error: any) {
     console.error('PDF Generation Error:', error);
