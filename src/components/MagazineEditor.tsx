@@ -5,6 +5,8 @@ import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
 import { ArrowLeft, Loader2, AlertCircle, UploadCloud, Download, Image as ImageIcon, ZoomIn, ZoomOut, RefreshCw, Undo, Redo } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+import Papa from 'papaparse';
 
 function useHistory<T>(initialState: T) {
   const [past, setPast] = useState<T[]>([]);
@@ -44,8 +46,6 @@ function useHistory<T>(initialState: T) {
 
   return { state: present, set, undo, redo, canUndo: past.length > 0, canRedo: future.length > 0, reset };
 }
-import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
-import Papa from 'papaparse';
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
 const toTitleCase = (name: string) =>
