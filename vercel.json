@@ -8,6 +8,24 @@
       "root": "backend",
       "entrypoint": "main:app",
       "routePrefix": "/_/backend"
+    },
+    "pdf-api": {
+      "root": "api",
+      "entrypoint": "generate-pdf.ts",
+      "builder": "@vercel/node",
+      "routePrefix": "/api/generate-pdf"
+    },
+    "logs-api": {
+      "root": "api",
+      "entrypoint": "logs.ts",
+      "builder": "@vercel/node",
+      "routePrefix": "/api/logs"
+    },
+    "test-log-api": {
+      "root": "api",
+      "entrypoint": "test-log.ts",
+      "builder": "@vercel/node",
+      "routePrefix": "/api/test-log"
     }
   },
   "rewrites": [
