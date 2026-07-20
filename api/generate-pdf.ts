@@ -1,5 +1,5 @@
 import puppeteer from 'puppeteer-core';
-import { logSystemActivity } from './logger';
+import { logSystemActivity } from './logger.js';
 
 export const config = {
   maxDuration: 60, // Set timeout to 60s for Vercel Hobby/Pro
