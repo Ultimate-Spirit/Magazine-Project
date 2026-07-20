@@ -4,9 +4,15 @@ import { Search, Filter, Activity, Clock, User, Info, Loader2 } from 'lucide-rea
 interface LogEntry {
   id: string;
   user_id: string;
-  user_name: string;
-  user_email: string;
-  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'EXPORT';
+  // New Schema
+  user_name?: string;
+  user_email?: string;
+  action?: 'CREATE' | 'UPDATE' | 'DELETE' | 'EXPORT';
+  // Legacy Schema
+  action_type?: string;
+  entity_type?: string;
+  entity_name?: string;
+  
   details: string;
   created_at: string;
 }
@@ -57,23 +63,45 @@ export const ActivityLog: React.FC = () => {
     }
   };
 
+  const getSafeUserName = (log: LogEntry) => log.user_name || log.user_id || 'System User';
+  const getSafeUserEmail = (log: LogEntry) => log.user_email || 'Unknown Email';
+  const getSafeAction = (log: LogEntry) => {
+    const act = (log.action || log.action_type || 'UNKNOWN').toUpperCase();
+    return act;
+  };
+  const getSafeDetails = (log: LogEntry) => {
+    let text = log.details || '';
+    if (log.entity_type && log.entity_name) {
+      text = `${log.entity_type}: ${log.entity_name} ${text ? `(${text})` : ''}`;
+    }
+    return text || 'No details provided';
+  };
+
   const filteredLogs = logs.filter((log) => {
+    const userName = getSafeUserName(log).toLowerCase();
+    const userEmail = getSafeUserEmail(log).toLowerCase();
     const matchesSearch =
-      log.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.user_email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesAction = actionFilter === 'All' || log.action === actionFilter;
+      userName.includes(searchTerm.toLowerCase()) ||
+      userEmail.includes(searchTerm.toLowerCase());
+      
+    const action = getSafeAction(log);
+    const matchesAction = actionFilter === 'All' || action === actionFilter || (actionFilter === 'CREATE' && action === 'CREATED') || (actionFilter === 'UPDATE' && action === 'UPDATED') || (actionFilter === 'DELETE' && action === 'DELETED');
+    
     return matchesSearch && matchesAction;
   });
 
-  const getActionBadge = (action: LogEntry['action']) => {
+  const getActionBadge = (action: string) => {
     switch (action) {
       case 'CREATE':
+      case 'CREATED':
         return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400">CREATE</span>;
       case 'DELETE':
+      case 'DELETED':
         return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400">DELETE</span>;
       case 'EXPORT':
         return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">EXPORT</span>;
       case 'UPDATE':
+      case 'UPDATED':
         return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400">UPDATE</span>;
       default:
         return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-400">{action}</span>;
@@ -209,15 +237,15 @@ export const ActivityLog: React.FC = () => {
                   </td>
                   <td className="py-3 px-6 truncate">
                     <div className="flex flex-col">
-                      <span className="font-bold text-foreground truncate">{log.user_name}</span>
-                      <span className="text-xs text-muted-foreground truncate">{log.user_email}</span>
+                      <span className="font-bold text-foreground truncate">{getSafeUserName(log)}</span>
+                      <span className="text-xs text-muted-foreground truncate">{getSafeUserEmail(log)}</span>
                     </div>
                   </td>
                   <td className="py-3 px-6 truncate">
-                    {getActionBadge(log.action)}
+                    {getActionBadge(getSafeAction(log))}
                   </td>
                   <td className="py-3 px-6 truncate text-muted-foreground hover:whitespace-normal group">
-                    <span className="line-clamp-1 group-hover:line-clamp-none transition-all">{log.details}</span>
+                    <span className="line-clamp-1 group-hover:line-clamp-none transition-all">{getSafeDetails(log)}</span>
                   </td>
                 </tr>
               ))
