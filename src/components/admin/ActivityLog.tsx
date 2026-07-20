@@ -17,24 +17,45 @@ export const ActivityLog: React.FC = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<{title: string, desc: string, type: 'error'|'success'} | null>(null);
+
+  const fetchLogs = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/logs');
+      if (!res.ok) {
+        throw new Error('Failed to fetch activity logs from server.');
+      }
+      const data = await res.json();
+      setLogs(data);
+    } catch (err: any) {
+      setError(err.message);
+      showToast('Fetch Error', err.message, 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchLogs = async () => {
-      try {
-        const res = await fetch('/api/logs');
-        if (!res.ok) {
-          throw new Error('Failed to fetch activity logs');
-        }
-        const data = await res.json();
-        setLogs(data);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchLogs();
   }, []);
+
+  const showToast = (title: string, desc: string, type: 'error'|'success') => {
+    setToastMessage({ title, desc, type });
+    setTimeout(() => setToastMessage(null), 5000);
+  };
+
+  const handleGenerateTestLog = async () => {
+    try {
+      const res = await fetch('/api/test-log', { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to create test log');
+      showToast('Success', 'Test log generated successfully!', 'success');
+      fetchLogs();
+    } catch (err: any) {
+      showToast('Error', err.message, 'error');
+    }
+  };
 
   const filteredLogs = logs.filter((log) => {
     const matchesSearch =
@@ -113,9 +134,29 @@ export const ActivityLog: React.FC = () => {
                 <option value="EXPORT">Export</option>
               </select>
             </div>
+            
+            {/* Generate Test Log Button */}
+            <button
+              onClick={handleGenerateTestLog}
+              className="px-4 py-2 text-sm font-bold bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all whitespace-nowrap"
+            >
+              Generate Test Log
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className={`fixed bottom-4 right-4 z-50 p-4 rounded-xl shadow-lg border max-w-sm animate-in slide-in-from-bottom-5 ${
+          toastMessage.type === 'error' 
+            ? 'bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-900 text-red-900 dark:text-red-200' 
+            : 'bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-900 text-green-900 dark:text-green-200'
+        }`}>
+          <h4 className="font-bold text-sm mb-1">{toastMessage.title}</h4>
+          <p className="text-xs opacity-90">{toastMessage.desc}</p>
+        </div>
+      )}
 
       {/* Data Table UI */}
       <div className="flex-1 overflow-auto bg-white dark:bg-slate-950 border border-border rounded-2xl shadow-sm">
