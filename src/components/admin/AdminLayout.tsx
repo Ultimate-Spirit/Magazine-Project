@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Shield, Users, Building2, LayoutDashboard, Settings, LogOut, Moon, Sun, Menu, X, LayoutTemplate, Layers } from 'lucide-react';
+import { Shield, Users, Building2, LayoutDashboard, Settings, LogOut, Moon, Sun, Menu, X, LayoutTemplate, Layers, Activity } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -33,6 +33,7 @@ export const AdminLayout: React.FC = () => {
     { to: '/admin/bundles', icon: Layers, label: 'Content Bundles' },
     { to: '/admin/covers', icon: LayoutTemplate, label: 'Cover Pages' },
     { to: '/admin/last-pages', icon: LayoutTemplate, label: 'Last Pages' },
+    { to: '/admin/activity', icon: Activity, label: 'Activity Log' },
   ];
 
   return (

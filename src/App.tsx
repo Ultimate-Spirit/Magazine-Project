@@ -14,6 +14,7 @@ import { CompanyManagement } from './components/admin/CompanyManagement';
 import { ContentBundlesManager } from './components/admin/ContentBundlesManager';
 import { Configurations } from './components/admin/Configurations';
 import { StandaloneTemplateManager } from './components/admin/StandaloneTemplateManager';
+import { ActivityLog } from './components/admin/ActivityLog';
 import { UpdatePassword } from './components/UpdatePassword';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { PrintRender } from './components/PrintRender';
@@ -65,6 +66,7 @@ function App() {
                   <Route path="bundles" element={<ContentBundlesManager />} />
                   <Route path="covers" element={<StandaloneTemplateManager category="Cover" />} />
                   <Route path="last-pages" element={<StandaloneTemplateManager category="Last Page" />} />
+                  <Route path="activity" element={<ActivityLog />} />
                   <Route path="*" element={<Navigate to="/admin" replace />} />
                 </Route>
               </Routes>
