@@ -1,63 +1,45 @@
-import React, { useState } from 'react';
-import { Search, Filter, Activity, Clock, User, Info } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Filter, Activity, Clock, User, Info, Loader2 } from 'lucide-react';
 
 interface LogEntry {
   id: string;
-  timestamp: string;
-  user: {
-    name: string;
-    email: string;
-  };
+  user_id: string;
+  user_name: string;
+  user_email: string;
   action: 'CREATE' | 'UPDATE' | 'DELETE' | 'EXPORT';
   details: string;
+  created_at: string;
 }
-
-const dummyLogs: LogEntry[] = [
-  {
-    id: '1',
-    timestamp: '2026-07-20T10:15:30Z',
-    user: { name: 'Alice Smith', email: 'alice@example.com' },
-    action: 'CREATE',
-    details: 'Created new magazine bundle "Summer Edition"',
-  },
-  {
-    id: '2',
-    timestamp: '2026-07-20T10:45:12Z',
-    user: { name: 'Bob Jones', email: 'bob@example.com' },
-    action: 'UPDATE',
-    details: 'Updated configuration settings for company workspace',
-  },
-  {
-    id: '3',
-    timestamp: '2026-07-20T11:20:00Z',
-    user: { name: 'Charlie Brown', email: 'charlie@example.com' },
-    action: 'DELETE',
-    details: 'Deleted cover template "Old Style"',
-  },
-  {
-    id: '4',
-    timestamp: '2026-07-20T13:05:45Z',
-    user: { name: 'Alice Smith', email: 'alice@example.com' },
-    action: 'EXPORT',
-    details: 'Exported workspace audit log as CSV',
-  },
-  {
-    id: '5',
-    timestamp: '2026-07-20T14:10:20Z',
-    user: { name: 'Diana Prince', email: 'diana@example.com' },
-    action: 'CREATE',
-    details: 'Created new user account for vendor',
-  },
-];
 
 export const ActivityLog: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [actionFilter, setActionFilter] = useState<string>('All');
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredLogs = dummyLogs.filter((log) => {
+  useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        const res = await fetch('/api/logs');
+        if (!res.ok) {
+          throw new Error('Failed to fetch activity logs');
+        }
+        const data = await res.json();
+        setLogs(data);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchLogs();
+  }, []);
+
+  const filteredLogs = logs.filter((log) => {
     const matchesSearch =
-      log.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      log.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.user_email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesAction = actionFilter === 'All' || log.action === actionFilter;
     return matchesSearch && matchesAction;
   });
@@ -163,16 +145,31 @@ export const ActivityLog: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {filteredLogs.length > 0 ? (
+            {isLoading ? (
+              <tr>
+                <td colSpan={4} className="py-8 text-center text-muted-foreground">
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                    <span>Loading logs...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={4} className="py-8 text-center text-red-500 font-medium">
+                  {error}
+                </td>
+              </tr>
+            ) : filteredLogs.length > 0 ? (
               filteredLogs.map((log) => (
                 <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
                   <td className="py-3 px-6 truncate text-muted-foreground">
-                    {formatDate(log.timestamp)}
+                    {formatDate(log.created_at)}
                   </td>
                   <td className="py-3 px-6 truncate">
                     <div className="flex flex-col">
-                      <span className="font-bold text-foreground truncate">{log.user.name}</span>
-                      <span className="text-xs text-muted-foreground truncate">{log.user.email}</span>
+                      <span className="font-bold text-foreground truncate">{log.user_name}</span>
+                      <span className="text-xs text-muted-foreground truncate">{log.user_email}</span>
                     </div>
                   </td>
                   <td className="py-3 px-6 truncate">

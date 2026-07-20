@@ -1,4 +1,5 @@
 import puppeteer from 'puppeteer-core';
+import { logSystemActivity } from './logger';
 
 export const config = {
   maxDuration: 60, // Set timeout to 60s for Vercel Hobby/Pro
@@ -59,6 +60,21 @@ export default async function handler(req: any, res: any) {
     });
 
     await browser.close();
+
+    // Log the export activity
+    // Note: Since we don't have user session in this generic API route yet, we'll log a system message or a placeholder.
+    // Assuming the frontend passed some user info, but since req.body only has pages, we'll use a placeholder.
+    const userEmail = requestBody.user_email || 'system@spirit-magazine.com';
+    const userName = requestBody.user_name || 'System User';
+    const userId = requestBody.user_id || '00000000-0000-0000-0000-000000000000';
+
+    await logSystemActivity({
+      user_id: userId,
+      user_name: userName,
+      user_email: userEmail,
+      action: 'EXPORT',
+      details: 'Generated Master PDF',
+    });
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="Master_Document.pdf"');
