@@ -236,9 +236,14 @@ export const ActivityLog: React.FC = () => {
                     {formatDate(log.created_at)}
                   </td>
                   <td className="py-3 px-6 truncate">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-foreground truncate">{getSafeUserName(log)}</span>
-                      <span className="text-xs text-muted-foreground truncate">{getSafeUserEmail(log)}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0 uppercase">
+                        {getSafeUserEmail(log)[0] || 'U'}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-bold text-foreground truncate">{getSafeUserName(log)}</span>
+                        <span className="text-xs text-muted-foreground truncate">{getSafeUserEmail(log)}</span>
+                      </div>
                     </div>
                   </td>
                   <td className="py-3 px-6 truncate">

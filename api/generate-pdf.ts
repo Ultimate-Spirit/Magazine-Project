@@ -74,7 +74,7 @@ export default async function handler(req: any, res: any) {
       user_email: userEmail,
       action: 'EXPORT',
       details: 'Generated Master PDF',
-    });
+    }, req);
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="Master_Document.pdf"');

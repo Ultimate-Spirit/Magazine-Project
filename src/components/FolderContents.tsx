@@ -540,9 +540,13 @@ export function FolderContents() {
       // Ensure no React elements or functions are sent
       const cleanPayload = JSON.parse(JSON.stringify({ pages: finalArray }));
 
+      const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch('/api/generate-pdf', { 
         method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        }, 
         body: JSON.stringify(cleanPayload) 
       });
 
@@ -565,6 +569,8 @@ export function FolderContents() {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+
+      await logActivity('exported', 'publication', folder?.name || 'Magazine', company?.id || '', profile?.id || '');
 
       showNotification('success', 'Master PDF compiled and downloaded');
       setIsExportSettingsOpen(false);

@@ -17,7 +17,7 @@ export default async function handler(req: any, res: any) {
 
     const { data, error } = await supabase
       .from('activity_logs')
-      .select('*')
+      .select('*, profiles (full_name, email)')
       .order('created_at', { ascending: false })
       .limit(100);
 
@@ -27,7 +27,16 @@ export default async function handler(req: any, res: any) {
       return res.status(200).json([]);
     }
 
-    return res.status(200).json(data || []);
+    const formattedData = data?.map((log: any) => {
+      const profile = Array.isArray(log.profiles) ? log.profiles[0] : log.profiles;
+      return {
+        ...log,
+        user_name: profile?.full_name || log.user_name || null,
+        user_email: profile?.email || log.user_email || null,
+      };
+    }) || [];
+
+    return res.status(200).json(formattedData);
   } catch (error: any) {
     console.error('API Error /api/logs:', error);
     return res.status(500).json({ error: 'Internal Server Error' });

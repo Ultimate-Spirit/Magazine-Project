@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 
-type ActionType = 'created' | 'updated' | 'deleted' | 'invited';
+type ActionType = 'created' | 'updated' | 'deleted' | 'invited' | 'exported';
 type EntityType = 'folder' | 'publication' | 'user';
 
 export async function logActivity(
