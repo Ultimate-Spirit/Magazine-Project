@@ -8,12 +8,6 @@
       "root": "backend",
       "entrypoint": "main:app",
       "routePrefix": "/_/backend"
-    },
-    "api": {
-      "root": "api",
-      "entrypoint": "generate-pdf.ts",
-      "builder": "@vercel/node",
-      "routePrefix": "/api"
     }
   },
   "rewrites": [
