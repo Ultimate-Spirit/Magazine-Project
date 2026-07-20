@@ -51,7 +51,7 @@ export const ActivityLog: React.FC = () => {
       const res = await fetch('/api/test-log', { method: 'POST' });
       if (!res.ok) throw new Error('Failed to create test log');
       showToast('Success', 'Test log generated successfully!', 'success');
-      fetchLogs();
+      await fetchLogs(); // Immediately trigger a re-fetch and wait for it
     } catch (err: any) {
       showToast('Error', err.message, 'error');
     }
@@ -223,8 +223,13 @@ export const ActivityLog: React.FC = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={4} className="py-8 text-center text-muted-foreground">
-                  No activity logs found matching your filters.
+                <td colSpan={4} className="py-12 text-center text-muted-foreground">
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <div className="p-3 bg-muted rounded-full">
+                      <Info className="w-6 h-6 text-muted-foreground/50" />
+                    </div>
+                    <p className="font-medium text-sm">No activity logs found. Try generating a Test Log.</p>
+                  </div>
                 </td>
               </tr>
             )}

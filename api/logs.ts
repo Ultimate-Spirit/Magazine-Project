@@ -22,10 +22,12 @@ export default async function handler(req: any, res: any) {
       .limit(100);
 
     if (error) {
-      return res.status(500).json({ error: error.message });
+      console.error('Supabase query error:', error.message);
+      // Fallback to empty array gracefully to prevent frontend crash
+      return res.status(200).json([]);
     }
 
-    return res.status(200).json(data);
+    return res.status(200).json(data || []);
   } catch (error: any) {
     console.error('API Error /api/logs:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
