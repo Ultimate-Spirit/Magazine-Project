@@ -347,7 +347,7 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <Link to="/admin/templates" className="mt-auto border-t border-border/40 bg-muted/20 px-4 py-2.5 flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
+              <Link to="/admin/bundles" className="mt-auto border-t border-border/40 bg-muted/20 px-4 py-2.5 flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
                 <span className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">Manage Resources</span>
               </Link>
             </div>
@@ -410,6 +410,17 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+
+        <footer className="mt-8 pt-6 border-t border-border/40 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-6 text-[11px] font-medium text-muted-foreground/80">
+            <span className="hover:text-foreground transition-colors cursor-pointer">API Documentation</span>
+            <span className="hover:text-foreground transition-colors cursor-pointer">Support</span>
+            <span className="hover:text-foreground transition-colors cursor-pointer">Changelog</span>
+          </div>
+          <div className="text-[10px] font-mono text-muted-foreground/60 tracking-wider">
+            SPIRIT OS BUILD v1.2.4
+          </div>
+        </footer>
       </main>
     </div>
   );
