@@ -102,8 +102,7 @@ export const AdminDashboard: React.FC = () => {
       try {
         const { data: workspacesData, error } = await supabase
           .from('companies')
-          .select('id, name, status, updated_at')
-          .order('updated_at', { ascending: false })
+          .select('*')
           .limit(4);
           
         if (error) throw error;
@@ -293,7 +292,8 @@ export const AdminDashboard: React.FC = () => {
                 <div className="text-xs text-muted-foreground text-center py-4">No active workspaces</div>
               ) : (
                 activeWorkspaces.map((ws: any) => {
-                  const hoursAgo = Math.max(0, Math.floor((new Date().getTime() - new Date(ws.updated_at).getTime()) / (1000 * 60 * 60)));
+                  const fallbackDate = ws.updated_at || ws.created_at || new Date().toISOString();
+                  const hoursAgo = Math.max(0, Math.floor((new Date().getTime() - new Date(fallbackDate).getTime()) / (1000 * 60 * 60)));
                   const editedText = hoursAgo === 0 ? 'just now' : hoursAgo < 24 ? `${hoursAgo}h ago` : `${Math.floor(hoursAgo/24)}d ago`;
                   return (
                     <div key={ws.id} className="flex justify-between items-center py-1.5 border-b border-border/20 last:border-0">
