@@ -27,9 +27,9 @@ export const AdminDashboard: React.FC = () => {
     active_sessions: '...'
   });
   const [overview, setOverview] = useState<Record<string, any>>({
-    total_workspaces: null,
-    total_pages: null,
-    total_users: null,
+    totalMagazines: null,
+    totalPages: null,
+    totalUsers: null,
     pdfsGenerated: null,
     pdfLimit: null,
   });
@@ -178,7 +178,7 @@ export const AdminDashboard: React.FC = () => {
               <Building2 className="w-4 h-4 text-muted-foreground" />
             </div>
             <p className="text-2xl font-semibold text-foreground">
-              {overviewError ? <span className="text-red-500 text-xs font-mono">{overviewError}</span> : overview.total_workspaces === null ? <span className="animate-pulse">...</span> : overview.total_workspaces}
+              {overviewError ? <span className="text-red-500 text-xs font-mono">{overviewError}</span> : overview.totalMagazines === null ? <span className="animate-pulse">...</span> : overview.totalMagazines || 0}
             </p>
           </div>
 
@@ -188,7 +188,7 @@ export const AdminDashboard: React.FC = () => {
               <FileText className="w-4 h-4 text-muted-foreground" />
             </div>
             <p className="text-2xl font-semibold text-foreground">
-              {overviewError ? <span className="text-red-500 text-xs font-mono">{overviewError}</span> : overview.total_pages === null ? <span className="animate-pulse">...</span> : overview.total_pages}
+              {overviewError ? <span className="text-red-500 text-xs font-mono">{overviewError}</span> : overview.totalPages === null ? <span className="animate-pulse">...</span> : overview.totalPages || 0}
             </p>
           </div>
 
@@ -198,7 +198,7 @@ export const AdminDashboard: React.FC = () => {
               <Users className="w-4 h-4 text-muted-foreground" />
             </div>
             <p className="text-2xl font-semibold text-foreground">
-              {overviewError ? <span className="text-red-500 text-xs font-mono">{overviewError}</span> : overview.total_users === null ? <span className="animate-pulse">...</span> : overview.total_users}
+              {overviewError ? <span className="text-red-500 text-xs font-mono">{overviewError}</span> : overview.totalUsers === null ? <span className="animate-pulse">...</span> : overview.totalUsers || 0}
             </p>
           </div>
 
@@ -208,7 +208,7 @@ export const AdminDashboard: React.FC = () => {
               <Zap className="w-4 h-4 text-muted-foreground" />
             </div>
             <p className="text-2xl font-semibold text-foreground">
-              {overviewError ? <span className="text-red-500 text-xs font-mono">{overviewError}</span> : overview.pdfsGenerated === null ? <span className="animate-pulse">...</span> : `${((overview.pdfsGenerated / overview.pdfLimit) * 100).toFixed(1)}%`}
+              {overviewError ? <span className="text-red-500 text-xs font-mono">{overviewError}</span> : overview.pdfsGenerated === null ? <span className="animate-pulse">...</span> : `${(((overview.pdfsGenerated || 0) / (overview.pdfLimit || 10000)) * 100).toFixed(1)}%`}
             </p>
           </div>
         </div>
@@ -318,7 +318,7 @@ export const AdminDashboard: React.FC = () => {
               <div className="h-2 rounded-full bg-secondary overflow-hidden w-full mb-2">
                 <div 
                   className="bg-primary h-full transition-all duration-1000" 
-                  style={{ width: overview.pdfsGenerated !== null ? `${(overview.pdfsGenerated / overview.pdfLimit) * 100}%` : '0%' }}
+                  style={{ width: overview.pdfsGenerated !== null ? `${(((overview.pdfsGenerated || 0) / (overview.pdfLimit || 10000)) * 100)}%` : '0%' }}
                 ></div>
               </div>
               <p className="text-xs text-muted-foreground">
@@ -327,7 +327,7 @@ export const AdminDashboard: React.FC = () => {
                 ) : overview.pdfsGenerated === null ? (
                   <span className="animate-pulse">Loading...</span>
                 ) : (
-                  `${overview.pdfLimit - overview.pdfsGenerated} generations remaining of ${overview.pdfLimit} limit`
+                  `${(overview.pdfLimit || 10000) - (overview.pdfsGenerated || 0)} generations remaining of ${overview.pdfLimit || 10000} limit`
                 )}
               </p>
             </div>
