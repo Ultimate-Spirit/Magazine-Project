@@ -27,9 +27,10 @@ export const AdminDashboard: React.FC = () => {
     active_sessions: '...'
   });
   const [overview, setOverview] = useState<Record<string, any>>({
+    totalWorkspaces: null,
+    activeUsers: null,
     totalMagazines: null,
-    totalPages: null,
-    totalUsers: null,
+    publishedPages: null,
     pdfsGenerated: null,
     pdfLimit: null,
   });
@@ -178,6 +179,26 @@ export const AdminDashboard: React.FC = () => {
               <Building2 className="w-4 h-4 text-muted-foreground" />
             </div>
             <p className="text-2xl font-semibold text-foreground">
+              {overviewError ? <span className="text-red-500 text-xs font-mono">{overviewError}</span> : overview.totalWorkspaces === null ? <span className="animate-pulse">...</span> : overview.totalWorkspaces || 0}
+            </p>
+          </div>
+
+          <div onClick={() => navigate('/admin/users')} className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col gap-2 cursor-pointer hover:bg-card/80 transition-all">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground font-medium">Active Users</p>
+              <Users className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <p className="text-2xl font-semibold text-foreground">
+              {overviewError ? <span className="text-red-500 text-xs font-mono">{overviewError}</span> : overview.activeUsers === null ? <span className="animate-pulse">...</span> : overview.activeUsers || 0}
+            </p>
+          </div>
+
+          <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground font-medium">Total Magazines</p>
+              <FileEdit className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <p className="text-2xl font-semibold text-foreground">
               {overviewError ? <span className="text-red-500 text-xs font-mono">{overviewError}</span> : overview.totalMagazines === null ? <span className="animate-pulse">...</span> : overview.totalMagazines || 0}
             </p>
           </div>
@@ -188,27 +209,7 @@ export const AdminDashboard: React.FC = () => {
               <FileText className="w-4 h-4 text-muted-foreground" />
             </div>
             <p className="text-2xl font-semibold text-foreground">
-              {overviewError ? <span className="text-red-500 text-xs font-mono">{overviewError}</span> : overview.totalPages === null ? <span className="animate-pulse">...</span> : overview.totalPages || 0}
-            </p>
-          </div>
-
-          <div onClick={() => navigate('/admin/users')} className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col gap-2 cursor-pointer hover:bg-card/80 transition-all">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground font-medium">Active Users</p>
-              <Users className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <p className="text-2xl font-semibold text-foreground">
-              {overviewError ? <span className="text-red-500 text-xs font-mono">{overviewError}</span> : overview.totalUsers === null ? <span className="animate-pulse">...</span> : overview.totalUsers || 0}
-            </p>
-          </div>
-
-          <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground font-medium">API Usage</p>
-              <Zap className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <p className="text-2xl font-semibold text-foreground">
-              {overviewError ? <span className="text-red-500 text-xs font-mono">{overviewError}</span> : overview.pdfsGenerated === null ? <span className="animate-pulse">...</span> : `${(((overview.pdfsGenerated || 0) / (overview.pdfLimit || 10000)) * 100).toFixed(1)}%`}
+              {overviewError ? <span className="text-red-500 text-xs font-mono">{overviewError}</span> : overview.publishedPages === null ? <span className="animate-pulse">...</span> : overview.publishedPages || 0}
             </p>
           </div>
         </div>
@@ -315,21 +316,31 @@ export const AdminDashboard: React.FC = () => {
           <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col justify-between gap-4">
             <h2 className="text-sm font-semibold text-foreground">PDF API Quota</h2>
             <div>
-              <div className="h-2 rounded-full bg-secondary overflow-hidden w-full mb-2">
+              <p className="text-2xl font-semibold text-foreground mb-4">
+                {overviewError ? (
+                  <span className="text-red-500 text-xs font-mono">{overviewError}</span>
+                ) : overview.pdfsGenerated === null ? (
+                  <span className="animate-pulse">...</span>
+                ) : (
+                  `${(overview.pdfLimit || 10000) - (overview.pdfsGenerated || 0)} Remaining`
+                )}
+              </p>
+              <div className="h-3 rounded-full bg-secondary overflow-hidden w-full mb-3">
                 <div 
                   className="bg-primary h-full transition-all duration-1000" 
                   style={{ width: overview.pdfsGenerated !== null ? `${(((overview.pdfsGenerated || 0) / (overview.pdfLimit || 10000)) * 100)}%` : '0%' }}
                 ></div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {overviewError ? (
-                  <span className="text-red-500 font-mono">{overviewError}</span>
-                ) : overview.pdfsGenerated === null ? (
-                  <span className="animate-pulse">Loading...</span>
-                ) : (
-                  `${(overview.pdfLimit || 10000) - (overview.pdfsGenerated || 0)} generations remaining of ${overview.pdfLimit || 10000} limit`
-                )}
-              </p>
+              <div className="grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
+                <div className="flex flex-col gap-1">
+                  <span>Used: {overview.pdfsGenerated || 0}</span>
+                  <span>Remaining: {(overview.pdfLimit || 10000) - (overview.pdfsGenerated || 0)}</span>
+                </div>
+                <div className="flex flex-col gap-1 text-right">
+                  <span>Status: Active</span>
+                  <span>Plan: Pro</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -337,23 +348,18 @@ export const AdminDashboard: React.FC = () => {
           <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col justify-between gap-4">
             <h2 className="text-sm font-semibold text-foreground">System Uptime</h2>
             <div>
-              <div className="flex items-end gap-[2px] h-6 w-full mb-3">
-                {Array.from({ length: 20 }).map((_, i) => (
+              <p className="text-2xl font-semibold text-foreground mb-4">99.9% Uptime</p>
+              <div className="flex items-end h-6 w-full mb-2">
+                {Array.from({ length: 25 }).map((_, i) => (
                   <div
                     key={i}
-                    className={`flex-1 rounded-sm ${i === 15 || i === 18 ? 'bg-emerald-500/30' : 'bg-emerald-500/80'} h-full`}
+                    className="w-1.5 h-6 rounded-[2px] bg-emerald-500/80 mr-1"
                   ></div>
                 ))}
               </div>
-              <div className="flex flex-col gap-1">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>PDF Compiler</span>
-                  <span className="text-foreground font-medium">Operational</span>
-                </div>
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Database</span>
-                  <span className="text-foreground font-medium">12ms latency</span>
-                </div>
+              <div className="text-[10px] text-muted-foreground flex justify-between">
+                <span>Operational</span>
+                <span>Latency: 14ms</span>
               </div>
             </div>
           </div>
