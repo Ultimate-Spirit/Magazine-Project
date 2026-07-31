@@ -652,16 +652,16 @@ export function FolderContents() {
           <div className="flex items-center gap-3 w-full md:w-auto mt-4 md:mt-0 flex-wrap">
             <button 
               onClick={() => fetchData()}
-              className="p-4 micro-surface border border-border/10 rounded-xl text-muted-foreground/40 hover:text-primary transition-all flex-shrink-0"
+              className="w-8 h-8 flex flex-col items-center justify-center p-0 rounded-lg border border-border/50 text-muted-foreground/50 hover:text-primary transition-all flex-shrink-0 micro-surface"
               title="Sync Database"
             >
-              <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
             {(pages && pages.length > 0) && (
               <div className="flex flex-1 md:flex-none items-center gap-2">
                 <button 
                   onClick={openExportSettings}
-                  className="flex items-center justify-center gap-2 px-8 py-4 bg-foreground text-background font-black rounded-2xl hover:opacity-90 transition-all uppercase tracking-widest text-[10px] shadow-lg"
+                  className="h-8 px-3 rounded-lg text-xs font-semibold bg-primary text-primary-foreground normal-case shadow-none flex items-center justify-center gap-2 border border-border/50"
                 >
                   <Printer className="w-4 h-4" />
                   Export PDF
@@ -683,8 +683,8 @@ export function FolderContents() {
             </div>
 
             {/* Mix & Match Global Bookends */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 lg:p-8 micro-surface border border-border/10 rounded-[2rem]">
-              <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 micro-surface border border-border/50 rounded-xl">
+              <div className="space-y-2">
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                   <Layout className="w-3.5 h-3.5" /> Global Cover Master
                 </label>
@@ -720,18 +720,18 @@ export function FolderContents() {
                 return (
                   <div 
                     key={template.id}
-                    className={`group relative micro-surface border rounded-[2rem] p-6 lg:p-8 flex flex-col justify-between min-h-[200px] lg:min-h-[240px] transition-all duration-500 ${isCompleted ? 'border-primary/20 opacity-100' : 'border-border/10 opacity-70 hover:opacity-100 hover:border-border/30'}`}
+                    className={`group relative micro-surface border rounded-xl p-4 lg:p-5 flex flex-col justify-between min-h-[160px] transition-all duration-500 ${isCompleted ? 'border-primary/20 opacity-100' : 'border-border/50 opacity-70 hover:opacity-100 hover:border-border/50'}`}
                   >
                     <div>
                       <div className="flex items-start justify-between mb-4">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors duration-500 ${isCompleted ? 'bg-emerald-500/10 text-emerald-500' : 'bg-secondary text-muted-foreground/30'}`}>
-                          {isCompleted ? <CheckCircle2 className="w-6 h-6" /> : <Layout className="w-6 h-6" />}
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-500 ${isCompleted ? 'bg-emerald-500/10 text-emerald-500' : 'bg-secondary text-muted-foreground/30'}`}>
+                          {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : <Layout className="w-4 h-4" />}
                         </div>
                         <span className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-muted/30 text-[8px] font-black uppercase tracking-widest text-muted-foreground border border-border/5">
                           {template.category}
                         </span>
                       </div>
-                      <h3 className="text-xl font-black text-foreground tracking-tight leading-tight line-clamp-2">
+                      <h3 className="text-base font-semibold text-foreground tracking-tight leading-tight line-clamp-2">
                         {template.template_name}
                       </h3>
                       <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest mt-2 flex items-center gap-2">
@@ -740,19 +740,19 @@ export function FolderContents() {
                       </p>
                     </div>
 
-                    <div className="mt-8 flex gap-2">
+                    <div className="mt-4 flex gap-2">
                       {isCompleted ? (
                         <>
                           <button 
                             onClick={() => navigate(`/folder/${folderId}/editor/${existingPage.id}`)}
-                            className="flex-1 py-3 bg-secondary text-foreground font-black rounded-xl hover:bg-muted transition-all text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"
+                            className="flex-1 h-8 bg-secondary text-foreground font-medium rounded-lg hover:bg-muted transition-all text-xs normal-case flex items-center justify-center gap-2"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                             Edit Page
                           </button>
                           <button 
                             onClick={() => setPageToReset({ page: existingPage, template })}
-                            className="p-3 micro-surface border border-border/10 text-muted-foreground hover:text-primary rounded-xl transition-all"
+                            className="w-8 h-8 flex items-center justify-center micro-surface border border-border/50 rounded-lg p-0 text-muted-foreground hover:text-primary transition-all"
                             title="Reset to Template"
                           >
                             <RotateCcw className="w-3.5 h-3.5" />
@@ -761,7 +761,7 @@ export function FolderContents() {
                       ) : (
                         <button 
                           onClick={() => handleStartDraft(template)}
-                          className="w-full py-3 bg-primary text-primary-foreground font-black rounded-xl hover:opacity-90 transition-all text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-primary/10"
+                          className="w-full h-8 bg-primary text-primary-foreground font-semibold rounded-lg text-xs flex items-center justify-center gap-2 shadow-none border border-border/50 normal-case hover:opacity-90 transition-all"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           Start Draft
@@ -773,8 +773,8 @@ export function FolderContents() {
               })}
               
               {activeTemplates.length === 0 && (
-                 <div className="col-span-full py-20 text-center micro-surface border border-dashed border-border/20 rounded-[2.5rem]">
-                    <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px]">No blueprint slots active. Select global masters above to begin.</p>
+                 <div className="col-span-full py-10 text-center micro-surface border border-dashed border-border/50 rounded-xl">
+                    <p className="text-muted-foreground font-medium uppercase tracking-widest text-xs">No blueprint slots active. Select global masters above to begin.</p>
                  </div>
               )}
             </div>
@@ -791,12 +791,12 @@ export function FolderContents() {
                 {legacyPages.map((page) => (
                   <div
                     key={page.id}
-                    className="group relative micro-surface border border-border/10 hover:border-primary/20 transition-all duration-500 p-6 rounded-2xl flex flex-col justify-between min-h-[160px] cursor-pointer"
+                    className="group relative micro-surface border border-border/50 hover:border-primary/20 transition-all duration-500 p-4 rounded-xl flex flex-col justify-between min-h-[120px] cursor-pointer"
                     onClick={() => navigate(`/folder/${folderId}/editor/${page.id}`)}
                   >
                     <div className="flex items-start justify-between">
-                      <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center text-muted-foreground/30 group-hover:text-primary transition-colors">
-                        <FileText className="w-5 h-5" />
+                      <div className="w-8 h-8 bg-secondary rounded-lg flex items-center justify-center text-muted-foreground/30 group-hover:text-primary transition-colors border border-border/50">
+                        <FileText className="w-4 h-4" />
                       </div>
                       <button 
                          onClick={(e) => { e.stopPropagation(); setPageToDelete(page); }}
@@ -823,22 +823,22 @@ export function FolderContents() {
         {isMounted && isExportSettingsOpen && (
           <div className="fixed inset-0 z-[100] flex flex-col justify-end lg:justify-center items-center p-4 pb-0 lg:p-10 animate-in fade-in duration-300">
             <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md" onClick={() => !isCompiling && setIsExportSettingsOpen(false)} />
-            <div className="relative w-full max-w-5xl bg-white dark:bg-slate-950 border border-border/10 rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] lg:max-h-[85vh] overflow-hidden animate-in slide-in-from-bottom-8">
-              <div className="p-6 lg:p-8 border-b border-border/5 flex items-center justify-between bg-card/30 shrink-0">
+            <div className="relative w-full max-w-5xl bg-card border border-border/50 rounded-xl shadow-none flex flex-col max-h-[90vh] lg:max-h-[85vh] overflow-hidden animate-in slide-in-from-bottom-8">
+              <div className="p-5 border-b border-border/50 flex items-center justify-between shrink-0">
                 <div>
-                  <h2 className="text-2xl font-black text-foreground tracking-tight">Export Settings</h2>
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">Select pages and adjust order for PDF generation</p>
+                  <h2 className="text-lg font-semibold text-foreground tracking-tight">Export Settings</h2>
+                  <p className="text-xs font-medium text-muted-foreground mt-1">Select pages and adjust order for PDF generation</p>
                 </div>
                 <button 
                   onClick={() => setIsExportSettingsOpen(false)}
                   disabled={isCompiling}
-                  className="p-2 hover:bg-secondary rounded-full text-muted-foreground transition-all disabled:opacity-50"
+                  className="p-2 hover:bg-secondary rounded-lg text-muted-foreground transition-all disabled:opacity-50 border border-border/50"
                 >
-                  <ArrowLeft className="w-5 h-5 rotate-180" />
+                  <ArrowLeft className="w-4 h-4 rotate-180" />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 lg:p-8 invisible-scrollbar bg-slate-50/50 dark:bg-slate-900/10">
+              <div className="flex-1 overflow-y-auto p-5 invisible-scrollbar">
                 <div className="flex flex-wrap gap-4 lg:gap-8 justify-center lg:justify-start">
                   
                   {/* Zone A: Locked Cover */}
@@ -892,20 +892,20 @@ export function FolderContents() {
                 </div>
               </div>
 
-              <div className="p-6 lg:p-8 border-t border-border/5 bg-card/50 shrink-0">
+              <div className="p-5 border-t border-border/50 shrink-0">
                 <button
                   onClick={generatePDFFromSettings}
                   disabled={isCompiling || (!zoneA && !zoneC && zoneB.length === 0)}
-                  className="w-full py-5 bg-primary text-primary-foreground font-black rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest shadow-xl shadow-primary/20"
+                  className="w-full h-9 bg-primary text-primary-foreground font-semibold rounded-lg text-xs gap-2 normal-case shadow-none border border-border/50 hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center"
                 >
                   {isCompiling ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       Generating Server PDF...
                     </>
                   ) : (
                     <>
-                      <Printer className="w-5 h-5" />
+                      <Printer className="w-4 h-4" />
                       Generate PDF
                     </>
                   )}

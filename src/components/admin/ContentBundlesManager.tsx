@@ -249,24 +249,24 @@ export const ContentBundlesManager: React.FC = () => {
   }
 
   return (
-    <div className="p-4 lg:p-12 space-y-12 max-w-7xl mx-auto font-sans">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <div className="p-4 lg:p-6 space-y-6 max-w-7xl mx-auto font-sans">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl lg:text-5xl font-black tracking-tight text-foreground">Blueprint Engine</h1>
-          <p className="text-muted-foreground mt-2 font-medium">Manage relational template bundles</p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Blueprint Engine</h1>
+          <p className="text-muted-foreground mt-2 text-sm font-medium">Manage relational template bundles</p>
         </div>
         {!selectedBundle ? (
-          <button 
-            onClick={() => {
-              setEditingBundle(null);
-              setNewBundleName('');
-              setShowCreateBundle(true);
-            }}
-            className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
-          >
-            <Plus className="w-5 h-5" />
-            New Bundle
-          </button>
+            <button 
+              onClick={() => {
+                setEditingBundle(null);
+                setNewBundleName('');
+                setShowCreateBundle(true);
+              }}
+              className="flex items-center gap-2 h-8 px-4 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-all text-xs border border-border/50 shadow-none"
+            >
+              <Plus className="w-4 h-4" />
+              New Bundle
+            </button>
         ) : (
           <button 
             onClick={() => setSelectedBundle(null)}
@@ -286,13 +286,13 @@ export const ContentBundlesManager: React.FC = () => {
       )}
 
       {(showCreateBundle || editingBundle) && !selectedBundle && (
-        <div className="micro-surface p-6 lg:p-8 rounded-[2rem] border border-border/10 space-y-6 animate-in fade-in slide-in-from-top-4">
-          <h3 className="text-xl font-black text-foreground">{editingBundle ? 'Rename Blueprint Bundle' : 'Initialize New Blueprint Bundle'}</h3>
+        <div className="micro-surface p-5 rounded-xl border border-border/50 space-y-4 animate-in fade-in slide-in-from-top-4">
+          <h3 className="text-base font-semibold text-foreground">{editingBundle ? 'Rename Blueprint Bundle' : 'Initialize New Blueprint Bundle'}</h3>
           <div className="flex gap-4">
             <input 
               type="text" 
               placeholder="e.g. Standard Corporate Profile"
-              className="flex-1 bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium"
+              className="flex-1 bg-background border border-border/50 rounded-lg h-8 px-3 text-xs text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium"
               value={newBundleName}
               onChange={(e) => setNewBundleName(e.target.value)}
               autoFocus
@@ -300,16 +300,16 @@ export const ContentBundlesManager: React.FC = () => {
             <div className="flex gap-2">
               <button 
                 onClick={() => { setShowCreateBundle(false); setEditingBundle(null); }}
-                className="px-6 py-3 micro-surface border border-border/10 rounded-xl font-bold hover:bg-secondary transition-all"
+                className="h-8 px-4 micro-surface border border-border/50 rounded-lg text-xs font-semibold hover:bg-secondary transition-all"
               >
                 Cancel
               </button>
               <button 
                 onClick={editingBundle ? handleUpdateBundle : handleCreateBundle}
                 disabled={actionLoading || !newBundleName.trim()}
-                className="px-8 py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all whitespace-nowrap disabled:opacity-50"
+                className="h-8 px-4 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 transition-all whitespace-nowrap disabled:opacity-50"
               >
-                {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (editingBundle ? 'Update' : 'Create')}
+                {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : (editingBundle ? 'Update' : 'Create')}
               </button>
             </div>
           </div>
@@ -321,11 +321,11 @@ export const ContentBundlesManager: React.FC = () => {
           {bundles?.map(bundle => (
             <div 
               key={bundle.id}
-              className={`group relative micro-surface p-6 lg:p-8 rounded-[2rem] border border-border/10 transition-all flex flex-col justify-between min-h-[200px] ${bundle.status === 'archived' ? 'opacity-50 grayscale' : 'hover:micro-surface-hover'}`}
+              className={`group relative micro-surface p-5 rounded-xl border border-border/50 transition-all flex flex-col justify-between min-h-[160px] ${bundle.status === 'archived' ? 'opacity-50 grayscale' : 'hover:border-border'}`}
             >
               <div className="flex justify-between items-start">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${bundle.status === 'archived' ? 'bg-slate-500/10 text-slate-500' : 'bg-primary/10 text-primary'}`}>
-                  <Layers className="w-6 h-6" />
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center border border-border/50 ${bundle.status === 'archived' ? 'bg-slate-500/10 text-slate-500' : 'bg-primary/10 text-primary'}`}>
+                  <Layers className="w-4 h-4" />
                 </div>
                 <div className="flex gap-1">
                   <button 
@@ -334,14 +334,14 @@ export const ContentBundlesManager: React.FC = () => {
                       setNewBundleName(bundle.bundle_name);
                       setShowCreateBundle(false);
                     }}
-                    className="p-2 micro-surface border border-border/10 rounded-xl text-muted-foreground hover:text-primary transition-all"
+                    className="p-2 micro-surface border border-border/50 rounded-lg text-muted-foreground hover:text-primary transition-all"
                     title="Edit Name"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button 
                     onClick={() => handleArchiveBundle(bundle)}
-                    className={`p-2 micro-surface border border-border/10 rounded-xl transition-all ${bundle.status === 'active' ? 'text-muted-foreground hover:text-orange-500' : 'text-emerald-500 hover:text-emerald-600'}`}
+                    className={`p-2 micro-surface border border-border/50 rounded-lg transition-all ${bundle.status === 'active' ? 'text-muted-foreground hover:text-orange-500' : 'text-emerald-500 hover:text-emerald-600'}`}
                     title={bundle.status === 'active' ? 'Archive' : 'Unarchive'}
                   >
                     {bundle.status === 'active' ? <Archive className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
@@ -349,10 +349,10 @@ export const ContentBundlesManager: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mt-6 cursor-pointer" onClick={() => handleSelectBundle(bundle)}>
-                <h3 className="text-xl font-black text-foreground group-hover:text-primary transition-colors">{bundle?.bundle_name || 'Unnamed Bundle'}</h3>
-                <div className="flex items-center justify-between mt-3">
-                  <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${bundle?.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-500/10 text-slate-500'}`}>
+              <div className="mt-4 cursor-pointer" onClick={() => handleSelectBundle(bundle)}>
+                <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors">{bundle?.bundle_name || 'Unnamed Bundle'}</h3>
+                <div className="flex items-center justify-between mt-2">
+                  <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded ${bundle?.status === 'active' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 border border-slate-500/20'}`}>
                     {bundle?.status || 'unknown'}
                   </span>
                   <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0" />
@@ -361,17 +361,17 @@ export const ContentBundlesManager: React.FC = () => {
             </div>
           ))}
           {(!bundles || bundles.length === 0) && !showCreateBundle && (
-            <div className="col-span-full py-20 text-center border-2 border-dashed border-border/20 rounded-[2.5rem]">
-              <p className="text-muted-foreground font-medium">No blueprint bundles found.</p>
+            <div className="col-span-full py-10 text-center border border-dashed border-border/50 rounded-xl">
+              <p className="text-muted-foreground text-sm font-medium">No blueprint bundles found.</p>
             </div>
           )}
         </div>
       ) : (
-        <div className="space-y-8 animate-in fade-in slide-in-from-right-8">
+        <div className="space-y-6 animate-in fade-in slide-in-from-right-8">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-black">{selectedBundle?.bundle_name || 'Bundle'} Templates</h2>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">Configure layout slots for this blueprint</p>
+              <h2 className="text-lg font-bold">{selectedBundle?.bundle_name || 'Bundle'} Templates</h2>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mt-1">Configure layout slots for this blueprint</p>
             </div>
             <button 
               onClick={() => {
@@ -386,7 +386,7 @@ export const ContentBundlesManager: React.FC = () => {
                 setTemplatePayload(null);
                 setShowCreateTemplate(true);
               }}
-              className="flex items-center gap-2 px-6 py-3 bg-card border border-border text-foreground rounded-xl font-bold hover:bg-secondary transition-all"
+              className="flex items-center gap-2 h-8 px-4 bg-card border border-border/50 text-foreground rounded-lg text-xs font-semibold hover:bg-secondary transition-all"
             >
               <Plus className="w-4 h-4" />
               Add Template Slot
@@ -394,42 +394,42 @@ export const ContentBundlesManager: React.FC = () => {
           </div>
 
           {showCreateTemplate && (
-            <div className="micro-surface p-6 lg:p-8 rounded-[2rem] border border-border/10 space-y-6 animate-in slide-in-from-top-4">
-              <h3 className="text-lg font-bold">{editingTemplate ? 'Update Template Definition' : 'New Template Definition'}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="micro-surface p-5 rounded-xl border border-border/50 space-y-4 animate-in slide-in-from-top-4">
+              <h3 className="text-base font-semibold">{editingTemplate ? 'Update Template Definition' : 'New Template Definition'}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Template Name</label>
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Template Name</label>
                   <input 
                     type="text" 
-                    className="w-full bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                    className="w-full bg-background border border-border/50 rounded-lg h-8 px-3 text-xs text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                     value={templateForm.template_name}
                     onChange={(e) => setTemplateForm({ ...templateForm, template_name: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Category</label>
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Category</label>
                   <input 
                     type="text" 
-                    className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-base text-muted-foreground cursor-not-allowed"
+                    className="w-full bg-muted border border-border/50 rounded-lg h-8 px-3 text-xs text-muted-foreground cursor-not-allowed"
                     value="Content"
                     disabled
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Department Tag</label>
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Department Tag</label>
                   <input 
                     type="text" 
                     placeholder="e.g. Sales, Marketing"
-                    className="w-full bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                    className="w-full bg-background border border-border/50 rounded-lg h-8 px-3 text-xs text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                     value={templateForm.department_tag}
                     onChange={(e) => setTemplateForm({ ...templateForm, department_tag: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Sorting Weight</label>
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Sorting Weight</label>
                   <input 
                     type="number" 
-                    className="w-full bg-background border border-border rounded-xl px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                    className="w-full bg-background border border-border/50 rounded-lg h-8 px-3 text-xs text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                     value={templateForm.weight}
                     onChange={(e) => setTemplateForm({ ...templateForm, weight: parseInt(e.target.value) || 0 })}
                   />
@@ -437,17 +437,17 @@ export const ContentBundlesManager: React.FC = () => {
                 </div>
                 
                 {(templateForm.category === 'Cover' || templateForm.category === 'Last Page') && (
-                  <div className="space-y-2 flex flex-col justify-center mt-2 col-span-full md:col-span-1 p-4 bg-primary/5 border border-primary/20 rounded-xl">
-                    <label className="flex items-center gap-3 cursor-pointer">
+                  <div className="space-y-1 flex flex-col justify-center mt-2 col-span-full md:col-span-1 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                    <label className="flex items-center gap-2 cursor-pointer">
                       <input 
                         type="checkbox" 
-                        className="w-5 h-5 rounded border-border/20 text-primary bg-background focus:ring-primary/20 accent-primary"
+                        className="w-4 h-4 rounded border-border/20 text-primary bg-background focus:ring-primary/20 accent-primary"
                         checked={templateForm.is_global}
                         onChange={(e) => setTemplateForm({ ...templateForm, is_global: e.target.checked })}
                       />
-                      <span className="text-sm font-black text-primary uppercase tracking-widest">Global Asset</span>
+                      <span className="text-xs font-semibold text-primary uppercase tracking-widest">Global Asset</span>
                     </label>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-8">Make this template mixable across all directories.</p>
+                    <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-widest ml-6">Make this template mixable across all directories.</p>
                   </div>
                 )}
 
@@ -459,44 +459,44 @@ export const ContentBundlesManager: React.FC = () => {
                   />
                 </div>
               </div>
-              <div className="flex justify-end gap-3 pt-4 border-t border-border/10 mt-6">
+              <div className="flex justify-end gap-2 pt-4 border-t border-border/10 mt-4">
                 <button 
                   onClick={() => { setShowCreateTemplate(false); setEditingTemplate(null); }}
-                  className="px-6 py-2.5 rounded-xl font-bold text-muted-foreground hover:bg-secondary transition-colors text-sm"
+                  className="h-8 px-4 rounded-lg font-semibold text-muted-foreground hover:bg-secondary transition-colors text-xs"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={handleSaveTemplate}
                   disabled={actionLoading || !templateForm.template_name.trim()}
-                  className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all text-sm flex items-center gap-2 disabled:opacity-50"
+                  className="h-8 px-4 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-all text-xs flex items-center gap-2 disabled:opacity-50"
                 >
-                  {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                   {editingTemplate ? 'Update Slot' : 'Save Template'}
                 </button>
               </div>
             </div>
           )}
 
-          <div className="bg-card rounded-[2rem] border border-border/10 overflow-hidden shadow-sm">
+          <div className="bg-card rounded-xl border border-border/50 overflow-hidden shadow-none">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse whitespace-nowrap">
                 <thead>
-                  <tr className="border-b border-border/10 bg-muted/20">
-                    <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Weight</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Template Name</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Category</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Department</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest text-right">Actions</th>
+                  <tr className="border-b border-border/50 bg-muted/20">
+                    <th className="px-4 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Weight</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Template Name</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Category</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Department</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/10">
                   {templates?.map(template => (
                     <tr key={template.id} className="hover:bg-muted/10 transition-colors group">
-                      <td className="px-6 py-4 text-sm font-mono text-muted-foreground">{template?.weight ?? '-'}</td>
-                      <td className="px-6 py-4 text-sm font-bold text-foreground">{template?.template_name || 'Unnamed'}</td>
-                      <td className="px-6 py-4 flex items-center gap-2">
-                        <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${
+                      <td className="px-4 py-3 text-xs font-mono text-muted-foreground">{template?.weight ?? '-'}</td>
+                      <td className="px-4 py-3 text-xs font-semibold text-foreground">{template?.template_name || 'Unnamed'}</td>
+                      <td className="px-4 py-3 text-xs flex items-center gap-2">
+                        <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded ${
                           template?.category === 'Cover' ? 'bg-purple-500/10 text-purple-500' :
                           template?.category === 'Last Page' ? 'bg-orange-500/10 text-orange-500' :
                           'bg-blue-500/10 text-blue-500'
@@ -504,24 +504,24 @@ export const ContentBundlesManager: React.FC = () => {
                           {template?.category || 'Content'}
                         </span>
                         {template?.is_global && (
-                          <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-[8px] font-black uppercase tracking-widest border border-primary/20">Global</span>
+                          <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-[8px] font-bold uppercase tracking-widest border border-primary/20">Global</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium text-muted-foreground">
+                      <td className="px-4 py-3 text-xs font-medium text-muted-foreground">
                         {template?.department_tag || '-'}
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <td className="px-4 py-3 text-xs text-right">
+                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button 
                             onClick={() => openEditTemplate(template)}
-                            className="p-2 micro-surface border border-border/10 rounded-lg text-muted-foreground hover:text-primary transition-all"
+                            className="p-2 micro-surface border border-border/50 rounded-lg text-muted-foreground hover:text-primary transition-all"
                             title="Edit Definition"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button 
                             onClick={() => setTemplateToDelete(template)}
-                            className="p-2 micro-surface border border-border/10 rounded-lg text-muted-foreground hover:text-destructive transition-all"
+                            className="p-2 micro-surface border border-border/50 rounded-lg text-muted-foreground hover:text-destructive transition-all"
                             title="Delete Slot"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -532,7 +532,7 @@ export const ContentBundlesManager: React.FC = () => {
                   ))}
                   {(!templates || templates.length === 0) && (
                     <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-medium">
+                      <td colSpan={5} className="px-4 py-8 text-center text-xs text-muted-foreground font-medium">
                         No templates in this bundle yet.
                       </td>
                     </tr>

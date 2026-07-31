@@ -48,29 +48,29 @@ export const AdminLayout: React.FC = () => {
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-[100] w-64 flex-shrink-0 h-full overflow-y-auto bg-white dark:bg-slate-950 border-r border-border flex flex-col 
+        fixed inset-y-0 left-0 z-[100] w-56 flex-shrink-0 h-full overflow-y-auto bg-background border-r border-border flex flex-col 
         transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="h-16 px-4 flex items-center justify-between shrink-0 border-b border-border/50 lg:border-none lg:h-auto lg:p-8">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary rounded-2xl shadow-xl shadow-primary/20">
-              <Shield className="w-6 h-6 text-primary-foreground" />
+        <div className="h-16 px-3 flex items-center justify-between shrink-0 border-b border-border/50 lg:border-none lg:h-auto lg:p-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary rounded-xl shadow-sm shadow-primary/20">
+              <Shield className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <span className="text-xl font-black block tracking-tighter">Admin</span>
-              <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Console</span>
+              <span className="text-sm font-semibold block tracking-tighter">Admin</span>
+              <span className="text-[10px] font-semibold text-primary uppercase tracking-[0.2em]">Console</span>
             </div>
           </div>
           <button 
             onClick={() => setIsSidebarOpen(false)}
-            className="lg:hidden p-2 text-muted-foreground hover:bg-secondary rounded-xl transition-all"
+            className="lg:hidden p-1.5 text-muted-foreground hover:bg-secondary rounded-lg transition-all"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </button>
         </div>
         
-        <nav className="flex-1 px-6 space-y-2 mt-4 overflow-y-auto invisible-scrollbar">
+        <nav className="flex-1 px-3 space-y-1 mt-2 overflow-y-auto invisible-scrollbar">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -78,62 +78,62 @@ export const AdminLayout: React.FC = () => {
               end={item.end}
               onClick={() => setIsSidebarOpen(false)}
               className={({ isActive }) =>
-                `w-full flex items-center gap-3 px-4 py-4 rounded-2xl transition-all ${
+                `w-full flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all text-[13px] ${
                   isActive
-                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 font-bold'
+                    ? 'bg-secondary/50 text-foreground font-semibold'
                     : 'text-muted-foreground hover:text-foreground font-medium hover:bg-muted'
                 }`
               }
             >
-              <item.icon className="w-5 h-5" />
+              <item.icon className="w-4 h-4" strokeWidth={1.5} />
               {item.label}
             </NavLink>
           ))}
           
-          <div className="pt-8 pb-4 px-4 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">System</div>
+          <div className="pt-4 pb-2 px-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">System</div>
           <NavLink
             to="/admin/configurations"
             onClick={() => setIsSidebarOpen(false)}
             className={({ isActive }) =>
-              `w-full flex items-center gap-3 px-4 py-4 rounded-2xl transition-all ${
+              `w-full flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all text-[13px] ${
                 isActive
-                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 font-bold'
+                  ? 'bg-secondary/50 text-foreground font-semibold'
                   : 'text-muted-foreground hover:text-foreground font-medium hover:bg-muted'
               }`
             }
           >
-            <Settings className="w-5 h-5" />
+            <Settings className="w-4 h-4" strokeWidth={1.5} />
             Configuration
           </NavLink>
 
           <button 
             onClick={toggleTheme}
-            className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl text-muted-foreground hover:text-foreground font-medium transition-all hover:bg-muted"
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-muted-foreground hover:text-foreground font-medium transition-all hover:bg-muted text-[13px]"
           >
-            {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+            {theme === 'light' ? <Moon className="w-4 h-4" strokeWidth={1.5} /> : <Sun className="w-4 h-4" strokeWidth={1.5} />}
             {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
           </button>
         </nav>
 
-        <div className="p-6 space-y-4">
-          <div className="bg-muted/50 rounded-3xl p-6 border border-border/50 backdrop-blur-sm">
-            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-2">Authenticated As</p>
-            <p className="text-sm font-bold truncate italic">System Administrator</p>
+        <div className="p-3 space-y-3">
+          <div className="bg-muted/50 rounded-xl p-3 border border-border/50 backdrop-blur-sm">
+            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-1">Authenticated As</p>
+            <p className="text-xs font-semibold truncate italic">System Administrator</p>
           </div>
           <button 
             onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-6 py-4 rounded-2xl text-destructive hover:bg-destructive/10 font-bold transition-all"
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-destructive hover:bg-destructive/10 font-semibold transition-all text-[13px]"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-4 h-4" strokeWidth={1.5} />
             Sign Out
           </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 w-full h-full bg-gray-50 overflow-y-auto min-w-0 p-8 flex flex-col relative pt-20 lg:pt-8 dark:bg-background">
+      <div className="flex-1 w-full h-full bg-background overflow-y-auto min-w-0 p-4 flex flex-col relative pt-16 lg:pt-4">
         {/* Mobile Header */}
-        <header className="fixed top-0 left-0 right-0 h-16 border-b border-slate-200 dark:border-slate-800 flex items-center px-6 lg:hidden bg-white dark:bg-slate-950 z-[40] shrink-0">
+        <header className="fixed top-0 left-0 right-0 h-16 border-b border-border flex items-center px-6 lg:hidden bg-background z-[40] shrink-0">
           <button 
             onClick={() => setIsSidebarOpen(true)}
             className="p-2 text-slate-500 hover:bg-slate-100/50 rounded-xl transition-all"

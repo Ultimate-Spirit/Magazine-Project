@@ -19,47 +19,47 @@ export const Configurations: React.FC = () => {
 
       {/* Settings Navigation Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-[60] w-64 flex-shrink-0 h-full overflow-y-auto bg-secondary/30 border-r border-border/50 flex flex-col p-6
+        fixed inset-y-0 left-0 z-[60] w-56 flex-shrink-0 h-full overflow-y-auto bg-secondary/30 border-r border-border/50 flex flex-col p-3
         transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="flex items-center justify-between mb-8 lg:mb-12">
-          <h2 className="text-xl font-black flex items-center gap-2">
-            <Settings className="w-5 h-5 text-primary" />
+        <div className="flex items-center justify-between mb-4 lg:mb-6">
+          <h2 className="text-sm font-semibold flex items-center gap-2">
+            <Settings className="w-4 h-4 text-primary" strokeWidth={1.5} />
             Settings
           </h2>
           <button 
             onClick={() => setIsSidebarOpen(false)}
-            className="lg:hidden p-2 text-muted-foreground hover:bg-secondary rounded-xl transition-all"
+            className="lg:hidden p-1.5 text-muted-foreground hover:bg-secondary rounded-lg transition-all"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" strokeWidth={1.5} />
           </button>
         </div>
         
-        <div className="flex flex-col gap-2">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 mb-2">Access & Security</p>
+        <div className="flex flex-col gap-1">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 mb-1">Access & Security</p>
           
           <button
             onClick={() => { setActiveTab('users'); setIsSidebarOpen(false); }}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm ${
+            className={`flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all text-[13px] ${
               activeTab === 'users' 
-                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' 
-                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                ? 'bg-secondary/50 text-foreground font-semibold' 
+                : 'text-muted-foreground hover:bg-secondary hover:text-foreground font-medium'
             }`}
           >
-            <Users className="w-4 h-4" />
+            <Users className="w-4 h-4" strokeWidth={1.5} />
             User Accounts
           </button>
 
           <button
             onClick={() => { setActiveTab('roles'); setIsSidebarOpen(false); }}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm ${
+            className={`flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all text-[13px] ${
               activeTab === 'roles' 
-                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' 
-                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                ? 'bg-secondary/50 text-foreground font-semibold' 
+                : 'text-muted-foreground hover:bg-secondary hover:text-foreground font-medium'
             }`}
           >
-            <Shield className="w-4 h-4" />
+            <Shield className="w-4 h-4" strokeWidth={1.5} />
             Access Control
           </button>
         </div>
@@ -68,7 +68,7 @@ export const Configurations: React.FC = () => {
       {/* Main Content Area */}
       <div className="flex-1 w-full h-full overflow-x-hidden relative flex flex-col">
         {/* Mobile Header for Settings Sidebar */}
-        <div className="lg:hidden sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50 h-16 flex items-center px-4">
+        <div className="lg:hidden sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50 h-14 flex items-center px-4">
           <button 
             onClick={() => setIsSidebarOpen(true)}
             className="p-2 text-muted-foreground hover:bg-secondary rounded-xl transition-all mr-2"

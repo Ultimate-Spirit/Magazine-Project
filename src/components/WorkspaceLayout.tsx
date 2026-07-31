@@ -25,7 +25,7 @@ export function WorkspaceLayout({ children, company }: Props) {
 
   return (
     <div className="flex-1 w-full overflow-hidden bg-background flex flex-col transition-colors duration-300">
-      <header className={`h-16 md:h-20 px-2 lg:px-10 xl:px-16 flex items-center justify-between sticky top-0 z-[100] bg-background/80 backdrop-blur-xl ${isSelectionPage ? '' : 'faint-divider'}`}>
+      <header className={`h-14 px-2 lg:px-10 xl:px-16 flex items-center justify-between sticky top-0 z-[100] bg-background/80 backdrop-blur-xl ${isSelectionPage ? '' : 'faint-divider'}`}>
         <div className="flex items-center gap-4 md:gap-8">
           {isSelectionPage ? (
             <div className="flex items-center gap-3">
@@ -36,7 +36,7 @@ export function WorkspaceLayout({ children, company }: Props) {
             </div>
           ) : (
             <div className="flex items-center gap-4">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
                 <Shield className="w-4 h-4 text-primary-foreground" />
               </div>
               <div className="flex flex-col">
@@ -63,7 +63,7 @@ export function WorkspaceLayout({ children, company }: Props) {
             {isAdmin && (
               <button
                 onClick={() => navigate('/admin')}
-                className="hidden md:flex items-center gap-2 px-4 py-2 micro-surface border border-border/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:text-primary transition-all"
+                className="hidden md:flex items-center gap-2 h-8 px-3 micro-surface border border-border/50 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:text-primary transition-all"
               >
                 <Shield className="w-3.5 h-3.5" />
                 Admin Console
@@ -80,7 +80,7 @@ export function WorkspaceLayout({ children, company }: Props) {
             </button>
 
             {/* Account Dropdown */}
-            <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-950 border border-border/10 rounded-3xl shadow-2xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all z-[100] overflow-hidden">
+            <div className="absolute top-full right-0 mt-2 w-64 bg-background border border-border/50 rounded-xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all z-[100] overflow-hidden">
               <div className="p-6 bg-slate-50 dark:bg-slate-900/50">
                 <p className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] mb-3">Identity Context</p>
                 <p className="text-sm font-black truncate">{profile?.full_name || 'System Identity'}</p>

@@ -85,29 +85,29 @@ export function CompanySelection({ onSelect }: Props) {
             </div>
 
             <div className="relative group w-full md:w-64">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground transition-colors group-focus-within:text-primary" />
               <input
                 type="text"
                 placeholder="Find environment..."
-                className="w-full pl-12 pr-6 py-4 bg-secondary border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary/10 outline-none transition-all placeholder:text-muted-foreground/30"
+                className="w-full h-9 pl-9 pr-3 bg-secondary border-none rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary/10 outline-none transition-all placeholder:text-muted-foreground/30"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
           </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 w-full">
             {filteredCompanies.map((company) => {
               const memberCount = company.user_companies?.[0]?.count ?? 0;
               return (
               <div
                 key={company.id}
-                className="group relative bento-card micro-surface micro-surface-hover flex flex-col justify-between min-h-[260px] cursor-pointer overflow-hidden border border-border/20 hover:border-primary/30"
+                className="group relative micro-surface micro-surface-hover flex flex-col justify-between min-h-[160px] p-5 cursor-pointer overflow-hidden border border-border/50 hover:border-primary/30 rounded-xl"
                 onClick={() => onSelect(company)}
               >
                 <div className="flex items-start justify-between">
                   {/* Circular Avatar / Logo Visual Anchor */}
-                  <div className="w-16 h-16 rounded-2xl bg-secondary/80 flex items-center justify-center shrink-0 border border-border/10 group-hover:bg-primary group-hover:border-primary/20 transition-all duration-500 overflow-hidden">
+                  <div className="w-10 h-10 rounded-xl bg-secondary/80 flex items-center justify-center shrink-0 border border-border/50 group-hover:bg-primary group-hover:border-primary/20 transition-all duration-500 overflow-hidden">
                     {company.logoUrl ? (
                       <img 
                         src={company.logoUrl} 
@@ -115,7 +115,7 @@ export function CompanySelection({ onSelect }: Props) {
                         className="w-full h-full object-contain p-1 group-hover:scale-110 transition-transform duration-500"
                       />
                     ) : (
-                      <Building2 className="w-8 h-8 text-muted-foreground group-hover:text-primary-foreground transition-colors duration-500" />
+                      <Building2 className="w-5 h-5 text-muted-foreground group-hover:text-primary-foreground transition-colors duration-500" strokeWidth={1.5} />
                     )}
                   </div>
 
@@ -125,7 +125,7 @@ export function CompanySelection({ onSelect }: Props) {
                 </div>
 
                 <div>
-                  <h3 className="text-2xl font-display font-black mb-3 text-foreground group-hover:text-primary transition-colors tracking-tight line-clamp-1 pr-4">
+                  <h3 className="text-lg font-semibold mb-2 text-foreground group-hover:text-primary transition-colors tracking-tight line-clamp-1 pr-4">
                     {company.name}
                   </h3>
                   <div className="flex items-center justify-between">
@@ -144,11 +144,11 @@ export function CompanySelection({ onSelect }: Props) {
           </div>
 
           {filteredCompanies.length === 0 && (
-            <div className="py-32 text-center micro-surface rounded-[2.5rem] border border-border/20">
-              <p className="text-xl font-body font-bold text-muted-foreground">No matches for "<span className="text-foreground">{searchQuery}</span>"</p>
+            <div className="p-5 text-center micro-surface rounded-xl border border-border/50">
+              <p className="text-base font-semibold text-muted-foreground">No matches for "<span className="text-foreground">{searchQuery}</span>"</p>
               <button 
                 onClick={() => setSearchQuery('')}
-                className="mt-6 text-sm font-bold text-primary hover:underline"
+                className="mt-4 text-xs font-medium text-primary hover:underline"
               >
                 Reset search filters
               </button>
@@ -161,12 +161,12 @@ export function CompanySelection({ onSelect }: Props) {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-background">
-      <div className="p-12 border border-border/10 rounded-[3.5rem] bg-card/50 backdrop-blur-xl max-w-md w-full mx-4 shadow-2xl micro-surface">
-        <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4">Verifying Session</h2>
-        <p className="text-foreground font-black text-2xl leading-tight mb-10 tracking-tighter">
+      <div className="p-5 border border-border/50 rounded-xl bg-card/50 backdrop-blur-xl max-w-md w-full mx-4 micro-surface">
+        <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-3">Verifying Session</h2>
+        <p className="text-foreground font-semibold text-base leading-tight mb-6">
           Identity Confirmed. Provisioning your secure workspace environment.
         </p>
-        <div className="flex items-center gap-4 pt-8 border-t border-black/5 dark:border-white/5">
+        <div className="flex items-center gap-3 pt-5 border-t border-black/5 dark:border-white/5">
           <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-primary font-bold">
             {(user?.email?.[0] || 'U').toUpperCase()}
           </div>

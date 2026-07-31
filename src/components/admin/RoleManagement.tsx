@@ -217,14 +217,14 @@ export const RoleManagement: React.FC = () => {
 
   return (
     <div className="w-full flex flex-col gap-6 font-sans">
-      <header className="h-20 lg:h-24 bg-card/30 backdrop-blur-md flex items-center justify-between px-4 lg:px-12 faint-divider shrink-0 z-10">
-        <h1 className="text-2xl lg:text-3xl font-black text-foreground tracking-tight leading-none">Access Control</h1>
+      <header className="h-14 bg-card/30 backdrop-blur-md flex items-center justify-between px-4 lg:px-6 faint-divider shrink-0 z-10">
+        <h1 className="text-lg font-semibold text-foreground tracking-tight leading-none">Access Control</h1>
         
         <button 
           onClick={() => setIsRoleModalOpen(true)}
-          className="flex items-center gap-2 px-4 lg:px-6 py-3 bg-primary text-primary-foreground font-black rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/10 uppercase tracking-widest text-[9px] lg:text-[10px]"
+          className="flex items-center gap-2 h-8 px-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-all shadow-none border border-border/50 text-xs"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Create Role</span>
           <span className="sm:hidden">New</span>
         </button>
@@ -240,28 +240,28 @@ export const RoleManagement: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-8">
           {roles.map((role) => (
-            <div key={role.id} className="bento-card micro-surface micro-surface-hover flex flex-col justify-between min-h-[380px] lg:min-h-[400px] border-border/20 hover:border-primary/30 group p-4 lg:p-10">
+            <div key={role.id} className="bento-card micro-surface micro-surface-hover flex flex-col justify-between min-h-[250px] border border-border/50 hover:border-primary/30 group p-5 rounded-xl">
               <div>
-                <div className="flex items-center justify-between mb-6 lg:mb-8">
-                  <div className={`p-3 lg:p-4 rounded-xl lg:rounded-2xl ${role.is_system_admin ? 'bg-primary/5 text-primary' : 'bg-secondary text-muted-foreground/40'}`}>
-                    <Shield className="w-5 h-5 lg:w-6 lg:h-6" />
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`p-2 rounded-lg ${role.is_system_admin ? 'bg-primary/5 text-primary' : 'bg-secondary text-muted-foreground/40'}`}>
+                    <Shield className="w-4 h-4" />
                   </div>
                   <div className="flex items-center gap-2">
                     {!role.is_system_admin && (
                       <>
                         <button 
                           onClick={() => openEditRoleModal(role)}
-                          className="p-2.5 hover:bg-secondary rounded-xl text-muted-foreground/40 hover:text-primary transition-all"
+                          className="p-2 hover:bg-secondary rounded-lg text-muted-foreground/40 hover:text-primary transition-all"
                           title="Edit Permissions"
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button 
                           onClick={() => setRoleToDelete(role)}
-                          className="p-2.5 hover:bg-destructive/10 rounded-xl text-muted-foreground/40 hover:text-destructive transition-all"
+                          className="p-2 hover:bg-destructive/10 rounded-lg text-muted-foreground/40 hover:text-destructive transition-all"
                           title="Delete Role"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </>
                     )}
@@ -271,15 +271,15 @@ export const RoleManagement: React.FC = () => {
                   </div>
                 </div>
                 
-                <h3 className="text-xl lg:text-2xl font-black text-foreground mb-1 lg:mb-2 tracking-tight">{role.name}</h3>
-                <p className="text-[10px] lg:text-sm text-muted-foreground/60 leading-relaxed mb-8 lg:mb-10">
+                <h3 className="text-base font-semibold text-foreground mb-1 tracking-tight">{role.name}</h3>
+                <p className="text-xs text-muted-foreground mb-4">
                   {role.is_system_admin ? 'Full system authority with global override.' : 'Custom scoped access configuration.'}
                 </p>
 
-                <div className="space-y-3 lg:space-y-4 mb-8 lg:mb-10">
-                  <div className="flex items-center gap-3 text-muted-foreground/30">
-                    <Users className="w-3 h-3 lg:w-3.5 lg:h-3.5" />
-                    <span className="text-[9px] lg:text-[10px] font-black uppercase tracking-[0.2em]">Assigned Members</span>
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Users className="w-3.5 h-3.5" />
+                    <span className="text-[9px] font-medium uppercase tracking-widest">Assigned Members</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {profiles.filter(p => p.role_id === role.id).length === 0 ? (
@@ -308,9 +308,9 @@ export const RoleManagement: React.FC = () => {
                   setSelectedRole(role);
                   setIsAssignModalOpen(true);
                 }}
-                className="w-full flex items-center justify-center gap-3 py-3 lg:py-4 micro-surface text-foreground font-black rounded-xl lg:rounded-2xl hover:bg-secondary transition-all uppercase tracking-widest text-[9px] lg:text-[10px] border border-border/10"
+                className="w-full flex items-center justify-center gap-2 h-9 micro-surface text-foreground font-semibold rounded-lg hover:bg-secondary transition-all text-xs border border-border/50"
               >
-                <UserPlus className="w-4 h-4 text-muted-foreground/40" />
+                <UserPlus className="w-3.5 h-3.5 text-muted-foreground/50" />
                 Assign User
               </button>
             </div>
@@ -321,13 +321,13 @@ export const RoleManagement: React.FC = () => {
       {/* Create/Edit Role Modal */}
       {isRoleModalOpen && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center p-4 lg:p-6">
-          <div className="bg-card rounded-[2.5rem] border border-border w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-8 lg:p-10 border-b border-border/10 flex items-center justify-between">
+          <div className="bg-card rounded-xl border border-border/50 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-border/50 flex items-center justify-between">
               <div>
-                <h2 className="text-2xl lg:text-3xl font-black text-foreground tracking-tight">
+                <h2 className="text-lg font-semibold text-foreground tracking-tight">
                   {editingRoleId ? 'Refine Identity' : 'New Custom Role'}
                 </h2>
-                <p className="text-muted-foreground/60 font-medium mt-1 text-sm lg:text-base">
+                <p className="text-muted-foreground font-medium mt-1 text-xs">
                   {editingRoleId ? 'Adjust group access parameters' : 'Define specific identity permissions'}
                 </p>
               </div>
@@ -338,26 +338,26 @@ export const RoleManagement: React.FC = () => {
                   setNewRoleName('');
                   setNewRolePermissions(INITIAL_PERMISSIONS);
                 }}
-                className="p-4 hover:bg-secondary rounded-2xl transition-all"
+                className="p-2 hover:bg-secondary rounded-lg transition-all border border-border/50"
               >
-                <X className="w-6 h-6 text-muted-foreground/30" />
+                <X className="w-4 h-4 text-muted-foreground/50" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateOrUpdateRole} className="p-8 lg:p-10 space-y-8 lg:space-y-10">
+            <form onSubmit={handleCreateOrUpdateRole} className="p-5 space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Role Designation</label>
+                <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest ml-1">Role Designation</label>
                 <input
                   type="text"
                   placeholder="e.g. Regional Manager"
-                  className="w-full px-6 py-4 micro-surface border border-border/10 rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight"
+                  className="w-full h-8 px-3 micro-surface border border-border/50 rounded-lg focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground text-xs"
                   value={newRoleName}
                   onChange={(e) => setNewRoleName(e.target.value)}
                   required
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 lg:gap-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-6">
                   <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
                     <Building2 className="w-3 h-3" />
@@ -426,9 +426,9 @@ export const RoleManagement: React.FC = () => {
               <button
                 type="submit"
                 disabled={actionLoading}
-                className="w-full py-5 bg-primary text-primary-foreground font-black rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-[10px] lg:text-[11px] uppercase tracking-[0.2em]"
+                className="w-full h-9 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-xs border border-border/50"
               >
-                {actionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : (editingRoleId ? 'Update Group' : 'Initialize Role')}
+                {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingRoleId ? 'Update Group' : 'Initialize Role')}
               </button>
             </form>
           </div>
@@ -438,33 +438,33 @@ export const RoleManagement: React.FC = () => {
       {/* Assign User Modal */}
       {isAssignModalOpen && selectedRole && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center p-4 lg:p-6">
-          <div className="bg-card rounded-[2.5rem] border border-border w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 shadow-2xl">
-            <div className="p-10 border-b border-border flex items-center justify-between">
+          <div className="bg-card rounded-xl border border-border/50 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 shadow-none">
+            <div className="p-5 border-b border-border/50 flex items-center justify-between">
               <div>
-                <h2 className="text-3xl font-black text-foreground tracking-tight">Assign Identity</h2>
-                <p className="text-muted-foreground/60 font-medium mt-1 text-sm">Mapping to "{selectedRole.name}"</p>
+                <h2 className="text-lg font-semibold text-foreground tracking-tight">Assign Identity</h2>
+                <p className="text-muted-foreground font-medium mt-1 text-xs">Mapping to "{selectedRole.name}"</p>
               </div>
               <button 
                 onClick={() => {
                   setIsAssignModalOpen(false);
                   setAssignUserId('');
                 }}
-                className="p-4 hover:bg-secondary rounded-2xl transition-all"
+                className="p-2 hover:bg-secondary rounded-lg transition-all border border-border/50"
               >
-                <X className="w-6 h-6 text-muted-foreground/30" />
+                <X className="w-4 h-4 text-muted-foreground/50" />
               </button>
             </div>
 
-            <form onSubmit={handleAssignUser} className="p-10 pb-12 space-y-8 flex flex-col max-h-[70vh]">
+            <form onSubmit={handleAssignUser} className="p-5 space-y-6 flex flex-col max-h-[70vh]">
               <div className="space-y-2 flex-shrink-0">
-                <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Select User</label>
+                <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest ml-1">Select User</label>
                 <div className="relative">
                   <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/30" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
                     <input
                       type="text"
                       placeholder="Search by name or email..."
-                      className="w-full pl-12 pr-6 py-4 micro-surface border border-border/10 rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-foreground text-sm"
+                      className="w-full h-8 pl-9 pr-3 micro-surface border border-border/50 rounded-lg focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground text-xs"
                       value={assignUserId ? (profiles.find(p => p.id === assignUserId)?.email || '') : userSearchTerm}
                       onChange={(e) => {
                         setAssignUserId('');
@@ -493,12 +493,12 @@ export const RoleManagement: React.FC = () => {
                              setAssignUserId(p.id);
                              setUserSearchTerm('');
                           }}
-                          className="w-full flex flex-col items-start px-4 py-3 rounded-xl micro-surface-hover transition-colors text-left group"
+                          className="w-full flex flex-col items-start px-3 py-2 rounded-lg micro-surface-hover transition-colors text-left group"
                         >
-                        <span className="font-black text-foreground text-sm group-hover:text-primary transition-colors tracking-tight">
+                        <span className="font-medium text-foreground text-xs group-hover:text-primary transition-colors tracking-tight">
                           {p.full_name || 'No Name'}
                         </span>
-                        <span className="text-[10px] font-bold text-muted-foreground/60">{p.email}</span>
+                        <span className="text-[10px] font-medium text-muted-foreground">{p.email}</span>
                       </button>
                     ))}
                   </div>
@@ -508,9 +508,9 @@ export const RoleManagement: React.FC = () => {
               <button
                 type="submit"
                 disabled={actionLoading || !assignUserId}
-                className="w-full py-5 bg-primary text-primary-foreground font-black rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-[11px] uppercase tracking-[0.2em] flex-shrink-0 mt-8"
+                className="w-full h-9 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-xs flex-shrink-0 mt-4 border border-border/50"
               >
-                {actionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Confirm Assignment'}
+                {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm Assignment'}
               </button>
             </form>
           </div>

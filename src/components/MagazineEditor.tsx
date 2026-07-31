@@ -455,11 +455,9 @@ export const MagazineEditor: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full bg-white items-center justify-center flex-col gap-4 text-gray-900">
-        <Loader2 className="w-10 h-10 animate-spin text-gray-900" />
-        <p className="text-xs font-bold uppercase tracking-[0.4em] text-gray-500 animate-pulse">
-          Loading Editor
-        </p>
+      <div className="flex h-screen w-full bg-background items-center justify-center flex-col gap-4 text-foreground">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+        <p className="font-semibold text-lg">Loading Page Workspace...</p>
       </div>
     );
   }
@@ -571,7 +569,7 @@ export const MagazineEditor: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-full bg-white text-gray-900 overflow-hidden flex-row-reverse">
+    <div className="flex h-screen w-full bg-background text-foreground overflow-hidden flex-row-reverse">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Right Canvas Workspace (Dedicated Consumer Rendering Engine) */}

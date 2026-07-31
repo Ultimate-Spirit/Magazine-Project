@@ -98,7 +98,7 @@ export function PageBuilder({ initialPage, onSave, onCancel }: Props) {
         </div>
 
         {/* Canvas Area */}
-        <div className="flex-1 w-full h-full bg-gray-50 p-8 overflow-y-auto flex justify-center relative">
+        <div className="flex-1 w-full h-full bg-background text-foreground p-8 overflow-y-auto flex justify-center relative">
           
           {/* Data Drop Zone Overlay (when dragging over entire canvas) */}
           <div 

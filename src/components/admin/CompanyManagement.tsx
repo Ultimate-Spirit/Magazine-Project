@@ -144,32 +144,32 @@ export const CompanyManagement: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background font-sans invisible-scrollbar">
-      <header className="h-20 lg:h-24 bg-card/30 backdrop-blur-md flex items-center justify-between px-4 lg:px-12 faint-divider shrink-0 z-10">
-        <h1 className="text-2xl lg:text-3xl font-black text-foreground tracking-tight leading-none">Workspace Directory</h1>
+      <header className="h-14 bg-card/30 backdrop-blur-md flex items-center justify-between px-4 lg:px-6 faint-divider shrink-0 z-10">
+        <h1 className="text-lg font-semibold text-foreground tracking-tight leading-none">Workspace Directory</h1>
         
-        <div className="flex items-center gap-2 lg:gap-6">
+        <div className="flex items-center gap-2 lg:gap-4">
           <div className="relative hidden md:block">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/30" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
             <input 
               type="text" 
               placeholder="Filter..."
-              className="pl-11 pr-6 py-3 micro-surface border border-border/10 rounded-xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all w-48 lg:w-72 text-sm font-bold text-foreground"
+              className="h-8 pl-9 pr-3 micro-surface border border-border/50 rounded-lg focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all w-48 lg:w-64 text-xs font-medium text-foreground"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <button 
             onClick={() => openModal()}
-            className="flex items-center gap-2 px-4 lg:px-6 py-3 bg-primary text-primary-foreground font-black rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/10 uppercase tracking-widest text-[9px] lg:text-[10px]"
+            className="flex items-center gap-2 h-8 px-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-all border border-border/50 text-xs"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">New Workspace</span>
             <span className="sm:hidden">Add</span>
           </button>
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-2 lg:px-6 pb-12 pt-6 lg:pt-8 w-full max-w-full">
+      <main className="flex-1 overflow-y-auto px-2 lg:px-6 py-4 w-full max-w-full">
         {notification && (
           <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-4 duration-300 ${notification.type === 'success' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-destructive/10 text-destructive'}`}>
             <CheckCircle2 className="w-5 h-5" />
@@ -243,34 +243,34 @@ export const CompanyManagement: React.FC = () => {
       {/* Company Modal (Create/Edit) */}
       {isCompanyModalOpen && (
         <div className="fixed inset-0 bg-background/60 backdrop-blur-2xl z-[150] flex items-center justify-center p-4 lg:p-6 animate-in fade-in duration-500">
-          <div className="micro-surface rounded-[2.5rem] shadow-none w-full max-w-md overflow-hidden border border-border/10 animate-in zoom-in-95 duration-300">
-            <div className="p-8 lg:p-10 border-b border-border/10 flex items-center justify-between">
+          <div className="micro-surface rounded-xl shadow-none w-full max-w-md overflow-hidden border border-border/50 animate-in zoom-in-95 duration-300 bg-card/50">
+            <div className="p-5 border-b border-border/50 flex items-center justify-between">
               <div>
-                <h2 className="text-2xl lg:text-3xl font-black text-foreground tracking-tighter">
+                <h2 className="text-lg font-semibold text-foreground tracking-tight">
                   {editingCompany ? 'Edit Identity' : 'New Workspace'}
                 </h2>
-                <p className="text-muted-foreground/60 font-medium mt-1 text-sm">
+                <p className="text-xs text-muted-foreground mt-1">
                   {editingCompany ? 'Update organization details' : 'Register a new organization'}
                 </p>
               </div>
               <button 
                 onClick={() => setIsCompanyModalOpen(false)}
-                className="p-4 hover:bg-secondary rounded-2xl transition-all group"
+                className="p-2 hover:bg-secondary rounded-lg transition-all group"
               >
-                <X className="w-6 h-6 text-muted-foreground/30 group-hover:text-foreground" />
+                <X className="w-4 h-4 text-muted-foreground/50 group-hover:text-foreground" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveCompany} className="p-8 lg:p-10 space-y-8 lg:space-y-10">
+            <form onSubmit={handleSaveCompany} className="p-5 space-y-5">
               <div className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Company Name</label>
                   <div className="relative">
-                    <Building2 className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30" />
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
                     <input
                       type="text"
                       placeholder="Enterprise Name"
-                      className="w-full pl-14 pr-6 py-4 micro-surface border border-border/10 rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight"
+                      className="w-full h-8 pl-9 pr-3 micro-surface border border-border/50 rounded-lg focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all text-xs font-medium text-foreground"
                       value={newCompanyName}
                       onChange={(e) => setNewCompanyName(e.target.value)}
                       required
@@ -280,12 +280,12 @@ export const CompanyManagement: React.FC = () => {
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Identity Visual (Logo)</label>
-                  <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 lg:w-20 lg:h-20 micro-surface rounded-2xl border-2 border-dashed border-border/20 flex items-center justify-center overflow-hidden">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 micro-surface rounded-xl border border-dashed border-border/50 flex items-center justify-center overflow-hidden">
                       {logoPreview ? (
                         <img src={logoPreview} alt="Preview" className="w-full h-full object-contain p-1" />
                       ) : (
-                        <Building2 className="w-6 h-6 lg:w-8 lg:h-8 text-muted-foreground/20" />
+                        <Building2 className="w-4 h-4 text-muted-foreground/50" />
                       )}
                     </div>
                     <div className="flex-1">
@@ -298,7 +298,7 @@ export const CompanyManagement: React.FC = () => {
                       />
                       <label 
                         htmlFor="logo-upload"
-                        className="inline-flex px-4 py-2 micro-surface border border-border/10 rounded-xl text-[9px] lg:text-[10px] font-black text-foreground uppercase tracking-widest hover:bg-secondary cursor-pointer transition-all"
+                        className="inline-flex h-8 px-3 items-center micro-surface border border-border/50 rounded-lg text-xs font-medium text-foreground hover:bg-secondary cursor-pointer transition-all"
                       >
                         Choose Image
                       </label>
@@ -311,9 +311,9 @@ export const CompanyManagement: React.FC = () => {
               <button
                 type="submit"
                 disabled={actionLoading}
-                className="w-full py-5 bg-primary text-primary-foreground font-black rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-[10px] lg:text-[11px] uppercase tracking-[0.2em] shadow-lg shadow-primary/10"
+                className="w-full py-3 h-10 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-xs border border-border/50"
               >
-                {actionLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : editingCompany ? 'Update Workspace' : 'Initialize Workspace'}
+                {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : editingCompany ? 'Update Workspace' : 'Initialize Workspace'}
               </button>
             </form>
           </div>

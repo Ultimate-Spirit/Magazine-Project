@@ -94,17 +94,17 @@ export const ActivityLog: React.FC = () => {
     switch (action) {
       case 'CREATE':
       case 'CREATED':
-        return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400">CREATE</span>;
+        return <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400">CREATE</span>;
       case 'DELETE':
       case 'DELETED':
-        return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400">DELETE</span>;
+        return <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400">DELETE</span>;
       case 'EXPORT':
-        return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">EXPORT</span>;
+        return <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">EXPORT</span>;
       case 'UPDATE':
       case 'UPDATED':
-        return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400">UPDATE</span>;
+        return <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400">UPDATE</span>;
       default:
-        return <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-400">{action}</span>;
+        return <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-400">{action}</span>;
     }
   };
 
@@ -122,38 +122,38 @@ export const ActivityLog: React.FC = () => {
   return (
     <div className="flex-1 w-full h-full flex flex-col gap-6 overflow-hidden">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-10 bg-gray-50/95 dark:bg-background/95 backdrop-blur-md pb-4 border-b border-border">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md pb-2 border-b border-border/50">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/10 rounded-lg text-primary">
-              <Activity className="w-5 h-5" />
+              <Activity className="w-4 h-4" />
             </div>
             <div>
-              <h1 className="text-xl font-black">System Activity</h1>
-              <p className="text-xs text-muted-foreground font-medium mt-0.5">Track all state-changing actions</p>
+              <h1 className="text-lg font-semibold text-foreground tracking-tight leading-none">System Activity</h1>
+              <p className="text-[10px] text-muted-foreground font-medium mt-1 uppercase tracking-widest">Track all state-changing actions</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             {/* Search Input */}
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search user or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 pr-4 py-2 text-sm bg-white dark:bg-slate-900 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all w-full md:w-64"
+                className="h-8 pl-8 pr-3 text-xs font-medium bg-background border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all w-full md:w-64"
               />
             </div>
 
             {/* Action Filter */}
             <div className="relative">
-              <Filter className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Filter className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <select
                 value={actionFilter}
                 onChange={(e) => setActionFilter(e.target.value)}
-                className="pl-9 pr-8 py-2 text-sm bg-white dark:bg-slate-900 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all appearance-none cursor-pointer"
+                className="h-8 pl-8 pr-6 text-xs font-medium bg-background border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all appearance-none cursor-pointer"
               >
                 <option value="All">All Actions</option>
                 <option value="CREATE">Create</option>
@@ -166,7 +166,7 @@ export const ActivityLog: React.FC = () => {
             {/* Generate Test Log Button */}
             <button
               onClick={handleGenerateTestLog}
-              className="px-4 py-2 text-sm font-bold bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all whitespace-nowrap"
+              className="h-8 px-3 text-xs font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all whitespace-nowrap border border-border/50"
             >
               Generate Test Log
             </button>
@@ -187,28 +187,28 @@ export const ActivityLog: React.FC = () => {
       )}
 
       {/* Data Table UI */}
-      <div className="flex-1 overflow-auto bg-white dark:bg-slate-950 border border-border rounded-2xl shadow-sm">
-        <table className="w-full table-fixed text-left text-sm whitespace-nowrap">
-          <thead className="sticky top-0 bg-slate-50 dark:bg-slate-900 z-10 border-b border-border text-muted-foreground font-bold text-xs uppercase tracking-wider">
+      <div className="flex-1 overflow-auto bg-background dark:bg-slate-950 border border-border/50 rounded-lg">
+        <table className="w-full table-fixed text-left text-xs whitespace-nowrap">
+          <thead className="sticky top-0 bg-slate-50 dark:bg-slate-900 z-10 border-b border-border text-muted-foreground font-semibold uppercase tracking-wider text-[10px]">
             <tr>
-              <th className="w-[15%] py-4 px-6 font-semibold">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" /> Timestamp
+              <th className="w-[15%] py-2 px-3">
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" /> Timestamp
                 </div>
               </th>
-              <th className="w-[25%] py-4 px-6 font-semibold">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4" /> User
+              <th className="w-[25%] py-2 px-3">
+                <div className="flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5" /> User
                 </div>
               </th>
-              <th className="w-[15%] py-4 px-6 font-semibold">
-                <div className="flex items-center gap-2">
-                  <Activity className="w-4 h-4" /> Action
+              <th className="w-[15%] py-2 px-3">
+                <div className="flex items-center gap-1.5">
+                  <Activity className="w-3.5 h-3.5" /> Action
                 </div>
               </th>
-              <th className="w-[45%] py-4 px-6 font-semibold">
-                <div className="flex items-center gap-2">
-                  <Info className="w-4 h-4" /> Details
+              <th className="w-[45%] py-2 px-3">
+                <div className="flex items-center gap-1.5">
+                  <Info className="w-3.5 h-3.5" /> Details
                 </div>
               </th>
             </tr>
@@ -231,25 +231,25 @@ export const ActivityLog: React.FC = () => {
               </tr>
             ) : filteredLogs.length > 0 ? (
               filteredLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
-                  <td className="py-3 px-6 truncate text-muted-foreground">
+                <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors text-xs">
+                  <td className="py-2 px-3 truncate text-muted-foreground">
                     {formatDate(log.created_at)}
                   </td>
-                  <td className="py-3 px-6 truncate">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0 uppercase">
+                  <td className="py-2 px-3 truncate">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px] shrink-0 uppercase">
                         {getSafeUserEmail(log)[0] || 'U'}
                       </div>
                       <div className="flex flex-col min-w-0">
-                        <span className="font-bold text-foreground truncate">{getSafeUserName(log)}</span>
-                        <span className="text-xs text-muted-foreground truncate">{getSafeUserEmail(log)}</span>
+                        <span className="font-semibold text-foreground truncate">{getSafeUserName(log)}</span>
+                        <span className="text-[10px] text-muted-foreground truncate">{getSafeUserEmail(log)}</span>
                       </div>
                     </div>
                   </td>
-                  <td className="py-3 px-6 truncate">
+                  <td className="py-2 px-3 truncate">
                     {getActionBadge(getSafeAction(log))}
                   </td>
-                  <td className="py-3 px-6 truncate text-muted-foreground hover:whitespace-normal group">
+                  <td className="py-2 px-3 truncate text-muted-foreground hover:whitespace-normal group">
                     <span className="line-clamp-1 group-hover:line-clamp-none transition-all">{getSafeDetails(log)}</span>
                   </td>
                 </tr>

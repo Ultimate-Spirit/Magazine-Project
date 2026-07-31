@@ -326,11 +326,11 @@ export function FoldersView({ onSelectCompany }: Props) {
 
           <div className="flex flex-wrap items-center gap-4 w-full md:w-auto mt-4 md:mt-0">
             <div className="relative group w-full md:w-auto flex-1 md:flex-none">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/30 transition-colors group-focus-within:text-primary" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50 transition-colors group-focus-within:text-primary" />
               <input
                 type="text"
                 placeholder="Find directory..."
-                className="w-full pl-12 pr-6 py-4 micro-surface border border-border/10 rounded-2xl text-sm font-black text-foreground focus:ring-2 focus:ring-primary/10 outline-none transition-all md:w-64 placeholder:text-muted-foreground/30"
+                className="w-full h-8 pl-9 pr-3 micro-surface border border-border/50 rounded-lg text-xs font-medium text-foreground focus:ring-2 focus:ring-primary/10 outline-none transition-all md:w-64 placeholder:text-muted-foreground/50"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -338,10 +338,10 @@ export function FoldersView({ onSelectCompany }: Props) {
             <div className="flex items-center gap-3 w-full md:w-auto">
               <button 
                 onClick={() => fetchData()}
-                className="p-4 micro-surface rounded-2xl text-muted-foreground/40 hover:text-primary transition-all border border-border/10"
+                className="w-8 h-8 flex items-center justify-center micro-surface rounded-lg text-muted-foreground/50 hover:text-primary transition-all border border-border/50"
                 title="Sync Workspace"
               >
-                <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
               </button>
               {permissions?.can_create_folders && (
                 <button 
@@ -352,9 +352,9 @@ export function FoldersView({ onSelectCompany }: Props) {
                     setSelectedLastPageId('');
                     setIsCreateModalOpen(true);
                   }}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-black rounded-2xl hover:opacity-90 transition-all uppercase tracking-widest text-[10px] shadow-lg shadow-primary/10"
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 h-8 px-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-all text-xs border border-border/50 shadow-none"
                 >
-                  <Plus className="w-5 h-5" />
+                  <Plus className="w-3.5 h-3.5" />
                   New Directory
                 </button>
               )}
@@ -366,16 +366,16 @@ export function FoldersView({ onSelectCompany }: Props) {
           <div className="grid lg:grid-cols-12 gap-10 items-start">
             <div className="lg:col-span-8 xl:col-span-9 space-y-10">
               {(!folders || folders.length === 0) ? (
-                <div className="micro-surface rounded-[3rem] py-32 text-center border border-border/10">
-                  <div className="w-24 h-24 bg-secondary rounded-[2rem] flex items-center justify-center mx-auto mb-10 border border-border/5">
-                    <FolderIcon className="w-10 h-10 text-muted-foreground/20" />
+                <div className="micro-surface rounded-xl p-6 text-center border border-border/50">
+                  <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center mx-auto mb-4 border border-border/50">
+                    <FolderIcon className="w-5 h-5 text-muted-foreground/50" />
                   </div>
-                  <h3 className="text-3xl font-display font-black text-foreground mb-3 tracking-tighter">Empty Context</h3>
-                  <p className="text-muted-foreground/50 font-medium mb-12 max-w-sm mx-auto">Start your journey by initializing a new publication directory.</p>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Empty Context</h3>
+                  <p className="text-xs text-muted-foreground mb-6 max-w-sm mx-auto">Start your journey by initializing a new publication directory.</p>
                   {permissions?.can_create_folders && (
                     <button 
                       onClick={() => setIsCreateModalOpen(true)}
-                      className="px-10 py-5 micro-surface border border-border/10 rounded-2xl font-black text-foreground hover:bg-secondary transition-all uppercase tracking-widest text-[10px]"
+                      className="h-8 px-3 micro-surface border border-border/50 rounded-lg font-medium text-xs text-foreground hover:bg-secondary transition-all"
                     >
                       Initialize Hub
                     </button>
@@ -396,12 +396,12 @@ export function FoldersView({ onSelectCompany }: Props) {
                   {filteredFolders.map((folder) => (
                     <div
                       key={folder.id}
-                      className="group relative bento-card micro-surface micro-surface-hover flex flex-col justify-between min-h-[220px] lg:min-h-[260px] cursor-pointer overflow-hidden border border-border/10 hover:border-primary/30 transition-all duration-500 p-4 lg:p-6"
+                      className="group relative micro-surface micro-surface-hover flex flex-col justify-between min-h-[140px] cursor-pointer overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-500 p-4 lg:p-5 rounded-xl"
                       onClick={() => navigate(`/folder/${folder.id}`)}
                     >
                       <div className="flex items-start justify-between">
-                        <div className="w-14 h-14 lg:w-16 lg:h-16 micro-surface rounded-xl lg:rounded-2xl flex items-center justify-center text-muted-foreground/30 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 border border-border/10">
-                          <FolderIcon className="w-7 h-7 lg:w-8 lg:h-8" />
+                        <div className="w-10 h-10 micro-surface rounded-lg flex items-center justify-center text-muted-foreground/50 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 border border-border/50">
+                          <FolderIcon className="w-5 h-5" strokeWidth={1.5} />
                         </div>
 
                         <div className="flex items-center gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 lg:translate-y-2 lg:group-hover:translate-y-0">
@@ -412,10 +412,10 @@ export function FoldersView({ onSelectCompany }: Props) {
                                 setEditingFolder(folder);
                                 setFolderNameInput(folder.name);
                               }}
-                              className="p-2.5 micro-surface border border-border/10 rounded-xl text-muted-foreground/40 hover:text-primary transition-all"
+                              className="p-2 micro-surface border border-border/50 rounded-lg text-muted-foreground/50 hover:text-primary transition-all"
                               title="Rename"
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <Edit2 className="w-3.5 h-3.5" />
                             </button>
                           )}
                           {(permissions?.can_delete_all_folders || (permissions?.can_delete_own_folders && folder.created_by === profile?.id)) && (
@@ -424,17 +424,17 @@ export function FoldersView({ onSelectCompany }: Props) {
                                 e.stopPropagation();
                                 setFolderToDelete(folder);
                               }}
-                              className="p-2.5 micro-surface border border-border/10 rounded-xl text-muted-foreground/40 hover:text-destructive transition-all"
+                              className="p-2 micro-surface border border-border/50 rounded-lg text-muted-foreground/50 hover:text-destructive transition-all"
                               title="Purge"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           )}
                         </div>
                       </div>
 
                       <div>
-                        <h3 className="text-xl lg:text-2xl font-display font-black text-foreground mb-2 lg:mb-3 group-hover:text-primary transition-colors tracking-tighter line-clamp-1 pr-4">
+                        <h3 className="text-base font-semibold text-foreground mb-2 lg:mb-2 group-hover:text-primary transition-colors tracking-tight line-clamp-1 pr-4">
                           {folder.name || 'Unnamed Directory'}
                         </h3>
                         <div className="mb-3 flex items-center gap-2">
@@ -455,20 +455,20 @@ export function FoldersView({ onSelectCompany }: Props) {
               )}
             </div>
 
-            <aside className="lg:col-span-4 xl:col-span-3 space-y-6 lg:space-y-8">
+            <aside className="lg:col-span-4 xl:col-span-3 space-y-4 lg:space-y-6">
               <div className="grid grid-cols-2 gap-3 lg:gap-4">
-                <div className="micro-surface rounded-2xl lg:rounded-[2rem] p-6 lg:p-8 border border-border/10">
-                  <p className="text-[9px] lg:text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] mb-3 lg:mb-4">Users</p>
-                  <p className="text-2xl lg:text-3xl font-black text-foreground tracking-tight">{stats.collaborators || 0}</p>
+                <div className="micro-surface rounded-xl p-4 border border-border/50">
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-1">Users</p>
+                  <p className="text-lg font-semibold text-foreground tracking-tight">{stats.collaborators || 0}</p>
                 </div>
-                <div className="micro-surface rounded-2xl lg:rounded-[2rem] p-6 lg:p-8 border border-border/10">
-                  <p className="text-[9px] lg:text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] mb-3 lg:mb-4">Pages</p>
-                  <p className="text-2xl lg:text-3xl font-black text-foreground tracking-tight">{stats.publications || 0}</p>
+                <div className="micro-surface rounded-xl p-4 border border-border/50">
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-1">Pages</p>
+                  <p className="text-lg font-semibold text-foreground tracking-tight">{stats.publications || 0}</p>
                 </div>
               </div>
 
-              <div className="micro-surface rounded-[2rem] lg:rounded-[2.5rem] border border-border/10 overflow-hidden flex flex-col min-h-[300px] lg:min-h-[400px]">
-                <div className="p-5 lg:p-6 faint-divider flex items-center justify-between bg-card/20">
+              <div className="micro-surface rounded-xl border border-border/50 overflow-hidden flex flex-col min-h-[250px] lg:min-h-[350px]">
+                <div className="p-4 faint-divider flex items-center justify-between bg-card/20">
                   <div className="flex items-center gap-3">
                     <Activity size={14} className="text-primary/60" />
                     <span className="text-[9px] lg:text-[10px] font-black text-foreground uppercase tracking-widest">Event Stream</span>
@@ -515,12 +515,12 @@ export function FoldersView({ onSelectCompany }: Props) {
           }}
           variant="info"
         >
-          <form onSubmit={editingFolder ? handleUpdateFolder : handleCreateFolder} className="mt-8 space-y-6">
+          <form onSubmit={editingFolder ? handleUpdateFolder : handleCreateFolder} className="mt-6 space-y-4">
             <div className="space-y-2 text-left">
-              <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Directory Name</label>
+              <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest ml-1">Directory Name</label>
               <input
                 autoFocus
-                className="w-full px-6 py-4 micro-surface border border-border/10 rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight"
+                className="w-full h-8 px-3 micro-surface border border-border/50 rounded-lg focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground text-xs"
                 value={folderNameInput}
                 onChange={(e) => setFolderNameInput(e.target.value)}
                 placeholder="e.g. Q4 Executive Reports"
@@ -530,9 +530,9 @@ export function FoldersView({ onSelectCompany }: Props) {
             {!editingFolder && (
               <>
                 <div className="space-y-2 text-left">
-                  <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Blueprint Template (Core Content)</label>
+                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest ml-1">Blueprint Template</label>
                   <select
-                    className="w-full px-6 py-4 micro-surface border border-border/10 rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight appearance-none cursor-pointer"
+                    className="w-full h-8 px-3 micro-surface border border-border/50 rounded-lg focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground text-xs appearance-none cursor-pointer"
                     value={selectedBundleId}
                     onChange={(e) => setSelectedBundleId(e.target.value)}
                   >
@@ -543,10 +543,10 @@ export function FoldersView({ onSelectCompany }: Props) {
                   </select>
                 </div>
 
-                <div className="space-y-2 text-left mt-4">
-                  <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Cover Page Template</label>
+                <div className="space-y-2 text-left mt-3">
+                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest ml-1">Cover Page Template</label>
                   <select
-                    className="w-full px-6 py-4 micro-surface border border-border/10 rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight appearance-none cursor-pointer"
+                    className="w-full h-8 px-3 micro-surface border border-border/50 rounded-lg focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground text-xs appearance-none cursor-pointer"
                     value={selectedCoverPageId}
                     onChange={(e) => setSelectedCoverPageId(e.target.value)}
                   >
@@ -557,10 +557,10 @@ export function FoldersView({ onSelectCompany }: Props) {
                   </select>
                 </div>
 
-                <div className="space-y-2 text-left mt-4">
-                  <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1">Last Page Template</label>
+                <div className="space-y-2 text-left mt-3">
+                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest ml-1">Last Page Template</label>
                   <select
-                    className="w-full px-6 py-4 micro-surface border border-border/10 rounded-2xl focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-foreground text-sm tracking-tight appearance-none cursor-pointer"
+                    className="w-full h-8 px-3 micro-surface border border-border/50 rounded-lg focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground text-xs appearance-none cursor-pointer"
                     value={selectedLastPageId}
                     onChange={(e) => setSelectedLastPageId(e.target.value)}
                   >
@@ -576,9 +576,9 @@ export function FoldersView({ onSelectCompany }: Props) {
             <button
               type="submit"
               disabled={isActionLoading || !folderNameInput.trim() || (!editingFolder && (!selectedCoverPageId || !selectedLastPageId))}
-              className="w-full py-5 bg-primary text-primary-foreground font-black rounded-2xl hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-3 text-[11px] uppercase tracking-[0.2em]"
+              className="w-full h-9 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-xs border border-border/50"
             >
-              {isActionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (editingFolder ? "Apply Changes" : "Initialize Directory")}
+              {isActionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingFolder ? "Apply Changes" : "Initialize Directory")}
             </button>
           </form>
         </ConfirmModal>

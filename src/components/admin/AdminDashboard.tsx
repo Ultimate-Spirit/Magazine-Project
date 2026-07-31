@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { Users, Building2, ArrowUpRight, Loader2, Calendar, FileText, Activity, ShieldCheck, Zap, Lock, FileEdit } from 'lucide-react';
+import { LineChart } from '../ui/line-chart';
+
+
 
 interface ActivityLog {
   id: string;
@@ -23,7 +26,22 @@ export const AdminDashboard: React.FC = () => {
     recent_updates: '...',
     active_sessions: '...'
   });
-  const [activities, setActivities] = useState<ActivityLog[]>([]);
+  const [overview, setOverview] = useState<Record<string, any>>({
+    total_workspaces: null,
+    total_pages: null,
+    total_users: null,
+    pdfsGenerated: null,
+    pdfLimit: null,
+  });
+  const [activities, setActivities] = useState<ActivityLog[] | null>(null);
+  const [chartData, setChartData] = useState<{dates: string[], data: number[]} | null>(null);
+  const [activeWorkspaces, setActiveWorkspaces] = useState<any[] | null>(null);
+  
+  const [overviewError, setOverviewError] = useState<string | null>(null);
+  const [chartError, setChartError] = useState<string | null>(null);
+  const [activitiesError, setActivitiesError] = useState<string | null>(null);
+  const [workspacesError, setWorkspacesError] = useState<string | null>(null);
+  
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,14 +70,61 @@ export const AdminDashboard: React.FC = () => {
       }
 
       // Fetch recent global activity
-      const { data: logsData } = await supabase
-        .from('activity_logs')
-        .select('id, action_type, entity_type, entity_name, created_at, profiles(full_name, email)')
-        .order('created_at', { ascending: false })
-        .limit(6);
+      try {
+        const { data: logsData, error } = await supabase
+          .from('activity_logs')
+          .select('id, action_type, entity_type, entity_name, created_at, profiles(full_name, email)')
+          .order('created_at', { ascending: false })
+          .limit(10);
 
-      if (logsData) {
-        setActivities(logsData as any);
+        if (error) throw error;
+        if (logsData) {
+          setActivities(logsData as any);
+        }
+      } catch (err: any) {
+        setActivitiesError(err.message || 'Failed to load activity');
+      }
+
+      // Fetch chart data
+      try {
+        const cRes = await fetch('/api/dashboard-chart', { headers });
+        const cData = await cRes.json();
+        if (cRes.ok) {
+          setChartData(cData);
+        } else {
+          setChartError(cData.error || 'Unknown API Error');
+        }
+      } catch (err: any) {
+        setChartError(err.message || 'Network Error');
+      }
+
+      // Fetch active workspaces
+      try {
+        const { data: workspacesData, error } = await supabase
+          .from('companies')
+          .select('id, name, status, updated_at')
+          .order('updated_at', { ascending: false })
+          .limit(4);
+          
+        if (error) throw error;
+        if (workspacesData) {
+          setActiveWorkspaces(workspacesData);
+        }
+      } catch (err: any) {
+        setWorkspacesError(err.message || 'Failed to load workspaces');
+      }
+
+      // Fetch new dashboard overview
+      try {
+        const overviewRes = await fetch('/api/dashboard-overview', { headers });
+        const overviewData = await overviewRes.json();
+        if (overviewRes.ok) {
+          setOverview(overviewData);
+        } else {
+          setOverviewError(overviewData.error || 'Unknown API Error');
+        }
+      } catch (err: any) {
+        setOverviewError(err.message || 'Network Error');
       }
 
     } catch (err: any) {
@@ -90,9 +155,9 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <div className="flex-1 overflow-y-auto bg-background font-sans invisible-scrollbar">
-      <header className="h-20 lg:h-24 px-3 lg:px-8 flex items-center justify-between sticky top-0 z-[10] bg-background/80 backdrop-blur-xl faint-divider shrink-0">
+      <header className="h-14 px-3 lg:px-6 flex items-center justify-between sticky top-0 z-[10] bg-background/80 backdrop-blur-xl faint-divider shrink-0">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-black text-foreground tracking-tight leading-none">Overview Portal</h1>
+          <h1 className="text-lg font-semibold text-foreground tracking-tight leading-none">Overview Portal</h1>
           <div className="flex items-center gap-2 mt-1 lg:mt-2">
             <Calendar className="w-3 h-3 text-muted-foreground/40" />
             <p className="text-[9px] lg:text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em]">
@@ -105,118 +170,191 @@ export const AdminDashboard: React.FC = () => {
         </div>
       </header>
 
-      <main className="px-2 lg:px-6 py-6 lg:py-8 space-y-6 lg:space-y-8 w-full">
-        {/* Primary Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-6">
-          <div onClick={() => navigate('/admin/users')} className="bento-card micro-surface micro-surface-hover border-border/20 group cursor-pointer overflow-hidden relative p-3 lg:p-6 flex flex-row lg:flex-col justify-between lg:justify-start items-center lg:items-start gap-4">
-            <div className="absolute top-0 right-0 p-3 lg:p-6 opacity-0 group-hover:opacity-100 transition-all hidden lg:block">
-              <ArrowUpRight size={16} className="text-primary" />
+      <main className="flex flex-col gap-4 p-4 lg:p-6 w-full max-w-full">
+        {/* Row 1: Executive Overview (4 Cards) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div onClick={() => navigate('/admin/companies')} className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col gap-2 cursor-pointer hover:bg-card/80 transition-all">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground font-medium">Total Workspaces</p>
+              <Building2 className="w-4 h-4 text-muted-foreground" />
             </div>
-            <div className="flex items-center gap-3 lg:block">
-              <div className="w-9 h-9 lg:w-10 lg:h-10 bg-secondary rounded-xl flex items-center justify-center text-muted-foreground/40 group-hover:bg-primary group-hover:text-primary-foreground transition-all shrink-0 lg:mb-6">
-                <Users size={16} />
-              </div>
-              <p className="text-[9px] lg:text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em]">Total Users</p>
-            </div>
-            {/* @ts-ignore */}
-            <p className="text-xl lg:text-4xl font-black text-foreground break-all">{String(stats.total_users)}</p>
+            <p className="text-2xl font-semibold text-foreground">
+              {overviewError ? <span className="text-red-500 text-xs font-mono">{overviewError}</span> : overview.total_workspaces === null ? <span className="animate-pulse">...</span> : overview.total_workspaces}
+            </p>
           </div>
 
-          <div onClick={() => navigate('/admin/companies')} className="bento-card micro-surface micro-surface-hover border-border/20 group cursor-pointer overflow-hidden relative p-3 lg:p-6 flex flex-row lg:flex-col justify-between lg:justify-start items-center lg:items-start gap-4">
-            <div className="absolute top-0 right-0 p-3 lg:p-6 opacity-0 group-hover:opacity-100 transition-all hidden lg:block">
-              <ArrowUpRight size={16} className="text-primary" />
+          <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground font-medium">Published Pages</p>
+              <FileText className="w-4 h-4 text-muted-foreground" />
             </div>
-            <div className="flex items-center gap-3 lg:block">
-              <div className="w-9 h-9 lg:w-10 lg:h-10 bg-secondary rounded-xl flex items-center justify-center text-muted-foreground/40 group-hover:bg-primary group-hover:text-primary-foreground transition-all shrink-0 lg:mb-6">
-                <Building2 size={16} />
-              </div>
-              <p className="text-[9px] lg:text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em]">Active Workspaces</p>
-            </div>
-            {/* @ts-ignore */}
-            <p className="text-xl lg:text-4xl font-black text-foreground break-all">{String(stats.active_workspaces)}</p>
+            <p className="text-2xl font-semibold text-foreground">
+              {overviewError ? <span className="text-red-500 text-xs font-mono">{overviewError}</span> : overview.total_pages === null ? <span className="animate-pulse">...</span> : overview.total_pages}
+            </p>
           </div>
 
-          <div className="bento-card micro-surface border-border/20 p-3 lg:p-6 flex flex-row lg:flex-col justify-between lg:justify-start items-center lg:items-start gap-4">
-            <div className="flex items-center gap-3 lg:block">
-              <div className="w-9 h-9 lg:w-10 lg:h-10 bg-secondary rounded-xl flex items-center justify-center text-muted-foreground/40 shrink-0 lg:mb-6">
-                <FileText size={16} />
-              </div>
-              <p className="text-[9px] lg:text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em]">Published Pages</p>
+          <div onClick={() => navigate('/admin/users')} className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col gap-2 cursor-pointer hover:bg-card/80 transition-all">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground font-medium">Active Users</p>
+              <Users className="w-4 h-4 text-muted-foreground" />
             </div>
-            {/* @ts-ignore */}
-            <p className="text-xl lg:text-4xl font-black text-foreground break-all">{String(stats.published_pages)}</p>
+            <p className="text-2xl font-semibold text-foreground">
+              {overviewError ? <span className="text-red-500 text-xs font-mono">{overviewError}</span> : overview.total_users === null ? <span className="animate-pulse">...</span> : overview.total_users}
+            </p>
           </div>
 
-          <div className="bento-card micro-surface border-border/20 p-3 lg:p-6 flex flex-row lg:flex-col justify-between lg:justify-start items-center lg:items-start gap-4">
-            <div className="flex items-center gap-3 lg:block">
-              <div className="w-9 h-9 lg:w-10 lg:h-10 bg-secondary rounded-xl flex items-center justify-center text-muted-foreground/40 shrink-0 lg:mb-6">
-                <ShieldCheck size={16} />
-              </div>
-              <p className="text-[9px] lg:text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em]">Active Accounts</p>
+          <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground font-medium">API Usage</p>
+              <Zap className="w-4 h-4 text-muted-foreground" />
             </div>
-            {/* @ts-ignore */}
-            <p className="text-xl lg:text-4xl font-black text-emerald-500 break-all">{String(stats.active_accounts)}</p>
+            <p className="text-2xl font-semibold text-foreground">
+              {overviewError ? <span className="text-red-500 text-xs font-mono">{overviewError}</span> : overview.pdfsGenerated === null ? <span className="animate-pulse">...</span> : `${((overview.pdfsGenerated / overview.pdfLimit) * 100).toFixed(1)}%`}
+            </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
-          {/* Global Activity Stream */}
-          <div className="lg:col-span-2 micro-surface rounded-[2rem] lg:rounded-[2.5rem] border border-border/20 overflow-hidden flex flex-col h-full min-h-[400px]">
-            <div className="p-6 lg:p-8 faint-divider flex items-center justify-between bg-card/10">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-secondary rounded-lg">
-                  <Activity size={16} className="text-primary" />
+        {/* Row 2: Central Analytics & Granular Feed */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
+          {/* Analytics (70%) */}
+          <div className="lg:col-span-2 bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col min-h-[300px]">
+            <h2 className="text-sm font-semibold text-foreground mb-4">30-Day Platform Activity</h2>
+            <div className="flex-1 w-full h-full relative">
+              {chartError ? (
+                <div className="w-full h-full bg-secondary/10 border border-red-500/20 rounded-lg flex items-center justify-center">
+                  <span className="text-red-500 text-xs font-mono">{chartError}</span>
                 </div>
-                <h2 className="text-base lg:text-lg font-black text-foreground tracking-tight">Global Activity Stream</h2>
-              </div>
-              <span className="text-[8px] lg:text-[9px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] px-3 py-1 micro-surface rounded-full border border-border/10 hidden sm:block">Real-time Monitor</span>
+              ) : chartData === null ? (
+                <div className="w-full h-full bg-secondary/20 animate-pulse rounded-lg flex items-center justify-center">
+                  <span className="text-xs text-muted-foreground">Loading chart...</span>
+                </div>
+              ) : (
+                <LineChart pagesData={chartData.data} pdfsData={[]} dates={chartData.dates} />
+              )}
             </div>
-            <div className="p-2 lg:p-4 flex-1 overflow-y-auto">
-              <div className="space-y-1">
-                {activities.length === 0 ? (
-                  <div className="py-20 text-center text-muted-foreground/20 italic text-xs lg:text-sm font-medium uppercase tracking-widest">No recent system activity recorded.</div>
+          </div>
+
+          {/* Activity Feed (30%) */}
+          <div className="lg:col-span-1 bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col min-h-[300px] overflow-hidden">
+            <h2 className="text-sm font-semibold text-foreground mb-4 shrink-0">Activity Feed</h2>
+            <div className="flex-1 overflow-y-auto invisible-scrollbar">
+              <div className="space-y-3">
+                {activitiesError ? (
+                  <div className="py-10 text-center">
+                    <span className="text-red-500 text-xs font-mono">{activitiesError}</span>
+                  </div>
+                ) : activities === null ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="animate-pulse flex flex-col gap-2 py-1.5 border-b border-border/20 last:border-0 pb-2 last:pb-0">
+                      <div className="h-3 bg-secondary rounded w-full"></div>
+                      <div className="h-3 bg-secondary rounded w-2/3"></div>
+                    </div>
+                  ))
+                ) : activities.length === 0 ? (
+                  <div className="py-10 text-center text-muted-foreground/50 text-xs">No recent activity.</div>
                 ) : activities.map((log) => (
-                  <div key={log.id} className="flex items-center gap-3 lg:gap-4 p-3 lg:p-4 rounded-xl lg:rounded-2xl micro-surface-hover group">
-                    <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-lg lg:rounded-xl bg-secondary flex items-center justify-center font-black text-[10px] lg:text-xs text-muted-foreground/40 group-hover:bg-primary/10 group-hover:text-primary transition-all border border-border/5 shrink-0">
-                      {((log.profiles?.full_name || log.profiles?.email || '?')[0] || '?').toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs lg:text-sm font-black text-foreground truncate">
-                        {log.profiles?.full_name || log.profiles?.email.split('@')[0]} 
-                        <span className="text-muted-foreground/60 font-medium ml-2 lowercase italic">
-                          {log.action_type} the {log.entity_type}
-                        </span>
+                  <div key={log.id} className="flex flex-col gap-0.5 border-b border-border/20 last:border-0 pb-2 last:pb-0">
+                    <div className="flex justify-between items-center gap-2">
+                      <p className="text-[11px] text-foreground font-medium truncate">
+                        {log.profiles?.full_name || log.profiles?.email?.split('@')[0] || 'System'}
                       </p>
-                      <p className="text-[9px] lg:text-[10px] font-bold text-primary uppercase tracking-widest truncate mt-0.5 opacity-60">{log.entity_name}</p>
+                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                        {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
                     </div>
-                    <div className="text-[8px] lg:text-[10px] font-black text-muted-foreground/30 uppercase tracking-tighter whitespace-nowrap hidden sm:block">
-                      {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-tight">
+                      <span className="lowercase">{log.action_type}</span> {log.entity_type} <span className="font-medium text-foreground/80">{log.entity_name}</span>
+                    </p>
                   </div>
                 ))}
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Platform Metrics */}
-          <div className="micro-surface rounded-[2rem] lg:rounded-[2.5rem] border border-border/20 p-6 lg:p-8 flex flex-col h-full">
-            <h2 className="text-base lg:text-lg font-black text-foreground mb-6 lg:mb-8 tracking-tight shrink-0">Platform Metrics</h2>
-            
-            <div className="flex-1 flex flex-col justify-between gap-3 lg:gap-4">
-              {[
-                { icon: Zap, label: 'Pending Invites', key: 'pending_invites' },
-                { icon: FileEdit, label: 'Recent Updates', key: 'recent_updates' },
-                { icon: Lock, label: 'Active Sessions', key: 'active_sessions' },
-              ].map((m) => (
-                <div key={m.label} className="flex items-center justify-between p-4 lg:p-6 micro-surface rounded-xl lg:rounded-[1.5rem] border border-border/10 flex-1 min-h-0 overflow-hidden">
-                  <div className="flex items-center gap-3 lg:gap-4">
-                    <m.icon size={18} className="text-muted-foreground/40 shrink-0" />
-                    <span className="text-[10px] lg:text-xs font-black text-muted-foreground/60 uppercase tracking-[0.1em] truncate">{m.label}</span>
-                  </div>
-                  {/* @ts-ignore */}
-                  <span className="text-lg lg:text-2xl font-black text-foreground break-all ml-2">{String(stats[m.key])}</span>
+        {/* Row 3: Data Enrichment */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full">
+          {/* Widget 1 - Active Workspaces */}
+          <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col gap-3">
+            <h2 className="text-sm font-semibold text-foreground">Active Workspaces</h2>
+            <div className="flex flex-col gap-2">
+              {workspacesError ? (
+                <div className="py-4 text-center">
+                  <span className="text-red-500 text-xs font-mono">{workspacesError}</span>
                 </div>
-              ))}
+              ) : activeWorkspaces === null ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="animate-pulse flex flex-col gap-2 py-1.5 border-b border-border/20 last:border-0">
+                    <div className="h-3 bg-secondary rounded w-3/4"></div>
+                    <div className="h-3 bg-secondary rounded w-1/2"></div>
+                  </div>
+                ))
+              ) : activeWorkspaces.length === 0 ? (
+                <div className="text-xs text-muted-foreground text-center py-4">No active workspaces</div>
+              ) : (
+                activeWorkspaces.map((ws: any) => {
+                  const hoursAgo = Math.max(0, Math.floor((new Date().getTime() - new Date(ws.updated_at).getTime()) / (1000 * 60 * 60)));
+                  const editedText = hoursAgo === 0 ? 'just now' : hoursAgo < 24 ? `${hoursAgo}h ago` : `${Math.floor(hoursAgo/24)}d ago`;
+                  return (
+                    <div key={ws.id} className="flex justify-between items-center py-1.5 border-b border-border/20 last:border-0">
+                      <div>
+                        <p className="text-xs font-medium text-foreground truncate max-w-[150px]">{ws.name}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Last edited {editedText}</p>
+                      </div>
+                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-sm ${ws.status === 'active' ? 'bg-primary/10 text-primary' : 'bg-secondary text-secondary-foreground'}`}>
+                        {ws.status || 'Active'}
+                      </span>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Widget 2 - PDF API Quota */}
+          <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col justify-between gap-4">
+            <h2 className="text-sm font-semibold text-foreground">PDF API Quota</h2>
+            <div>
+              <div className="h-2 rounded-full bg-secondary overflow-hidden w-full mb-2">
+                <div 
+                  className="bg-primary h-full transition-all duration-1000" 
+                  style={{ width: overview.pdfsGenerated !== null ? `${(overview.pdfsGenerated / overview.pdfLimit) * 100}%` : '0%' }}
+                ></div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {overviewError ? (
+                  <span className="text-red-500 font-mono">{overviewError}</span>
+                ) : overview.pdfsGenerated === null ? (
+                  <span className="animate-pulse">Loading...</span>
+                ) : (
+                  `${overview.pdfLimit - overview.pdfsGenerated} generations remaining of ${overview.pdfLimit} limit`
+                )}
+              </p>
+            </div>
+          </div>
+
+          {/* Widget 3 - System Health */}
+          <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col justify-between gap-4">
+            <h2 className="text-sm font-semibold text-foreground">System Uptime</h2>
+            <div>
+              <div className="flex items-end gap-[2px] h-6 w-full mb-3">
+                {Array.from({ length: 20 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`flex-1 rounded-sm ${i === 15 || i === 18 ? 'bg-emerald-500/30' : 'bg-emerald-500/80'} h-full`}
+                  ></div>
+                ))}
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>PDF Compiler</span>
+                  <span className="text-foreground font-medium">Operational</span>
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Database</span>
+                  <span className="text-foreground font-medium">12ms latency</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

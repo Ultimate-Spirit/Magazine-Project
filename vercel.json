@@ -21,6 +21,19 @@
       "builder": "@vercel/node",
       "routePrefix": "/api/logs"
     },
+    "dashboard-overview-api": {
+      "root": "api",
+      "entrypoint": "dashboard-overview.ts",
+      "builder": "@vercel/node",
+      "routePrefix": "/api/dashboard-overview"
+    },
+
+    "dashboard-chart-api": {
+      "root": "api",
+      "entrypoint": "dashboard-chart.ts",
+      "builder": "@vercel/node",
+      "routePrefix": "/api/dashboard-chart"
+    },
     "test-log-api": {
       "root": "api",
       "entrypoint": "test-log.ts",
