@@ -275,92 +275,97 @@ export const AdminDashboard: React.FC = () => {
         {/* Row 3: Data Enrichment */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full">
           {/* Widget 1 - Active Workspaces */}
-          <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col gap-3">
-            <h2 className="text-sm font-semibold text-foreground">Active Workspaces</h2>
-            <div className="flex flex-col gap-2">
-              {workspacesError ? (
-                <div className="py-4 text-center">
-                  <span className="text-red-500 text-xs font-mono">{workspacesError}</span>
-                </div>
-              ) : activeWorkspaces === null ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="animate-pulse flex flex-col gap-2 py-1.5 border-b border-border/20 last:border-0">
-                    <div className="h-3 bg-secondary rounded w-3/4"></div>
-                    <div className="h-3 bg-secondary rounded w-1/2"></div>
+          <div className="lg:col-span-2 h-full">
+            <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col gap-3 h-full">
+              <h2 className="text-sm font-semibold text-foreground">Active Workspaces</h2>
+              <div className="flex flex-col gap-2">
+                {workspacesError ? (
+                  <div className="py-4 text-center">
+                    <span className="text-red-500 text-xs font-mono">{workspacesError}</span>
                   </div>
-                ))
-              ) : activeWorkspaces.length === 0 ? (
-                <div className="text-xs text-muted-foreground text-center py-4">No active workspaces</div>
-              ) : (
-                activeWorkspaces.map((ws: any) => {
-                  const fallbackDate = ws.updated_at || ws.created_at || new Date().toISOString();
-                  const hoursAgo = Math.max(0, Math.floor((new Date().getTime() - new Date(fallbackDate).getTime()) / (1000 * 60 * 60)));
-                  const editedText = hoursAgo === 0 ? 'just now' : hoursAgo < 24 ? `${hoursAgo}h ago` : `${Math.floor(hoursAgo/24)}d ago`;
-                  return (
-                    <div key={ws.id} className="flex justify-between items-center py-1.5 border-b border-border/20 last:border-0">
-                      <div>
-                        <p className="text-xs font-medium text-foreground truncate max-w-[150px]">{ws.name}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">Last edited {editedText}</p>
-                      </div>
-                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-sm ${ws.status === 'active' ? 'bg-primary/10 text-primary' : 'bg-secondary text-secondary-foreground'}`}>
-                        {ws.status || 'Active'}
-                      </span>
+                ) : activeWorkspaces === null ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="animate-pulse flex flex-col gap-2 py-1.5 border-b border-border/20 last:border-0">
+                      <div className="h-3 bg-secondary rounded w-3/4"></div>
+                      <div className="h-3 bg-secondary rounded w-1/2"></div>
                     </div>
-                  )
-                })
-              )}
-            </div>
-          </div>
-
-          {/* Widget 2 - PDF API Quota */}
-          <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col h-[120px]">
-            <div className="flex flex-col justify-center h-full gap-3">
-              {/* Tier 1 (Header) */}
-              <div className="flex justify-between items-end">
-                <span className="text-xs font-medium text-foreground">PDF Quota</span>
-                <span className="text-xs font-mono text-muted-foreground">
-                  {overviewError ? 'ERR' : overview.pdfsGenerated === null ? '...' : `${overview.pdfsGenerated || 0} / ${overview.pdfLimit || 10000}`}
-                </span>
-              </div>
-              
-              {/* Tier 2 (The Track) */}
-              <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
-                <div 
-                  className="bg-primary h-full transition-all duration-1000" 
-                  style={{ width: overview.pdfsGenerated !== null ? `${(((overview.pdfsGenerated || 0) / (overview.pdfLimit || 10000)) * 100)}%` : '0%' }}
-                ></div>
-              </div>
-              
-              {/* Tier 3 (Footer) */}
-              <div className="flex justify-between text-[10px] text-muted-foreground">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                  <span>Active</span>
-                </div>
-                <span>Pro Plan</span>
+                  ))
+                ) : activeWorkspaces.length === 0 ? (
+                  <div className="text-xs text-muted-foreground text-center py-4">No active workspaces</div>
+                ) : (
+                  activeWorkspaces.map((ws: any) => {
+                    const fallbackDate = ws.updated_at || ws.created_at || new Date().toISOString();
+                    const hoursAgo = Math.max(0, Math.floor((new Date().getTime() - new Date(fallbackDate).getTime()) / (1000 * 60 * 60)));
+                    const editedText = hoursAgo === 0 ? 'just now' : hoursAgo < 24 ? `${hoursAgo}h ago` : `${Math.floor(hoursAgo/24)}d ago`;
+                    return (
+                      <div key={ws.id} className="flex justify-between items-center py-1.5 border-b border-border/20 last:border-0">
+                        <div>
+                          <p className="text-xs font-medium text-foreground truncate max-w-[150px]">{ws.name}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">Last edited {editedText}</p>
+                        </div>
+                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-sm ${ws.status === 'active' ? 'bg-primary/10 text-primary' : 'bg-secondary text-secondary-foreground'}`}>
+                          {ws.status || 'Active'}
+                        </span>
+                      </div>
+                    )
+                  })
+                )}
               </div>
             </div>
           </div>
 
-          {/* Widget 3 - System Health */}
-          <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col h-[120px]">
-            <div className="flex flex-col justify-center h-full gap-3">
-              <div className="flex justify-between items-end">
-                <span className="text-xs font-medium text-foreground">System Uptime</span>
-                <span className="text-xs font-mono text-muted-foreground">99.9%</span>
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center justify-between w-full gap-[2px]">
-                  {Array.from({ length: 40 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-[3px] h-[14px] rounded-[1px] bg-emerald-500/80 hover:bg-emerald-400 transition-colors"
-                    ></div>
-                  ))}
+          {/* Stacked Micro-Widgets Wrapper */}
+          <div className="flex flex-col gap-4 h-full">
+            {/* Widget 2 - PDF API Quota */}
+            <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col flex-1">
+              <div className="flex flex-col justify-center h-full gap-3">
+                {/* Tier 1 (Header) */}
+                <div className="flex justify-between items-end">
+                  <span className="text-xs font-medium text-foreground">PDF Quota</span>
+                  <span className="text-xs font-mono text-muted-foreground">
+                    {overviewError ? 'ERR' : overview.pdfsGenerated === null ? '...' : `${overview.pdfsGenerated || 0} / ${overview.pdfLimit || 10000}`}
+                  </span>
                 </div>
-                <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-                  <span>30-day health</span>
-                  <span>Latency: 14ms</span>
+                
+                {/* Tier 2 (The Track) */}
+                <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                  <div 
+                    className="bg-primary h-full transition-all duration-1000" 
+                    style={{ width: overview.pdfsGenerated !== null ? `${(((overview.pdfsGenerated || 0) / (overview.pdfLimit || 10000)) * 100)}%` : '0%' }}
+                  ></div>
+                </div>
+                
+                {/* Tier 3 (Footer) */}
+                <div className="flex justify-between text-[10px] text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                    <span>Active</span>
+                  </div>
+                  <span>Pro Plan</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Widget 3 - System Health */}
+            <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col flex-1">
+              <div className="flex flex-col justify-center h-full gap-3">
+                <div className="flex justify-between items-end">
+                  <span className="text-xs font-medium text-foreground">System Uptime</span>
+                  <span className="text-xs font-mono text-muted-foreground">99.9%</span>
+                </div>
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between w-full gap-[2px]">
+                    {Array.from({ length: 40 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="w-[3px] h-[14px] rounded-[1px] bg-emerald-500/80 hover:bg-emerald-400 transition-colors"
+                      ></div>
+                    ))}
+                  </div>
+                  <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                    <span>30-day health</span>
+                    <span>Latency: 14ms</span>
+                  </div>
                 </div>
               </div>
             </div>
