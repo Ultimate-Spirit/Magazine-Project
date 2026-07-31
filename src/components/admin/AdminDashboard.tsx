@@ -313,53 +313,55 @@ export const AdminDashboard: React.FC = () => {
           </div>
 
           {/* Widget 2 - PDF API Quota */}
-          <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col justify-between gap-4">
-            <h2 className="text-sm font-semibold text-foreground">PDF API Quota</h2>
-            <div>
-              <p className="text-2xl font-semibold text-foreground mb-4">
-                {overviewError ? (
-                  <span className="text-red-500 text-xs font-mono">{overviewError}</span>
-                ) : overview.pdfsGenerated === null ? (
-                  <span className="animate-pulse">...</span>
-                ) : (
-                  `${(overview.pdfLimit || 10000) - (overview.pdfsGenerated || 0)} Remaining`
-                )}
-              </p>
-              <div className="h-3 rounded-full bg-secondary overflow-hidden w-full mb-3">
+          <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col h-[120px]">
+            <div className="flex flex-col justify-center h-full gap-3">
+              {/* Tier 1 (Header) */}
+              <div className="flex justify-between items-end">
+                <span className="text-xs font-medium text-foreground">PDF Quota</span>
+                <span className="text-xs font-mono text-muted-foreground">
+                  {overviewError ? 'ERR' : overview.pdfsGenerated === null ? '...' : `${overview.pdfsGenerated || 0} / ${overview.pdfLimit || 10000}`}
+                </span>
+              </div>
+              
+              {/* Tier 2 (The Track) */}
+              <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
                 <div 
                   className="bg-primary h-full transition-all duration-1000" 
                   style={{ width: overview.pdfsGenerated !== null ? `${(((overview.pdfsGenerated || 0) / (overview.pdfLimit || 10000)) * 100)}%` : '0%' }}
                 ></div>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
-                <div className="flex flex-col gap-1">
-                  <span>Used: {overview.pdfsGenerated || 0}</span>
-                  <span>Remaining: {(overview.pdfLimit || 10000) - (overview.pdfsGenerated || 0)}</span>
+              
+              {/* Tier 3 (Footer) */}
+              <div className="flex justify-between text-[10px] text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                  <span>Active</span>
                 </div>
-                <div className="flex flex-col gap-1 text-right">
-                  <span>Status: Active</span>
-                  <span>Plan: Pro</span>
-                </div>
+                <span>Pro Plan</span>
               </div>
             </div>
           </div>
 
           {/* Widget 3 - System Health */}
-          <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col justify-between gap-4">
-            <h2 className="text-sm font-semibold text-foreground">System Uptime</h2>
-            <div>
-              <p className="text-2xl font-semibold text-foreground mb-4">99.9% Uptime</p>
-              <div className="flex items-end h-6 w-full mb-2">
-                {Array.from({ length: 25 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-1.5 h-6 rounded-[2px] bg-emerald-500/80 mr-1"
-                  ></div>
-                ))}
+          <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col h-[120px]">
+            <div className="flex flex-col justify-center h-full gap-3">
+              <div className="flex justify-between items-end">
+                <span className="text-xs font-medium text-foreground">System Uptime</span>
+                <span className="text-xs font-mono text-muted-foreground">99.9%</span>
               </div>
-              <div className="text-[10px] text-muted-foreground flex justify-between">
-                <span>Operational</span>
-                <span>Latency: 14ms</span>
+              <div className="flex flex-col">
+                <div className="flex items-center justify-between w-full gap-[2px]">
+                  {Array.from({ length: 40 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="w-[3px] h-[14px] rounded-[1px] bg-emerald-500/80 hover:bg-emerald-400 transition-colors"
+                    ></div>
+                  ))}
+                </div>
+                <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                  <span>30-day health</span>
+                  <span>Latency: 14ms</span>
+                </div>
               </div>
             </div>
           </div>
