@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Link from 'next/link';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { Users, Building2, ArrowUpRight, Loader2, Calendar, FileText, Activity, ShieldCheck, Zap, Lock, FileEdit } from 'lucide-react';
 import { LineChart } from '../ui/line-chart';
@@ -318,7 +317,7 @@ export const AdminDashboard: React.FC = () => {
                   )}
                 </div>
               </div>
-              <Link href="/dashboard/activity" className="mt-auto border-t border-border/40 bg-muted/20 px-4 py-2.5 flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
+              <Link to="/admin/activity" className="mt-auto border-t border-border/40 bg-muted/20 px-4 py-2.5 flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
                 <span className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">View All Exports</span>
               </Link>
             </div>
@@ -348,7 +347,7 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <Link href="/dashboard/templates" className="mt-auto border-t border-border/40 bg-muted/20 px-4 py-2.5 flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
+              <Link to="/admin/templates" className="mt-auto border-t border-border/40 bg-muted/20 px-4 py-2.5 flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
                 <span className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">Manage Resources</span>
               </Link>
             </div>
