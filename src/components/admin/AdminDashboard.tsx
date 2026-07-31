@@ -33,6 +33,7 @@ export const AdminDashboard: React.FC = () => {
     publishedPages: null,
     pdfsGenerated: null,
     pdfLimit: null,
+    recentExports: null,
   });
   const [activities, setActivities] = useState<ActivityLog[] | null>(null);
   const [chartData, setChartData] = useState<{dates: string[], data: number[]} | null>(null);
@@ -274,37 +275,38 @@ export const AdminDashboard: React.FC = () => {
 
         {/* Row 3: Data Enrichment */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full">
-          {/* Widget 1 - Active Workspaces */}
+          {/* Widget 1 - Recent PDF Exports */}
           <div className="lg:col-span-2 h-full">
             <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col gap-3 h-full">
-              <h2 className="text-sm font-semibold text-foreground">Active Workspaces</h2>
-              <div className="flex flex-col gap-2">
-                {workspacesError ? (
+              <h2 className="text-sm font-semibold text-foreground">Recent PDF Exports</h2>
+              <div className="flex flex-col flex-1">
+                {overviewError ? (
                   <div className="py-4 text-center">
-                    <span className="text-red-500 text-xs font-mono">{workspacesError}</span>
+                    <span className="text-red-500 text-xs font-mono">{overviewError}</span>
                   </div>
-                ) : activeWorkspaces === null ? (
+                ) : overview.recentExports === null ? (
                   Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="animate-pulse flex flex-col gap-2 py-1.5 border-b border-border/20 last:border-0">
-                      <div className="h-3 bg-secondary rounded w-3/4"></div>
-                      <div className="h-3 bg-secondary rounded w-1/2"></div>
+                    <div key={i} className="animate-pulse flex items-center justify-between py-2.5 border-b border-border/20 last:border-0">
+                      <div className="h-3 bg-secondary rounded w-1/3"></div>
+                      <div className="h-3 bg-secondary rounded w-1/6"></div>
                     </div>
                   ))
-                ) : activeWorkspaces.length === 0 ? (
-                  <div className="text-xs text-muted-foreground text-center py-4">No active workspaces</div>
+                ) : overview.recentExports.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-xs text-muted-foreground">No recent PDF exports.</div>
                 ) : (
-                  activeWorkspaces.map((ws: any) => {
-                    const fallbackDate = ws.updated_at || ws.created_at || new Date().toISOString();
-                    const hoursAgo = Math.max(0, Math.floor((new Date().getTime() - new Date(fallbackDate).getTime()) / (1000 * 60 * 60)));
+                  overview.recentExports.map((exp: any) => {
+                    const hoursAgo = Math.max(0, Math.floor((new Date().getTime() - new Date(exp.created_at).getTime()) / (1000 * 60 * 60)));
                     const editedText = hoursAgo === 0 ? 'just now' : hoursAgo < 24 ? `${hoursAgo}h ago` : `${Math.floor(hoursAgo/24)}d ago`;
                     return (
-                      <div key={ws.id} className="flex justify-between items-center py-1.5 border-b border-border/20 last:border-0">
-                        <div>
-                          <p className="text-xs font-medium text-foreground truncate max-w-[150px]">{ws.name}</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">Last edited {editedText}</p>
+                      <div key={exp.id} className="flex items-center justify-between py-2.5 border-b border-border/40 last:border-0">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-3.5 h-3.5 text-red-500" />
+                          <span className="text-xs font-medium text-foreground">
+                            {exp.profiles?.full_name || exp.profiles?.email?.split('@')[0] || 'System User'}
+                          </span>
                         </div>
-                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-sm ${ws.status === 'active' ? 'bg-primary/10 text-primary' : 'bg-secondary text-secondary-foreground'}`}>
-                          {ws.status || 'Active'}
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          {editedText}
                         </span>
                       </div>
                     )

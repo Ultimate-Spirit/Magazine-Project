@@ -14,19 +14,25 @@ export default async function handler(req: any, res: any) {
         publishedPages: 0,
         pdfsGenerated: 0, 
         pdfLimit: 10000, 
+        recentExports: [],
         error: 'Missing Supabase credentials' 
       });
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const [companiesRes, foldersRes, pagesRes, usersRes, pdfsRes] = await Promise.all([
+    const [companiesRes, foldersRes, pagesRes, usersRes, pdfsRes, recentExportsRes] = await Promise.all([
       supabase.from('companies').select('id', { count: 'exact', head: true }),
       supabase.from('folders').select('id', { count: 'exact', head: true }),
       supabase.from('pages').select('id', { count: 'exact', head: true }),
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
       supabase.from('activity_logs').select('id', { count: 'exact', head: true })
+        .eq('action', 'EXPORT'),
+      supabase.from('activity_logs')
+        .select('id, action, entity_name, created_at, profiles(full_name, email)')
         .eq('action', 'EXPORT')
+        .order('created_at', { ascending: false })
+        .limit(5)
     ]);
 
     if (companiesRes.error) console.error(`Companies query failed: ${companiesRes.error.message}`);
@@ -41,6 +47,7 @@ export default async function handler(req: any, res: any) {
     const publishedPages = (pagesRes.error ? 0 : pagesRes.count) || 0;
     const pdfsGenerated = (pdfsRes.error ? 0 : pdfsRes.count) || 0;
     const pdfLimit = 10000;
+    const recentExports = recentExportsRes.error ? [] : (recentExportsRes.data || []);
 
     return res.status(200).json({
       totalWorkspaces,
@@ -48,7 +55,8 @@ export default async function handler(req: any, res: any) {
       totalMagazines,
       publishedPages,
       pdfsGenerated,
-      pdfLimit
+      pdfLimit,
+      recentExports
     });
   } catch (error: any) {
     console.error('Dashboard Overview Error:', error);
@@ -59,6 +67,7 @@ export default async function handler(req: any, res: any) {
       publishedPages: 0, 
       pdfsGenerated: 0, 
       pdfLimit: 10000,
+      recentExports: [],
       error: error.message || 'Unknown API Error' 
     });
   }
