@@ -34,6 +34,8 @@ export const AdminDashboard: React.FC = () => {
     pdfsGenerated: null,
     pdfLimit: null,
     recentExports: null,
+    totalTemplates: null,
+    totalBundles: null,
   });
   const [activities, setActivities] = useState<ActivityLog[] | null>(null);
   const [chartData, setChartData] = useState<{dates: string[], data: number[]} | null>(null);
@@ -276,7 +278,7 @@ export const AdminDashboard: React.FC = () => {
         {/* Row 3: Data Enrichment */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full">
           {/* Widget 1 - Recent PDF Exports */}
-          <div className="lg:col-span-2 h-full">
+          <div className="lg:col-span-1 h-full">
             <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col gap-3 h-full">
               <h2 className="text-sm font-semibold text-foreground">Recent PDF Exports</h2>
               <div className="flex flex-col flex-1">
@@ -312,6 +314,31 @@ export const AdminDashboard: React.FC = () => {
                     )
                   })
                 )}
+              </div>
+            </div>
+          </div>
+
+          {/* Widget 2 - Resource Library */}
+          <div className="lg:col-span-1 h-full">
+            <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col h-full">
+              <h2 className="text-sm font-semibold text-foreground mb-3">Resource Library</h2>
+              <div className="flex flex-col flex-1">
+                <div className="flex justify-between items-center py-3 border-b border-border/30 text-xs">
+                  <span className="text-muted-foreground">Active Templates</span>
+                  <span className="font-mono text-foreground">{overviewError ? 'ERR' : overview.totalTemplates === null ? '...' : overview.totalTemplates || 0}</span>
+                </div>
+                <div className="flex justify-between items-center py-3 border-b border-border/30 text-xs">
+                  <span className="text-muted-foreground">Template Bundles</span>
+                  <span className="font-mono text-foreground">{overviewError ? 'ERR' : overview.totalBundles === null ? '...' : overview.totalBundles || 0}</span>
+                </div>
+                <div className="flex justify-between items-center py-3 border-b border-border/30 last:border-0 text-xs">
+                  <span className="text-muted-foreground">System Roles</span>
+                  <div className="flex gap-1">
+                    <span className="px-1.5 py-0.5 rounded-sm bg-primary/10 text-primary text-[10px] font-medium">Admin</span>
+                    <span className="px-1.5 py-0.5 rounded-sm bg-secondary text-secondary-foreground text-[10px] font-medium">Editor</span>
+                    <span className="px-1.5 py-0.5 rounded-sm bg-secondary text-secondary-foreground text-[10px] font-medium">Viewer</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

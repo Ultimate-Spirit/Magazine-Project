@@ -15,13 +15,15 @@ export default async function handler(req: any, res: any) {
         pdfsGenerated: 0, 
         pdfLimit: 10000, 
         recentExports: [],
+        totalTemplates: 0,
+        totalBundles: 0,
         error: 'Missing Supabase credentials' 
       });
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const [companiesRes, foldersRes, pagesRes, usersRes, pdfsRes, recentExportsRes] = await Promise.all([
+    const [companiesRes, foldersRes, pagesRes, usersRes, pdfsRes, recentExportsRes, templatesRes, bundlesRes] = await Promise.all([
       supabase.from('companies').select('id', { count: 'exact', head: true }),
       supabase.from('folders').select('id', { count: 'exact', head: true }),
       supabase.from('pages').select('id', { count: 'exact', head: true }),
@@ -32,7 +34,9 @@ export default async function handler(req: any, res: any) {
         .select('id, action, entity_name, created_at, profiles(full_name, email)')
         .eq('action', 'EXPORT')
         .order('created_at', { ascending: false })
-        .limit(5)
+        .limit(5),
+      supabase.from('templates').select('id', { count: 'exact', head: true }),
+      supabase.from('template_bundles').select('id', { count: 'exact', head: true })
     ]);
 
     if (companiesRes.error) console.error(`Companies query failed: ${companiesRes.error.message}`);
@@ -48,6 +52,8 @@ export default async function handler(req: any, res: any) {
     const pdfsGenerated = (pdfsRes.error ? 0 : pdfsRes.count) || 0;
     const pdfLimit = 10000;
     const recentExports = recentExportsRes.error ? [] : (recentExportsRes.data || []);
+    const totalTemplates = (templatesRes.error ? 0 : templatesRes.count) || 0;
+    const totalBundles = (bundlesRes.error ? 0 : bundlesRes.count) || 0;
 
     return res.status(200).json({
       totalWorkspaces,
@@ -56,7 +62,9 @@ export default async function handler(req: any, res: any) {
       publishedPages,
       pdfsGenerated,
       pdfLimit,
-      recentExports
+      recentExports,
+      totalTemplates,
+      totalBundles
     });
   } catch (error: any) {
     console.error('Dashboard Overview Error:', error);
@@ -68,6 +76,8 @@ export default async function handler(req: any, res: any) {
       pdfsGenerated: 0, 
       pdfLimit: 10000,
       recentExports: [],
+      totalTemplates: 0,
+      totalBundles: 0,
       error: error.message || 'Unknown API Error' 
     });
   }
