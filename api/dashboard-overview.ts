@@ -27,15 +27,15 @@ export default async function handler(req: any, res: any) {
         .eq('action', 'EXPORT')
     ]);
 
-    if (foldersRes.error) throw new Error(`Folders query failed: ${foldersRes.error.message}`);
-    if (pagesRes.error) throw new Error(`Pages query failed: ${pagesRes.error.message}`);
-    if (usersRes.error) throw new Error(`Profiles query failed: ${usersRes.error.message}`);
-    if (pdfsRes.error) throw new Error(`PDFs query failed: ${pdfsRes.error.message}`);
+    if (foldersRes.error) console.error(`Folders query failed: ${foldersRes.error.message}`);
+    if (pagesRes.error) console.error(`Pages query failed: ${pagesRes.error.message}`);
+    if (usersRes.error) console.error(`Profiles query failed: ${usersRes.error.message}`);
+    if (pdfsRes.error) console.error(`PDFs query failed: ${pdfsRes.error.message}`);
 
-    const totalMagazines = foldersRes.count || 0;
-    const totalPages = pagesRes.count || 0;
-    const totalUsers = usersRes.count || 0;
-    const pdfsGenerated = pdfsRes.count || 0;
+    const totalMagazines = (foldersRes.error ? 0 : foldersRes.count) || 0;
+    const totalPages = (pagesRes.error ? 0 : pagesRes.count) || 0;
+    const totalUsers = (usersRes.error ? 0 : usersRes.count) || 0;
+    const pdfsGenerated = (pdfsRes.error ? 0 : pdfsRes.count) || 0;
     const pdfLimit = 10000;
 
     return res.status(200).json({
