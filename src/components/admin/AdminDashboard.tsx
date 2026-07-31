@@ -279,66 +279,76 @@ export const AdminDashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full">
           {/* Widget 1 - Recent PDF Exports */}
           <div className="lg:col-span-1 h-full">
-            <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col gap-3 h-full">
-              <h2 className="text-sm font-semibold text-foreground">Recent PDF Exports</h2>
-              <div className="flex flex-col flex-1">
-                {overviewError ? (
-                  <div className="py-4 text-center">
-                    <span className="text-red-500 text-xs font-mono">{overviewError}</span>
-                  </div>
-                ) : overview.recentExports === null ? (
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="animate-pulse flex items-center justify-between py-2.5 border-b border-border/20 last:border-0">
-                      <div className="h-3 bg-secondary rounded w-1/3"></div>
-                      <div className="h-3 bg-secondary rounded w-1/6"></div>
+            <div className="bg-card/50 border border-border/40 rounded-xl flex flex-col h-full overflow-hidden">
+              <div className="flex-1 p-4 flex flex-col gap-1">
+                <h2 className="text-sm font-semibold text-foreground mb-3">Recent PDF Exports</h2>
+                <div className="flex flex-col flex-1">
+                  {overviewError ? (
+                    <div className="py-4 text-center">
+                      <span className="text-red-500 text-xs font-mono">{overviewError}</span>
                     </div>
-                  ))
-                ) : overview.recentExports.length === 0 ? (
-                  <div className="flex items-center justify-center h-full text-xs text-muted-foreground">No recent PDF exports.</div>
-                ) : (
-                  overview.recentExports.map((exp: any) => {
-                    const hoursAgo = Math.max(0, Math.floor((new Date().getTime() - new Date(exp.created_at).getTime()) / (1000 * 60 * 60)));
-                    const editedText = hoursAgo === 0 ? 'just now' : hoursAgo < 24 ? `${hoursAgo}h ago` : `${Math.floor(hoursAgo/24)}d ago`;
-                    return (
-                      <div key={exp.id} className="flex items-center justify-between py-2.5 border-b border-border/40 last:border-0">
-                        <div className="flex items-center gap-2">
-                          <FileText className="w-3.5 h-3.5 text-red-500" />
-                          <span className="text-xs font-medium text-foreground">
-                            {exp.profiles?.full_name || exp.profiles?.email?.split('@')[0] || 'System User'}
+                  ) : overview.recentExports === null ? (
+                    Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="animate-pulse flex items-center justify-between py-2.5 border-b border-border/20 last:border-0">
+                        <div className="h-3 bg-secondary rounded w-1/3"></div>
+                        <div className="h-3 bg-secondary rounded w-1/6"></div>
+                      </div>
+                    ))
+                  ) : overview.recentExports.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-xs text-muted-foreground">No recent PDF exports.</div>
+                  ) : (
+                    overview.recentExports.map((exp: any) => {
+                      const hoursAgo = Math.max(0, Math.floor((new Date().getTime() - new Date(exp.created_at).getTime()) / (1000 * 60 * 60)));
+                      const editedText = hoursAgo === 0 ? 'just now' : hoursAgo < 24 ? `${hoursAgo}h ago` : `${Math.floor(hoursAgo/24)}d ago`;
+                      return (
+                        <div key={exp.id} className="flex items-center justify-between py-2.5 border-b border-border/40 last:border-0">
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-3.5 h-3.5 text-red-500" />
+                            <span className="text-xs font-medium text-foreground">
+                              {exp.profiles?.full_name || exp.profiles?.email?.split('@')[0] || 'System User'}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground font-mono">
+                            {editedText}
                           </span>
                         </div>
-                        <span className="text-[10px] text-muted-foreground font-mono">
-                          {editedText}
-                        </span>
-                      </div>
-                    )
-                  })
-                )}
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+              <div className="mt-auto border-t border-border/40 bg-muted/20 px-4 py-2.5 flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
+                <span className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">View All Exports</span>
               </div>
             </div>
           </div>
 
           {/* Widget 2 - Resource Library */}
           <div className="lg:col-span-1 h-full">
-            <div className="bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col h-full">
-              <h2 className="text-sm font-semibold text-foreground mb-3">Resource Library</h2>
-              <div className="flex flex-col flex-1">
-                <div className="flex justify-between items-center py-3 border-b border-border/30 text-xs">
-                  <span className="text-muted-foreground">Active Templates</span>
-                  <span className="font-mono text-foreground">{overviewError ? 'ERR' : overview.totalTemplates === null ? '...' : overview.totalTemplates || 0}</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-border/30 text-xs">
-                  <span className="text-muted-foreground">Template Bundles</span>
-                  <span className="font-mono text-foreground">{overviewError ? 'ERR' : overview.totalBundles === null ? '...' : overview.totalBundles || 0}</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-border/30 last:border-0 text-xs">
-                  <span className="text-muted-foreground">System Roles</span>
-                  <div className="flex gap-1">
-                    <span className="px-1.5 py-0.5 rounded-sm bg-primary/10 text-primary text-[10px] font-medium">Admin</span>
-                    <span className="px-1.5 py-0.5 rounded-sm bg-secondary text-secondary-foreground text-[10px] font-medium">Editor</span>
-                    <span className="px-1.5 py-0.5 rounded-sm bg-secondary text-secondary-foreground text-[10px] font-medium">Viewer</span>
+            <div className="bg-card/50 border border-border/40 rounded-xl flex flex-col h-full overflow-hidden">
+              <div className="flex-1 p-4 flex flex-col gap-1">
+                <h2 className="text-sm font-semibold text-foreground mb-3">Resource Library</h2>
+                <div className="flex flex-col flex-1">
+                  <div className="flex justify-between items-center py-3.5 border-b border-border/30 text-xs">
+                    <span className="text-muted-foreground">Active Templates</span>
+                    <span className="font-mono text-foreground">{overviewError ? 'ERR' : overview.totalTemplates === null ? '...' : overview.totalTemplates || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3.5 border-b border-border/30 text-xs">
+                    <span className="text-muted-foreground">Template Bundles</span>
+                    <span className="font-mono text-foreground">{overviewError ? 'ERR' : overview.totalBundles === null ? '...' : overview.totalBundles || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3.5 border-b border-border/30 last:border-0 text-xs">
+                    <span className="text-muted-foreground">System Roles</span>
+                    <div className="flex gap-1">
+                      <span className="px-1.5 py-0.5 rounded-sm bg-primary/10 text-primary text-[10px] font-medium">Admin</span>
+                      <span className="px-1.5 py-0.5 rounded-sm bg-secondary text-secondary-foreground text-[10px] font-medium">Editor</span>
+                      <span className="px-1.5 py-0.5 rounded-sm bg-secondary text-secondary-foreground text-[10px] font-medium">Viewer</span>
+                    </div>
                   </div>
                 </div>
+              </div>
+              <div className="mt-auto border-t border-border/40 bg-muted/20 px-4 py-2.5 flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
+                <span className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">Manage Resources</span>
               </div>
             </div>
           </div>
