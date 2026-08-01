@@ -1,39 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { Users, Building2, FileEdit, FileText } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
-export default function TopKPIs() {
-  const [data, setData] = useState({
-    totalWorkspaces: 0,
-    activeUsers: 0,
-    totalMagazines: 0,
-    publishedPages: 0
-  });
+export default async function TopKPIs() {
+  const [
+    companiesRes,
+    usersRes,
+    foldersRes,
+    pagesRes
+  ] = await Promise.all([
+    supabase.from('companies').select('id', { count: 'exact', head: true }),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }),
+    supabase.from('folders').select('id', { count: 'exact', head: true }),
+    supabase.from('pages').select('id', { count: 'exact', head: true }),
+  ]);
 
-  useEffect(() => {
-    async function fetchData() {
-      const [
-        companiesRes,
-        usersRes,
-        foldersRes,
-        pagesRes
-      ] = await Promise.all([
-        supabase.from('companies').select('id', { count: 'exact', head: true }),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('folders').select('id', { count: 'exact', head: true }),
-        supabase.from('pages').select('id', { count: 'exact', head: true }),
-      ]);
-
-      setData({
-        totalWorkspaces: companiesRes.count || 0,
-        activeUsers: usersRes.count || 0,
-        totalMagazines: foldersRes.count || 0,
-        publishedPages: pagesRes.count || 0
-      });
-    }
-    fetchData();
-  }, []);
+  const totalWorkspaces = companiesRes.count || 0;
+  const activeUsers = usersRes.count || 0;
+  const totalMagazines = foldersRes.count || 0;
+  const publishedPages = pagesRes.count || 0;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -43,7 +29,7 @@ export default function TopKPIs() {
           <Building2 className="w-4 h-4 text-muted-foreground" />
         </div>
         <p className="text-2xl font-semibold text-foreground">
-          {data.totalWorkspaces}
+          {totalWorkspaces}
         </p>
       </Link>
 
@@ -53,7 +39,7 @@ export default function TopKPIs() {
           <Users className="w-4 h-4 text-muted-foreground" />
         </div>
         <p className="text-2xl font-semibold text-foreground">
-          {data.activeUsers}
+          {activeUsers}
         </p>
       </Link>
 
@@ -63,7 +49,7 @@ export default function TopKPIs() {
           <FileEdit className="w-4 h-4 text-muted-foreground" />
         </div>
         <p className="text-2xl font-semibold text-foreground">
-          {data.totalMagazines}
+          {totalMagazines}
         </p>
       </div>
 
@@ -73,7 +59,7 @@ export default function TopKPIs() {
           <FileText className="w-4 h-4 text-muted-foreground" />
         </div>
         <p className="text-2xl font-semibold text-foreground">
-          {data.publishedPages}
+          {publishedPages}
         </p>
       </div>
     </div>
