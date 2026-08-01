@@ -302,7 +302,7 @@ export function FoldersView({ onSelectCompany }: Props) {
           </div>
         )}
 
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 lg:gap-12 mb-8 px-6 pt-8 shrink-0">
+        <header className="flex w-full flex-col md:flex-row md:items-end justify-between gap-6 lg:gap-12 mb-8 px-6 pt-8 shrink-0">
           <div className="space-y-3 lg:space-y-4">
             <button 
               onClick={() => navigate('/')}
@@ -519,10 +519,10 @@ export function FoldersView({ onSelectCompany }: Props) {
         >
           <form onSubmit={editingFolder ? handleUpdateFolder : handleCreateFolder} className="mt-6 space-y-4">
             <div className="space-y-2 text-left">
-              <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest ml-1">Directory Name</label>
+              <label className="label-premium ml-1">DIRECTORY NAME</label>
               <input
                 autoFocus
-                className="w-full h-8 px-3 micro-surface border border-border/50 rounded-lg focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground text-xs"
+                className="w-full h-9 px-3 bg-muted/30 border border-border rounded-lg focus-visible:ring-1 focus-visible:ring-primary/50 outline-none transition-all font-medium text-foreground text-xs"
                 value={folderNameInput}
                 onChange={(e) => setFolderNameInput(e.target.value)}
                 placeholder="e.g. Q4 Executive Reports"
@@ -532,7 +532,7 @@ export function FoldersView({ onSelectCompany }: Props) {
             {!editingFolder && (
               <>
                 <div className="space-y-2 text-left">
-                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest ml-1">Blueprint Template</label>
+                  <label className="label-premium ml-1">BLUEPRINT TEMPLATE</label>
                   <CustomSelect
                     value={selectedBundleId}
                     onChange={setSelectedBundleId}
@@ -542,7 +542,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                 </div>
 
                 <div className="space-y-2 text-left mt-3">
-                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest ml-1">Cover Page Template</label>
+                  <label className="label-premium ml-1">COVER PAGE TEMPLATE</label>
                   <CustomSelect
                     value={selectedCoverPageId}
                     onChange={setSelectedCoverPageId}
@@ -552,7 +552,7 @@ export function FoldersView({ onSelectCompany }: Props) {
                 </div>
 
                 <div className="space-y-2 text-left mt-3">
-                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest ml-1">Last Page Template</label>
+                  <label className="label-premium ml-1">LAST PAGE TEMPLATE</label>
                   <CustomSelect
                     value={selectedLastPageId}
                     onChange={setSelectedLastPageId}
@@ -563,13 +563,29 @@ export function FoldersView({ onSelectCompany }: Props) {
               </>
             )}
 
-            <button
-              type="submit"
-              disabled={isActionLoading || !folderNameInput.trim() || (!editingFolder && (!selectedCoverPageId || !selectedLastPageId))}
-              className="w-full h-9 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-xs border border-border/50"
-            >
-              {isActionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingFolder ? "Apply Changes" : "Initialize Directory")}
-            </button>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCreateModalOpen(false);
+                  setEditingFolder(null);
+                  setFolderNameInput('');
+                  setSelectedBundleId('');
+                  setSelectedCoverPageId('');
+                  setSelectedLastPageId('');
+                }}
+                className="px-4 py-2 border border-border/50 text-muted-foreground rounded-lg hover:bg-secondary transition-all text-xs font-semibold"
+              >
+                Dismiss
+              </button>
+              <button
+                type="submit"
+                disabled={isActionLoading || !folderNameInput.trim() || (!editingFolder && (!selectedCoverPageId || !selectedLastPageId))}
+                className="px-4 py-2 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-xs border border-border/50"
+              >
+                {isActionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingFolder ? "Apply Changes" : "Initialize Directory")}
+              </button>
+            </div>
           </form>
         </ConfirmModal>
 
