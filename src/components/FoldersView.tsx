@@ -364,8 +364,8 @@ export function FoldersView({ onSelectCompany }: Props) {
         </header>
 
         <main className="flex-1 overflow-y-auto px-5 lg:px-10 xl:px-16 pb-12 w-full max-w-full">
-          <div className="grid lg:grid-cols-12 gap-10 items-start">
-            <div className="lg:col-span-8 xl:col-span-9 space-y-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div className="lg:col-span-8 xl:col-span-9 space-y-6">
               {(!folders || folders.length === 0) ? (
                 <div className="micro-surface rounded-xl p-6 text-center border border-border/50">
                   <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center mx-auto mb-4 border border-border/50">
@@ -393,58 +393,61 @@ export function FoldersView({ onSelectCompany }: Props) {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 lg:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredFolders.map((folder) => (
                     <div
                       key={folder.id}
-                      className="group relative micro-surface micro-surface-hover flex flex-row items-center gap-4 cursor-pointer overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-500 p-3 rounded-xl"
+                      className="group relative flex flex-col justify-between cursor-pointer overflow-hidden border border-border/10 bg-card/40 hover:bg-card/80 hover:border-primary/50 transition-all duration-500 p-5 rounded-2xl aspect-[4/3]"
                       onClick={() => navigate(`/folder/${folder.id}`)}
                     >
-                      <div className="w-12 h-12 shrink-0 micro-surface rounded-lg flex items-center justify-center text-muted-foreground/50 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 border border-border/50">
-                        <FolderIcon className="w-5 h-5" strokeWidth={1.5} />
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors tracking-tight truncate pr-4">
-                          {folder.name || 'Unnamed Directory'}
-                        </h3>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded ${folder?.template_bundles ? 'bg-primary/10 text-primary border-primary/20' : 'bg-slate-500/10 text-slate-500 border-slate-500/20'} text-[8px] font-bold uppercase tracking-widest border`}>
-                            <Layers className="w-2.5 h-2.5" />
-                            {folder?.template_bundles?.bundle_name || 'Legacy'}
-                          </span>
-                          <span className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-widest">
-                            {getRelativeTime(folder.updated_at)}
-                          </span>
+                      <div className="flex items-start justify-between">
+                        <div className="w-10 h-10 bg-background/50 rounded-lg flex items-center justify-center text-muted-foreground/70 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 border border-border/10">
+                          <FolderIcon className="w-5 h-5" strokeWidth={1.5} />
+                        </div>
+                        
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0 shrink-0">
+                          {(permissions?.can_edit_all_folders || (permissions?.can_edit_own_folders && folder.created_by === profile?.id)) && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingFolder(folder);
+                                setFolderNameInput(folder.name);
+                              }}
+                              className="p-2 hover:bg-muted/50 rounded-lg text-muted-foreground/40 hover:text-primary transition-all bg-background/50 backdrop-blur-md"
+                              title="Rename"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {(permissions?.can_delete_all_folders || (permissions?.can_delete_own_folders && folder.created_by === profile?.id)) && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFolderToDelete(folder);
+                              }}
+                              className="p-2 hover:bg-muted/50 rounded-lg text-muted-foreground/40 hover:text-destructive transition-all bg-background/50 backdrop-blur-md"
+                              title="Purge"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0 shrink-0">
-                        {(permissions?.can_edit_all_folders || (permissions?.can_edit_own_folders && folder.created_by === profile?.id)) && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingFolder(folder);
-                              setFolderNameInput(folder.name);
-                            }}
-                            className="p-1.5 hover:bg-muted/50 rounded-lg text-muted-foreground/40 hover:text-primary transition-all"
-                            title="Rename"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {(permissions?.can_delete_all_folders || (permissions?.can_delete_own_folders && folder.created_by === profile?.id)) && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setFolderToDelete(folder);
-                            }}
-                            className="p-1.5 hover:bg-muted/50 rounded-lg text-muted-foreground/40 hover:text-destructive transition-all"
-                            title="Purge"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                      <div className="flex-1 flex items-center justify-center py-4">
+                        <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors tracking-tight text-center line-clamp-2 px-2">
+                          {folder.name || 'Unnamed Directory'}
+                        </h3>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-auto">
+                        <span className={`flex items-center gap-1.5 px-2 py-1 rounded-md ${folder?.template_bundles ? 'bg-primary/10 text-primary border-primary/20' : 'bg-slate-500/10 text-slate-500 border-slate-500/20'} text-[9px] font-bold uppercase tracking-widest border`}>
+                          <Layers className="w-3 h-3" />
+                          {folder?.template_bundles?.bundle_name || 'Legacy'}
+                        </span>
+                        <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest">
+                          {getRelativeTime(folder.updated_at)}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -452,43 +455,45 @@ export function FoldersView({ onSelectCompany }: Props) {
               )}
             </div>
 
-            <aside className="lg:col-span-4 xl:col-span-3 space-y-4 lg:space-y-6">
-              <div className="grid grid-cols-2 gap-3 lg:gap-4">
-                <div className="bg-card/50 rounded-xl p-4 border border-border/10">
-                  <p className="label-premium mb-1">USERS</p>
-                  <p className="text-lg font-semibold text-foreground tracking-tight">{stats.collaborators || 0}</p>
-                </div>
-                <div className="bg-card/50 rounded-xl p-4 border border-border/10">
-                  <p className="label-premium mb-1">PAGES</p>
-                  <p className="text-lg font-semibold text-foreground tracking-tight">{stats.publications || 0}</p>
-                </div>
-              </div>
-
-              <div className="bg-card/50 rounded-xl border border-border/10 overflow-hidden flex flex-col min-h-[250px] lg:min-h-[350px]">
-                <div className="p-4 faint-divider flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Activity size={14} className="text-primary/60" />
-                    <span className="label-premium">EVENT STREAM</span>
+            <aside className="lg:col-span-4 xl:col-span-3">
+              <div className="bg-card/40 border border-border/10 rounded-[1.5rem] p-4 lg:p-6 flex flex-col gap-6 h-full">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-background/40 rounded-2xl p-4 border border-border/10">
+                    <p className="label-premium mb-1">USERS</p>
+                    <p className="text-xl font-semibold text-foreground tracking-tight">{stats.collaborators || 0}</p>
+                  </div>
+                  <div className="bg-background/40 rounded-2xl p-4 border border-border/10">
+                    <p className="label-premium mb-1">PAGES</p>
+                    <p className="text-xl font-semibold text-foreground tracking-tight">{stats.publications || 0}</p>
                   </div>
                 </div>
-                <div className="p-3 lg:p-4 flex-1 overflow-y-auto invisible-scrollbar">
-                  <div className="flex flex-col gap-1">
-                    {(!activities || activities.length === 0) ? (
-                      <div className="py-20 text-center text-muted-foreground/20 italic label-premium">No local actions recorded.</div>
-                    ) : activities.map((log) => (
-                      <div key={log.id} className="flex items-center gap-3 p-2 rounded-lg transition-all duration-300">
-                        <div className="w-6 h-6 lg:w-7 lg:h-7 rounded-md bg-secondary flex items-center justify-center font-bold text-[9px] text-muted-foreground/40 shrink-0">
-                          {((log.profiles?.full_name || log.profiles?.email || '?')[0] || '?').toUpperCase()}
+
+                <div className="flex-1 bg-background/40 rounded-2xl border border-border/10 overflow-hidden flex flex-col min-h-[300px]">
+                  <div className="p-4 border-b border-border/5 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Activity size={14} className="text-primary/60" />
+                      <span className="label-premium">EVENT STREAM</span>
+                    </div>
+                  </div>
+                  <div className="p-4 flex-1 overflow-y-auto invisible-scrollbar">
+                    <div className="flex flex-col gap-2">
+                      {(!activities || activities.length === 0) ? (
+                        <div className="py-20 text-center text-muted-foreground/20 italic label-premium">No local actions recorded.</div>
+                      ) : activities.map((log) => (
+                        <div key={log.id} className="flex items-center gap-3 p-2 rounded-xl transition-all duration-300">
+                          <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center font-bold text-[10px] text-muted-foreground/50 shrink-0">
+                            {((log.profiles?.full_name || log.profiles?.email || '?')[0] || '?').toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground truncate">
+                              {log.profiles?.full_name || log.profiles?.email?.split('@')[0] || 'Unknown'}
+                              <span className="text-muted-foreground font-normal ml-1.5 text-xs">{log.action_type} {log.entity_type}</span>
+                            </p>
+                            <p className="text-[10px] text-muted-foreground/60 truncate mt-0.5">{log.entity_name || 'Asset'}</p>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-foreground truncate">
-                            {log.profiles?.full_name || log.profiles?.email?.split('@')[0] || 'Unknown'}
-                            <span className="text-muted-foreground font-normal ml-1.5">{log.action_type} {log.entity_type}</span>
-                          </p>
-                          <p className="text-[10px] text-muted-foreground/70 truncate">{log.entity_name || 'Asset'}</p>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
