@@ -397,58 +397,54 @@ export function FoldersView({ onSelectCompany }: Props) {
                   {filteredFolders.map((folder) => (
                     <div
                       key={folder.id}
-                      className="group relative micro-surface micro-surface-hover flex flex-col justify-between min-h-[140px] cursor-pointer overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-500 p-4 lg:p-5 rounded-xl"
+                      className="group relative micro-surface micro-surface-hover flex flex-row items-center gap-4 cursor-pointer overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-500 p-3 rounded-xl"
                       onClick={() => navigate(`/folder/${folder.id}`)}
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="w-10 h-10 micro-surface rounded-lg flex items-center justify-center text-muted-foreground/50 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 border border-border/50">
-                          <FolderIcon className="w-5 h-5" strokeWidth={1.5} />
-                        </div>
-
-                        <div className="flex items-center gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 lg:translate-y-2 lg:group-hover:translate-y-0">
-                          {(permissions?.can_edit_all_folders || (permissions?.can_edit_own_folders && folder.created_by === profile?.id)) && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingFolder(folder);
-                                setFolderNameInput(folder.name);
-                              }}
-                              className="p-2 micro-surface border border-border/50 rounded-lg text-muted-foreground/50 hover:text-primary transition-all"
-                              title="Rename"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                          {(permissions?.can_delete_all_folders || (permissions?.can_delete_own_folders && folder.created_by === profile?.id)) && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setFolderToDelete(folder);
-                              }}
-                              className="p-2 micro-surface border border-border/50 rounded-lg text-muted-foreground/50 hover:text-destructive transition-all"
-                              title="Purge"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
+                      <div className="w-12 h-12 shrink-0 micro-surface rounded-lg flex items-center justify-center text-muted-foreground/50 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 border border-border/50">
+                        <FolderIcon className="w-5 h-5" strokeWidth={1.5} />
                       </div>
 
-                      <div>
-                        <h3 className="text-base font-semibold text-foreground mb-2 lg:mb-2 group-hover:text-primary transition-colors tracking-tight line-clamp-1 pr-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors tracking-tight truncate pr-4">
                           {folder.name || 'Unnamed Directory'}
                         </h3>
-                        <div className="mb-3 flex items-center gap-2">
-                          <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${folder?.template_bundles ? 'bg-primary/10 text-primary border-primary/20' : 'bg-slate-500/10 text-slate-500 border-slate-500/20'} text-[9px] font-bold uppercase tracking-widest border`}>
-                            <Layers className="w-3 h-3" />
-                            {folder?.template_bundles?.bundle_name || 'Legacy Folder'}
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded ${folder?.template_bundles ? 'bg-primary/10 text-primary border-primary/20' : 'bg-slate-500/10 text-slate-500 border-slate-500/20'} text-[8px] font-bold uppercase tracking-widest border`}>
+                            <Layers className="w-2.5 h-2.5" />
+                            {folder?.template_bundles?.bundle_name || 'Legacy'}
                           </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="px-3 py-1 rounded-lg micro-surface text-[9px] lg:text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest border border-border/10">
+                          <span className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-widest">
                             {getRelativeTime(folder.updated_at)}
                           </span>
                         </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0 shrink-0">
+                        {(permissions?.can_edit_all_folders || (permissions?.can_edit_own_folders && folder.created_by === profile?.id)) && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingFolder(folder);
+                              setFolderNameInput(folder.name);
+                            }}
+                            className="p-1.5 hover:bg-muted/50 rounded-lg text-muted-foreground/40 hover:text-primary transition-all"
+                            title="Rename"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {(permissions?.can_delete_all_folders || (permissions?.can_delete_own_folders && folder.created_by === profile?.id)) && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFolderToDelete(folder);
+                            }}
+                            className="p-1.5 hover:bg-muted/50 rounded-lg text-muted-foreground/40 hover:text-destructive transition-all"
+                            title="Purge"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -458,38 +454,38 @@ export function FoldersView({ onSelectCompany }: Props) {
 
             <aside className="lg:col-span-4 xl:col-span-3 space-y-4 lg:space-y-6">
               <div className="grid grid-cols-2 gap-3 lg:gap-4">
-                <div className="micro-surface rounded-xl p-4 border border-border/50">
-                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-1">Users</p>
+                <div className="bg-card/50 rounded-xl p-4 border border-border/10">
+                  <p className="label-premium mb-1">USERS</p>
                   <p className="text-lg font-semibold text-foreground tracking-tight">{stats.collaborators || 0}</p>
                 </div>
-                <div className="micro-surface rounded-xl p-4 border border-border/50">
-                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-1">Pages</p>
+                <div className="bg-card/50 rounded-xl p-4 border border-border/10">
+                  <p className="label-premium mb-1">PAGES</p>
                   <p className="text-lg font-semibold text-foreground tracking-tight">{stats.publications || 0}</p>
                 </div>
               </div>
 
-              <div className="micro-surface rounded-xl border border-border/50 overflow-hidden flex flex-col min-h-[250px] lg:min-h-[350px]">
-                <div className="p-4 faint-divider flex items-center justify-between bg-card/20">
+              <div className="bg-card/50 rounded-xl border border-border/10 overflow-hidden flex flex-col min-h-[250px] lg:min-h-[350px]">
+                <div className="p-4 faint-divider flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Activity size={14} className="text-primary/60" />
-                    <span className="text-[9px] lg:text-[10px] font-black text-foreground uppercase tracking-widest">Event Stream</span>
+                    <span className="label-premium">EVENT STREAM</span>
                   </div>
                 </div>
                 <div className="p-3 lg:p-4 flex-1 overflow-y-auto invisible-scrollbar">
-                  <div className="space-y-1">
+                  <div className="flex flex-col gap-1">
                     {(!activities || activities.length === 0) ? (
-                      <div className="py-20 text-center text-muted-foreground/20 italic text-[9px] lg:text-[10px] font-bold uppercase tracking-widest">No local actions recorded.</div>
+                      <div className="py-20 text-center text-muted-foreground/20 italic label-premium">No local actions recorded.</div>
                     ) : activities.map((log) => (
-                      <div key={log.id} className="flex items-center gap-3 p-2.5 lg:p-3 rounded-xl micro-surface-hover group transition-all duration-300">
-                        <div className="w-7 h-7 lg:w-8 lg:h-8 rounded-lg bg-secondary flex items-center justify-center font-black text-[8px] lg:text-[10px] text-muted-foreground/40 group-hover:bg-primary/10 group-hover:text-primary transition-all border border-border/5 shrink-0">
+                      <div key={log.id} className="flex items-center gap-3 p-2 rounded-lg transition-all duration-300">
+                        <div className="w-6 h-6 lg:w-7 lg:h-7 rounded-md bg-secondary flex items-center justify-center font-bold text-[9px] text-muted-foreground/40 shrink-0">
                           {((log.profiles?.full_name || log.profiles?.email || '?')[0] || '?').toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[10px] lg:text-[11px] font-black text-foreground truncate">
+                          <p className="text-xs font-semibold text-foreground truncate">
                             {log.profiles?.full_name || log.profiles?.email?.split('@')[0] || 'Unknown'}
-                            <span className="text-muted-foreground/50 font-medium ml-1.5 lowercase italic tracking-tight">{log.action_type} {log.entity_type}</span>
+                            <span className="text-muted-foreground font-normal ml-1.5">{log.action_type} {log.entity_type}</span>
                           </p>
-                          <p className="text-[8px] lg:text-[9px] font-bold text-primary/60 uppercase tracking-widest truncate">{log.entity_name || 'Asset'}</p>
+                          <p className="text-[10px] text-muted-foreground/70 truncate">{log.entity_name || 'Asset'}</p>
                         </div>
                       </div>
                     ))}
