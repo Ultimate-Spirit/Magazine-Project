@@ -104,7 +104,7 @@ export default function PlatformActivityChart() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
               <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-              <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} domain={[0, 'auto']} />
+              <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} domain={[0, dataMax => (dataMax === 0 ? 1 : dataMax)]} />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(var(--background))', 
