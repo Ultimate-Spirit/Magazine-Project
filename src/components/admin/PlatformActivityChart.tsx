@@ -15,7 +15,7 @@ export default function PlatformActivityChart() {
 
       const [foldersRes, logsRes] = await Promise.all([
         supabase.from('folders').select('created_at').gte('created_at', startOfYearIso),
-        supabase.from('activity_logs').select('created_at, action_type').gte('created_at', startOfYearIso).eq('action_type', 'PDF_EXPORT')
+        supabase.from('activity_logs').select('created_at, action_type').gte('created_at', startOfYearIso).eq('action_type', 'EXPORT')
       ]);
 
       let cData: any[] = [];

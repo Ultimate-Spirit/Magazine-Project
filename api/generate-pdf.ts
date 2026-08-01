@@ -76,6 +76,20 @@ export default async function handler(req: any, res: any) {
       details: 'Generated Master PDF',
     }, req);
 
+    const revalidatePath = async (path: string) => {
+      try {
+        if (res.revalidate) {
+          await res.revalidate(path);
+        } else {
+          res.setHeader('Cache-Control', 's-maxage=1, stale-while-revalidate');
+        }
+      } catch (e) {
+        console.error('Revalidation failed:', e);
+      }
+    };
+    
+    await revalidatePath('/admin');
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="Master_Document.pdf"');
     return res.status(200).send(Buffer.from(pdfBuffer));
