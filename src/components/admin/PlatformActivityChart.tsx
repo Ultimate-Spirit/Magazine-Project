@@ -34,7 +34,8 @@ export default function PlatformActivityChart() {
           
           const dayObj = {
             date: dateStr,
-            magazinesCreated: 0
+            magazinesCreated: 0,
+            magazinesDownloaded: 0
           };
           cData.push(dayObj);
           dateMap.set(ymd, dayObj);
@@ -103,7 +104,7 @@ export default function PlatformActivityChart() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
               <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-              <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} />
+              <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} domain={[0, 'auto']} />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(var(--background))', 
@@ -114,8 +115,8 @@ export default function PlatformActivityChart() {
                 }} 
               />
               <Legend verticalAlign="top" height={36} />
-              <Area type="natural" dataKey="magazinesCreated" name="Drafted" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#colorDrafted)" />
-              <Area type="natural" dataKey="magazinesDownloaded" name="Downloaded" stroke="hsl(var(--muted-foreground))" strokeWidth={2} fillOpacity={1} fill="url(#colorDownloaded)" />
+              <Area type="monotone" dataKey="magazinesCreated" name="Drafted" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#colorDrafted)" />
+              <Area type="monotone" dataKey="magazinesDownloaded" name="Downloaded" stroke="hsl(var(--muted-foreground))" strokeWidth={2} fillOpacity={1} fill="url(#colorDownloaded)" />
             </AreaChart>
           </ResponsiveContainer>
         )}
