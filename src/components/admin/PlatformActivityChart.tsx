@@ -1,56 +1,80 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
 
 export default function PlatformActivityChart() {
-  const [data, setData] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30D');
 
   useEffect(() => {
     async function fetchData() {
-      try {
-        const [{ count: pages }, { count: companies }] = await Promise.all([
-          supabase.from('pages').select('id', { count: 'exact', head: true }),
-          supabase.from('companies').select('id', { count: 'exact', head: true }),
-        ]);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
+      thirtyDaysAgo.setHours(0, 0, 0, 0);
+      const thirtyDaysAgoIso = thirtyDaysAgo.toISOString();
 
-        const genDates = [];
+      const [folders30dRes, logs30dRes] = await Promise.all([
+        supabase.from('folders').select('created_at').gte('created_at', thirtyDaysAgoIso),
+        supabase.from('activity_logs').select('action_type, created_at').gte('created_at', thirtyDaysAgoIso).eq('action_type', 'PDF_EXPORT')
+      ]);
+
+      let cData: any[] = [];
+      try {
+        const dateMap = new Map();
+
         for (let i = 29; i >= 0; i--) {
           const d = new Date();
           d.setDate(d.getDate() - i);
-          genDates.push(`${d.getMonth() + 1}/${d.getDate()}`);
+          const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          const ymd = d.toISOString().split('T')[0];
+          
+          const dayObj = {
+            date: dateStr,
+            magazinesCreated: 0,
+            magazinesDownloaded: 0
+          };
+          cData.push(dayObj);
+          dateMap.set(ymd, dayObj);
         }
 
-        const totalActivity = (pages || 0) + (companies || 0);
-        
-        const genData = genDates.map((date, index) => {
-          const base = 50 + (index * 2);
-          const variance = Math.floor(Math.random() * 30) - 15;
-          return {
-            date,
-            value: Math.max(0, base + variance + (totalActivity > 0 ? (totalActivity % 10) : 0))
-          };
-        });
+        if (!folders30dRes.error && folders30dRes.data) {
+          folders30dRes.data.forEach((p: any) => {
+            const ymd = p.created_at.split('T')[0];
+            if (dateMap.has(ymd)) {
+              dateMap.get(ymd).magazinesCreated += 1;
+            }
+          });
+        }
 
-        setData(genData);
+        if (!logs30dRes.error && logs30dRes.data) {
+          logs30dRes.data.forEach((l: any) => {
+            const ymd = l.created_at.split('T')[0];
+            if (dateMap.has(ymd)) {
+              dateMap.get(ymd).magazinesDownloaded += 1;
+            }
+          });
+        }
       } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+        console.error('Error generating chartData:', err);
       }
+      
+      setChartData(cData);
+      setLoading(false);
     }
     fetchData();
   }, []);
 
+  const displayData = timeRange === '7D' ? chartData.slice(-7) : chartData;
+
   return (
     <div className="lg:col-span-2 bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col min-h-[300px]">
       <div className="flex items-center justify-between mb-4 z-10">
-        <h2 className="text-sm font-semibold text-foreground">Platform Activity</h2>
+        <h2 className="text-sm font-semibold text-foreground">Magazine Production</h2>
         
         {/* Sleek Pill-shaped Toggle Group */}
         <div className="flex items-center bg-black/10 dark:bg-black/40 rounded-full p-1 border border-border/30">
-          {['7D', '30D', 'YTD'].map((range) => (
+          {['7D', '30D'].map((range) => (
             <button
               key={range}
               onClick={() => setTimeRange(range)}
@@ -73,11 +97,15 @@ export default function PlatformActivityChart() {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+            <AreaChart data={displayData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <defs>
-                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                <linearGradient id="colorDrafted" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorDownloaded" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
@@ -92,7 +120,9 @@ export default function PlatformActivityChart() {
                   boxShadow: '0 4px 12px rgba(0,0,0,0.5)' 
                 }} 
               />
-              <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#colorValue)" />
+              <Legend verticalAlign="top" height={36} />
+              <Area type="monotone" dataKey="magazinesCreated" fill="url(#colorDrafted)" name="Drafted" stroke="#3b82f6" strokeWidth={2} />
+              <Area type="monotone" dataKey="magazinesDownloaded" fill="url(#colorDownloaded)" name="Downloaded" stroke="#10b981" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
         )}
