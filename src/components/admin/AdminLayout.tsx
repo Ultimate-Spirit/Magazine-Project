@@ -131,7 +131,7 @@ export const AdminLayout: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 w-full h-full bg-background overflow-y-auto min-w-0 p-4 flex flex-col relative pt-16 lg:pt-4">
+      <div className="flex-1 w-full h-full bg-background overflow-y-auto min-w-0 flex flex-col relative pt-16 lg:pt-0">
         {/* Mobile Header */}
         <header className="fixed top-0 left-0 right-0 h-16 border-b border-border flex items-center px-6 lg:hidden bg-background z-[40] shrink-0">
           <button 
