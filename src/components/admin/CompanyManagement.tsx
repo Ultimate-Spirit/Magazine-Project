@@ -145,7 +145,7 @@ export const CompanyManagement: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background font-sans invisible-scrollbar">
       <header className="w-full bg-card/30 backdrop-blur-md faint-divider shrink-0 z-10">
-        <div className="max-w-7xl mx-auto w-full h-14 flex items-center justify-between px-4 lg:px-6">
+        <div className="flex w-full h-14 items-center justify-between px-6">
           <h1 className="text-lg font-semibold text-foreground tracking-tight leading-none">Workspace Directory</h1>
           
           <div className="flex items-center gap-2 lg:gap-4">
