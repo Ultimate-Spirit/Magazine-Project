@@ -13,10 +13,10 @@ export default function PlatformActivityChart() {
       const startOfYear = new Date(now.getFullYear(), 0, 1);
       const startOfYearIso = startOfYear.toISOString();
 
-      const { data, error } = await supabase
-        .from('folders')
-        .select('created_at')
-        .gte('created_at', startOfYearIso);
+      const [foldersRes, logsRes] = await Promise.all([
+        supabase.from('folders').select('created_at').gte('created_at', startOfYearIso),
+        supabase.from('activity_logs').select('created_at, action_type').gte('created_at', startOfYearIso).eq('action_type', 'PDF_EXPORT')
+      ]);
 
       let cData: any[] = [];
       try {
@@ -41,11 +41,20 @@ export default function PlatformActivityChart() {
           dateMap.set(ymd, dayObj);
         }
 
-        if (!error && data) {
-          data.forEach((p: any) => {
+        if (!foldersRes.error && foldersRes.data) {
+          foldersRes.data.forEach((p: any) => {
             const ymd = p.created_at.split('T')[0];
             if (dateMap.has(ymd)) {
               dateMap.get(ymd).magazinesCreated += 1;
+            }
+          });
+        }
+
+        if (!logsRes.error && logsRes.data) {
+          logsRes.data.forEach((l: any) => {
+            const ymd = l.created_at.split('T')[0];
+            if (dateMap.has(ymd)) {
+              dateMap.get(ymd).magazinesDownloaded += 1;
             }
           });
         }
