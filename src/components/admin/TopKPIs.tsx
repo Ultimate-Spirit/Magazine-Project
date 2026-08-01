@@ -103,7 +103,7 @@ export default function TopKPIs() {
           <div className="mt-2">
             <ResponsiveContainer height={35} width="100%">
               <LineChart data={momentum.workspaces}>
-                <Line dataKey="count" dot={false} stroke="hsl(var(--primary))" strokeWidth={2} type="monotone"/>
+                <Line dataKey="count" dot={false} activeDot={false} stroke="hsl(var(--primary))" strokeWidth={2} type="natural"/>
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -122,7 +122,7 @@ export default function TopKPIs() {
           <div className="mt-2">
             <ResponsiveContainer height={35} width="100%">
               <LineChart data={momentum.users}>
-                <Line dataKey="count" dot={false} stroke="hsl(var(--primary))" strokeWidth={2} type="monotone"/>
+                <Line dataKey="count" dot={false} activeDot={false} stroke="hsl(var(--primary))" strokeWidth={2} type="natural"/>
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -141,7 +141,7 @@ export default function TopKPIs() {
           <div className="mt-2">
             <ResponsiveContainer height={35} width="100%">
               <LineChart data={momentum.magazines}>
-                <Line dataKey="count" dot={false} stroke="hsl(var(--primary))" strokeWidth={2} type="monotone"/>
+                <Line dataKey="count" dot={false} activeDot={false} stroke="hsl(var(--primary))" strokeWidth={2} type="natural"/>
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -160,7 +160,7 @@ export default function TopKPIs() {
           <div className="mt-2">
             <ResponsiveContainer height={35} width="100%">
               <LineChart data={momentum.pages}>
-                <Line dataKey="count" dot={false} stroke="hsl(var(--primary))" strokeWidth={2} type="monotone"/>
+                <Line dataKey="count" dot={false} activeDot={false} stroke="hsl(var(--primary))" strokeWidth={2} type="natural"/>
               </LineChart>
             </ResponsiveContainer>
           </div>
