@@ -91,7 +91,7 @@ export default function TopKPIs() {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <Link to="/admin/companies" className="bg-card/40 backdrop-blur-md border border-white/5 rounded-xl p-4 flex flex-col gap-2 cursor-pointer hover:bg-card/80 transition-all">
+      <div className="bg-card/40 backdrop-blur-md border border-white/5 rounded-xl p-4 flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Total Workspaces</p>
           <Building2 className="w-4 h-4 text-muted-foreground" />
@@ -108,9 +108,9 @@ export default function TopKPIs() {
             </ResponsiveContainer>
           </div>
         </div>
-      </Link>
+      </div>
 
-      <Link to="/admin/users" className="bg-card/40 backdrop-blur-md border border-white/5 rounded-xl p-4 flex flex-col gap-2 cursor-pointer hover:bg-card/80 transition-all">
+      <div className="bg-card/40 backdrop-blur-md border border-white/5 rounded-xl p-4 flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Active Users</p>
           <Users className="w-4 h-4 text-muted-foreground" />
@@ -127,7 +127,7 @@ export default function TopKPIs() {
             </ResponsiveContainer>
           </div>
         </div>
-      </Link>
+      </div>
 
       <div className="bg-card/40 backdrop-blur-md border border-white/5 rounded-xl p-4 flex flex-col gap-2">
         <div className="flex items-center justify-between">

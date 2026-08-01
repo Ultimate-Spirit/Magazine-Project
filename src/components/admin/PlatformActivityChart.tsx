@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
 
 export default function PlatformActivityChart() {
   const [chartData, setChartData] = useState<any[]>([]);
@@ -96,6 +96,10 @@ export default function PlatformActivityChart() {
                   <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
                   <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                 </linearGradient>
+                <linearGradient id="colorDownloaded" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.2}/>
+                  <stop offset="95%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0}/>
+                </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
               <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
@@ -109,7 +113,9 @@ export default function PlatformActivityChart() {
                   boxShadow: '0 4px 12px rgba(0,0,0,0.5)' 
                 }} 
               />
-              <Area type="monotone" dataKey="magazinesCreated" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#colorDrafted)" />
+              <Legend verticalAlign="top" height={36} />
+              <Area type="basis" dataKey="magazinesCreated" name="Drafted" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#colorDrafted)" />
+              <Area type="basis" dataKey="magazinesDownloaded" name="Downloaded" stroke="hsl(var(--muted-foreground))" strokeWidth={2} fillOpacity={1} fill="url(#colorDownloaded)" />
             </AreaChart>
           </ResponsiveContainer>
         )}
