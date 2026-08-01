@@ -11,21 +11,43 @@ export default function TopKPIs() {
     totalMagazines: 0,
     publishedPages: 0
   });
+  
+  const [momentum, setMomentum] = useState({
+    workspaces: [] as any[],
+    users: [] as any[],
+    magazines: [] as any[],
+    pages: [] as any[]
+  });
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       try {
+        const fourteenDaysAgo = new Date();
+        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 13);
+        fourteenDaysAgo.setHours(0, 0, 0, 0);
+        const fourteenIso = fourteenDaysAgo.toISOString();
+
         const [
           companiesRes,
           usersRes,
           foldersRes,
-          pagesRes
+          pagesRes,
+          comp14,
+          users14,
+          folders14,
+          pages14
         ] = await Promise.all([
           supabase.from('companies').select('id', { count: 'exact', head: true }),
           supabase.from('profiles').select('id', { count: 'exact', head: true }),
           supabase.from('folders').select('id', { count: 'exact', head: true }),
           supabase.from('pages').select('id', { count: 'exact', head: true }),
+          
+          supabase.from('companies').select('created_at').gte('created_at', fourteenIso),
+          supabase.from('profiles').select('created_at').gte('created_at', fourteenIso),
+          supabase.from('folders').select('created_at').gte('created_at', fourteenIso),
+          supabase.from('pages').select('created_at').gte('created_at', fourteenIso),
         ]);
 
         setData({
@@ -34,6 +56,30 @@ export default function TopKPIs() {
           totalMagazines: foldersRes.count || 0,
           publishedPages: pagesRes.count || 0
         });
+
+        const process14 = (rows: any[]) => {
+          const map = new Map();
+          for (let i = 13; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            map.set(d.toISOString().split('T')[0], { count: 0 });
+          }
+          rows.forEach((r: any) => {
+            const ymd = r.created_at.split('T')[0];
+            if (map.has(ymd)) {
+              map.get(ymd).count += 1;
+            }
+          });
+          return Array.from(map.values());
+        };
+
+        setMomentum({
+          workspaces: process14(comp14.data || []),
+          users: process14(users14.data || []),
+          magazines: process14(folders14.data || []),
+          pages: process14(pages14.data || [])
+        });
+        
       } catch (err) {
         console.error(err);
       } finally {
@@ -42,8 +88,6 @@ export default function TopKPIs() {
     }
     fetchData();
   }, []);
-
-  const sparklineData = [{v: 10}, {v: 25}, {v: 15}, {v: 40}];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -58,8 +102,8 @@ export default function TopKPIs() {
           </p>
           <div className="mt-2">
             <ResponsiveContainer height={35} width="100%">
-              <LineChart data={sparklineData}>
-                <Line dataKey="v" dot={false} stroke="hsl(var(--primary))" strokeWidth={2} type="monotone"/>
+              <LineChart data={momentum.workspaces}>
+                <Line dataKey="count" dot={false} stroke="hsl(var(--primary))" strokeWidth={2} type="monotone"/>
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -77,8 +121,8 @@ export default function TopKPIs() {
           </p>
           <div className="mt-2">
             <ResponsiveContainer height={35} width="100%">
-              <LineChart data={sparklineData}>
-                <Line dataKey="v" dot={false} stroke="hsl(var(--primary))" strokeWidth={2} type="monotone"/>
+              <LineChart data={momentum.users}>
+                <Line dataKey="count" dot={false} stroke="hsl(var(--primary))" strokeWidth={2} type="monotone"/>
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -96,8 +140,8 @@ export default function TopKPIs() {
           </p>
           <div className="mt-2">
             <ResponsiveContainer height={35} width="100%">
-              <LineChart data={sparklineData}>
-                <Line dataKey="v" dot={false} stroke="hsl(var(--primary))" strokeWidth={2} type="monotone"/>
+              <LineChart data={momentum.magazines}>
+                <Line dataKey="count" dot={false} stroke="hsl(var(--primary))" strokeWidth={2} type="monotone"/>
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -115,8 +159,8 @@ export default function TopKPIs() {
           </p>
           <div className="mt-2">
             <ResponsiveContainer height={35} width="100%">
-              <LineChart data={sparklineData}>
-                <Line dataKey="v" dot={false} stroke="hsl(var(--primary))" strokeWidth={2} type="monotone"/>
+              <LineChart data={momentum.pages}>
+                <Line dataKey="count" dot={false} stroke="hsl(var(--primary))" strokeWidth={2} type="monotone"/>
               </LineChart>
             </ResponsiveContainer>
           </div>

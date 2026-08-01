@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 export default function PlatformActivityChart() {
   const [chartData, setChartData] = useState<any[]>([]);
@@ -9,21 +9,24 @@ export default function PlatformActivityChart() {
 
   useEffect(() => {
     async function fetchData() {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
-      thirtyDaysAgo.setHours(0, 0, 0, 0);
-      const thirtyDaysAgoIso = thirtyDaysAgo.toISOString();
+      const now = new Date();
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      const startOfYearIso = startOfYear.toISOString();
 
-      const [folders30dRes, logs30dRes] = await Promise.all([
-        supabase.from('folders').select('created_at').gte('created_at', thirtyDaysAgoIso),
-        supabase.from('activity_logs').select('action_type, created_at').gte('created_at', thirtyDaysAgoIso).eq('action_type', 'PDF_EXPORT')
-      ]);
+      const { data, error } = await supabase
+        .from('folders')
+        .select('created_at')
+        .gte('created_at', startOfYearIso);
 
       let cData: any[] = [];
       try {
         const dateMap = new Map();
+        
+        // Calculate days between start of year and now
+        const diffTime = Math.abs(now.getTime() - startOfYear.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        for (let i = 29; i >= 0; i--) {
+        for (let i = diffDays; i >= 0; i--) {
           const d = new Date();
           d.setDate(d.getDate() - i);
           const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -31,27 +34,17 @@ export default function PlatformActivityChart() {
           
           const dayObj = {
             date: dateStr,
-            magazinesCreated: 0,
-            magazinesDownloaded: 0
+            magazinesCreated: 0
           };
           cData.push(dayObj);
           dateMap.set(ymd, dayObj);
         }
 
-        if (!folders30dRes.error && folders30dRes.data) {
-          folders30dRes.data.forEach((p: any) => {
+        if (!error && data) {
+          data.forEach((p: any) => {
             const ymd = p.created_at.split('T')[0];
             if (dateMap.has(ymd)) {
               dateMap.get(ymd).magazinesCreated += 1;
-            }
-          });
-        }
-
-        if (!logs30dRes.error && logs30dRes.data) {
-          logs30dRes.data.forEach((l: any) => {
-            const ymd = l.created_at.split('T')[0];
-            if (dateMap.has(ymd)) {
-              dateMap.get(ymd).magazinesDownloaded += 1;
             }
           });
         }
@@ -65,7 +58,7 @@ export default function PlatformActivityChart() {
     fetchData();
   }, []);
 
-  const displayData = timeRange === '7D' ? chartData.slice(-7) : chartData;
+  const displayData = timeRange === '7D' ? chartData.slice(-7) : timeRange === '30D' ? chartData.slice(-30) : chartData;
 
   return (
     <div className="lg:col-span-2 bg-card/50 border border-border/40 rounded-xl p-4 flex flex-col min-h-[300px]">
@@ -74,7 +67,7 @@ export default function PlatformActivityChart() {
         
         {/* Sleek Pill-shaped Toggle Group */}
         <div className="flex items-center bg-black/10 dark:bg-black/40 rounded-full p-1 border border-border/30">
-          {['7D', '30D'].map((range) => (
+          {['7D', '30D', 'YTD'].map((range) => (
             <button
               key={range}
               onClick={() => setTimeRange(range)}
@@ -100,12 +93,8 @@ export default function PlatformActivityChart() {
             <AreaChart data={displayData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorDrafted" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="colorDownloaded" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
@@ -120,9 +109,7 @@ export default function PlatformActivityChart() {
                   boxShadow: '0 4px 12px rgba(0,0,0,0.5)' 
                 }} 
               />
-              <Legend verticalAlign="top" height={36} />
-              <Area type="monotone" dataKey="magazinesCreated" fill="url(#colorDrafted)" name="Drafted" stroke="#3b82f6" strokeWidth={2} />
-              <Area type="monotone" dataKey="magazinesDownloaded" fill="url(#colorDownloaded)" name="Downloaded" stroke="#10b981" strokeWidth={2} />
+              <Area type="monotone" dataKey="magazinesCreated" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#colorDrafted)" />
             </AreaChart>
           </ResponsiveContainer>
         )}
