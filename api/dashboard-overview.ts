@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { createClient } from '@supabase/supabase-js';
 
 const generateFallbackChartData = () => {
@@ -52,16 +53,16 @@ export default async function handler(req: any, res: any) {
       supabase.from('pages').select('id', { count: 'exact', head: true }),
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
       supabase.from('activity_logs').select('id', { count: 'exact', head: true })
-        .eq('action', 'PDF_EXPORT'),
+        .eq('action', 'EXPORT'),
       supabase.from('activity_logs')
         .select('id, action, entity_name, created_at, profiles(full_name, email)')
-        .eq('action', 'PDF_EXPORT')
+        .eq('action', 'EXPORT')
         .order('created_at', { ascending: false })
         .limit(5),
       supabase.from('templates').select('id', { count: 'exact', head: true }),
       supabase.from('template_bundles').select('id', { count: 'exact', head: true }),
       supabase.from('folders').select('created_at').gte('created_at', thirtyDaysAgoIso),
-      supabase.from('activity_logs').select('action, created_at').gte('created_at', thirtyDaysAgoIso).eq('action', 'PDF_EXPORT')
+      supabase.from('activity_logs').select('action, created_at').gte('created_at', thirtyDaysAgoIso).eq('action', 'EXPORT')
     ]);
 
     if (companiesRes.error) console.error(`Companies query failed: ${companiesRes.error.message}`);
@@ -74,7 +75,19 @@ export default async function handler(req: any, res: any) {
     const activeUsers = (usersRes.error ? 0 : usersRes.count) || 0;
     const totalMagazines = (foldersRes.error ? 0 : foldersRes.count) || 0;
     const publishedPages = (pagesRes.error ? 0 : pagesRes.count) || 0;
-    const pdfsGenerated = (pdfsRes.error ? 0 : pdfsRes.count) || 0;
+
+    let pdfsGenerated = (pdfsRes.error ? 0 : pdfsRes.count) || 0;
+    try {
+      const token = process.env.BROWSERLESS_TOKEN || '2Ui5G7Wh2tHASwS00b5802fc5d89f8c13d2c0d233a2dc1c60';
+      const quotaRes = await fetch(`https://api.browserless.io/workspace?token=${token}`, { cache: 'no-store' });
+      if (quotaRes.ok) {
+        const quotaData = await quotaRes.json();
+        const integerQuota = quotaData.usage || quotaData.used || quotaData.count || quotaData.total || pdfsGenerated;
+        pdfsGenerated = parseInt(integerQuota, 10);
+      }
+    } catch (e) {
+      console.error('Browserless quota fetch failed', e);
+    }
     const pdfLimit = 10000;
     const recentExports = recentExportsRes.error ? [] : (recentExportsRes.data || []);
     const totalTemplates = (templatesRes.error ? 0 : templatesRes.count) || 0;
