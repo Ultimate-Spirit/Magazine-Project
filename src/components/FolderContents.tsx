@@ -90,15 +90,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { PrintTemplate } from './PrintTemplate';
 
 import React from 'react';
-import Select from 'react-select';
-
-const SELECT_STYLES = {
-  control: () => '!bg-background !border-border/10 !rounded-xl !min-h-[42px] hover:!border-primary/50 !shadow-none !cursor-pointer',
-  menu: () => '!bg-background !border !border-border/20 !rounded-xl !shadow-xl !overflow-hidden !z-50',
-  option: (state: any) => `!cursor-pointer ${state.isFocused ? '!bg-muted/50' : ''} ${state.isSelected ? '!bg-primary/10 !text-primary !font-bold' : '!text-foreground'}`,
-  singleValue: () => '!text-foreground !font-bold !text-sm',
-  input: () => '!text-foreground'
-};
+import { CustomSelect } from './common/CustomSelect';
 
 const PagePreview = ({ page }: { page: Page }) => {
   const layoutJson = page.templates?.layout_json;
@@ -688,26 +680,24 @@ export function FolderContents() {
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                   <Layout className="w-3.5 h-3.5" /> Global Cover Master
                 </label>
-                <Select 
-                  value={globalTemplates.filter(t => t.category === 'Cover').map(t => ({ value: t.id, label: t.template_name })).find(o => o.value === selectedCoverId) || null}
-                  onChange={(option) => option && handleUpdateGlobalPage(option.value, 'Cover')}
+                <CustomSelect
+                  value={selectedCoverId}
+                  onChange={(val) => handleUpdateGlobalPage(val, 'Cover')}
                   options={globalTemplates.filter(t => t.category === 'Cover').map(t => ({ value: t.id, label: t.template_name }))}
-                  classNames={SELECT_STYLES}
                   placeholder="Choose a Cover Template..."
-                  isDisabled={isActionLoading}
+                  disabled={isActionLoading}
                 />
               </div>
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                   <Layout className="w-3.5 h-3.5" /> Global Back Cover Master
                 </label>
-                <Select 
-                  value={globalTemplates.filter(t => t.category === 'Last Page').map(t => ({ value: t.id, label: t.template_name })).find(o => o.value === selectedLastPageId) || null}
-                  onChange={(option) => option && handleUpdateGlobalPage(option.value, 'Last Page')}
+                <CustomSelect
+                  value={selectedLastPageId}
+                  onChange={(val) => handleUpdateGlobalPage(val, 'Last Page')}
                   options={globalTemplates.filter(t => t.category === 'Last Page').map(t => ({ value: t.id, label: t.template_name }))}
-                  classNames={SELECT_STYLES}
                   placeholder="Choose a Last Page Template..."
-                  isDisabled={isActionLoading}
+                  disabled={isActionLoading}
                 />
               </div>
             </div>

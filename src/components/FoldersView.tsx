@@ -18,6 +18,7 @@ import {
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { ConfirmModal } from './common/ConfirmModal';
+import { CustomSelect } from './common/CustomSelect';
 import { logActivity } from '../lib/activityLogger';
 import type { Folder, Company, TemplateBundle, Template } from '../types';
 
@@ -531,44 +532,32 @@ export function FoldersView({ onSelectCompany }: Props) {
               <>
                 <div className="space-y-2 text-left">
                   <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest ml-1">Blueprint Template</label>
-                  <select
-                    className="w-full h-8 px-3 micro-surface border border-border/50 rounded-lg focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground text-xs appearance-none cursor-pointer"
+                  <CustomSelect
                     value={selectedBundleId}
-                    onChange={(e) => setSelectedBundleId(e.target.value)}
-                  >
-                    <option value="" disabled>Select a Blueprint Bundle...</option>
-                    {(activeBundles || []).map(bundle => (
-                      <option key={bundle.id} value={bundle.id}>{bundle?.bundle_name || 'Unnamed Bundle'}</option>
-                    ))}
-                  </select>
+                    onChange={setSelectedBundleId}
+                    placeholder="Select a Blueprint Bundle..."
+                    options={(activeBundles || []).map(bundle => ({ value: bundle.id, label: bundle?.bundle_name || 'Unnamed Bundle' }))}
+                  />
                 </div>
 
                 <div className="space-y-2 text-left mt-3">
                   <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest ml-1">Cover Page Template</label>
-                  <select
-                    className="w-full h-8 px-3 micro-surface border border-border/50 rounded-lg focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground text-xs appearance-none cursor-pointer"
+                  <CustomSelect
                     value={selectedCoverPageId}
-                    onChange={(e) => setSelectedCoverPageId(e.target.value)}
-                  >
-                    <option value="" disabled>Select a Cover Page...</option>
-                    {(coverTemplates || []).map(template => (
-                      <option key={template.id} value={template.id}>{template?.template_name || 'Unnamed Template'}</option>
-                    ))}
-                  </select>
+                    onChange={setSelectedCoverPageId}
+                    placeholder="Select a Cover Page..."
+                    options={(coverTemplates || []).map(template => ({ value: template.id, label: template?.template_name || 'Unnamed Template' }))}
+                  />
                 </div>
 
                 <div className="space-y-2 text-left mt-3">
                   <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest ml-1">Last Page Template</label>
-                  <select
-                    className="w-full h-8 px-3 micro-surface border border-border/50 rounded-lg focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-foreground text-xs appearance-none cursor-pointer"
+                  <CustomSelect
                     value={selectedLastPageId}
-                    onChange={(e) => setSelectedLastPageId(e.target.value)}
-                  >
-                    <option value="" disabled>Select a Last Page...</option>
-                    {(lastPageTemplates || []).map(template => (
-                      <option key={template.id} value={template.id}>{template?.template_name || 'Unnamed Template'}</option>
-                    ))}
-                  </select>
+                    onChange={setSelectedLastPageId}
+                    placeholder="Select a Last Page..."
+                    options={(lastPageTemplates || []).map(template => ({ value: template.id, label: template?.template_name || 'Unnamed Template' }))}
+                  />
                 </div>
               </>
             )}

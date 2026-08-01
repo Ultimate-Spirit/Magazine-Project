@@ -144,28 +144,30 @@ export const CompanyManagement: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background font-sans invisible-scrollbar">
-      <header className="h-14 bg-card/30 backdrop-blur-md flex items-center justify-between px-4 lg:px-6 faint-divider shrink-0 z-10">
-        <h1 className="text-lg font-semibold text-foreground tracking-tight leading-none">Workspace Directory</h1>
-        
-        <div className="flex items-center gap-2 lg:gap-4">
-          <div className="relative hidden md:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
-            <input 
-              type="text" 
-              placeholder="Filter..."
-              className="h-8 pl-9 pr-3 micro-surface border border-border/50 rounded-lg focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all w-48 lg:w-64 text-xs font-medium text-foreground"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+      <header className="w-full bg-card/30 backdrop-blur-md faint-divider shrink-0 z-10">
+        <div className="max-w-7xl mx-auto w-full h-14 flex items-center justify-between px-4 lg:px-6">
+          <h1 className="text-lg font-semibold text-foreground tracking-tight leading-none">Workspace Directory</h1>
+          
+          <div className="flex items-center gap-2 lg:gap-4">
+            <div className="relative hidden md:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
+              <input 
+                type="text" 
+                placeholder="Filter..."
+                className="h-8 pl-9 pr-3 micro-surface border border-border/50 rounded-lg focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all w-48 lg:w-64 text-xs font-medium text-foreground"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <button 
+              onClick={() => openModal()}
+              className="flex items-center gap-2 h-8 px-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-all border border-border/50 text-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">New Workspace</span>
+              <span className="sm:hidden">Add</span>
+            </button>
           </div>
-          <button 
-            onClick={() => openModal()}
-            className="flex items-center gap-2 h-8 px-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-all border border-border/50 text-xs"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">New Workspace</span>
-            <span className="sm:hidden">Add</span>
-          </button>
         </div>
       </header>
 
