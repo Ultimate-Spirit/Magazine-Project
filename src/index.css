@@ -75,6 +75,18 @@
     @apply border-border;
   }
   
+  h1 {
+    @apply font-extrabold text-4xl tracking-tight;
+  }
+
+  h2 {
+    @apply font-bold text-3xl tracking-tight border-b border-border pb-2;
+  }
+
+  p {
+    @apply leading-relaxed text-muted-foreground;
+  }
+  
   body {
     @apply bg-background text-foreground/90 antialiased overflow-x-hidden font-sans;
     font-size: 1rem;
@@ -98,6 +110,12 @@
 
   .dark select {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  }
+}
+
+@layer components {
+  .label-premium {
+    @apply text-sm uppercase font-medium tracking-wider text-muted-foreground;
   }
 }
 
