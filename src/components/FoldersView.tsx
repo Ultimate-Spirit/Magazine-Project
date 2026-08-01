@@ -294,7 +294,7 @@ export function FoldersView({ onSelectCompany }: Props) {
     <WorkspaceLayout 
       company={company || { id: 'none', name: 'Select Company' }}
     >
-      <div className="flex-1 flex flex-col overflow-hidden bg-background font-sans invisible-scrollbar">
+      <div className="flex-1 flex flex-col w-full h-full overflow-hidden bg-background font-sans invisible-scrollbar">
         {notification && (
           <div className={`fixed top-8 right-8 z-[100] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right-8 duration-300 ${notification.type === 'success' ? 'bg-foreground text-background' : 'bg-destructive text-destructive-foreground'}`}>
             {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <AlertCircle className="w-5 h-5" />}
@@ -302,7 +302,7 @@ export function FoldersView({ onSelectCompany }: Props) {
           </div>
         )}
 
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 lg:gap-12 mb-8 lg:mb-20 px-2 lg:px-10 xl:px-16 pt-8 lg:pt-12 shrink-0">
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 lg:gap-12 mb-8 px-6 pt-8 shrink-0">
           <div className="space-y-3 lg:space-y-4">
             <button 
               onClick={() => navigate('/')}
@@ -363,9 +363,9 @@ export function FoldersView({ onSelectCompany }: Props) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-5 lg:px-10 xl:px-16 pb-12 w-full max-w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <div className="lg:col-span-8 xl:col-span-9 space-y-6">
+        <main className="flex-1 flex flex-col overflow-y-auto px-6 pb-6 w-full">
+          <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch min-h-0">
+            <div className="lg:col-span-8 xl:col-span-9 space-y-6 flex flex-col">
               {(!folders || folders.length === 0) ? (
                 <div className="micro-surface rounded-xl p-6 text-center border border-border/50">
                   <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center mx-auto mb-4 border border-border/50">
@@ -455,8 +455,8 @@ export function FoldersView({ onSelectCompany }: Props) {
               )}
             </div>
 
-            <aside className="lg:col-span-4 xl:col-span-3">
-              <div className="bg-card/40 border border-border/10 rounded-[1.5rem] p-4 lg:p-6 flex flex-col gap-6 h-full">
+            <aside className="lg:col-span-4 xl:col-span-3 flex flex-col h-full min-h-0">
+              <div className="flex-1 bg-card/40 border border-border/10 rounded-[1.5rem] p-4 lg:p-6 flex flex-col gap-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-background/40 rounded-2xl p-4 border border-border/10">
                     <p className="label-premium mb-1">USERS</p>
