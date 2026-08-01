@@ -90,7 +90,7 @@ export const AdminDashboard: React.FC = () => {
 
       // Fetch new dashboard overview
       try {
-        const overviewRes = await fetch('/api/dashboard-overview', { headers });
+        const overviewRes = await fetch(`/api/dashboard-overview?t=${Date.now()}`, { headers });
         const overviewData = await overviewRes.json();
         if (overviewRes.ok) {
           setOverview(overviewData);

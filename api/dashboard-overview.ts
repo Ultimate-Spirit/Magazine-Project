@@ -53,16 +53,16 @@ export default async function handler(req: any, res: any) {
       supabase.from('pages').select('id', { count: 'exact', head: true }),
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
       supabase.from('activity_logs').select('id', { count: 'exact', head: true })
-        .eq('action', 'EXPORT'),
+        .eq('action_type', 'EXPORT'),
       supabase.from('activity_logs')
-        .select('id, action, entity_name, created_at, profiles(full_name, email)')
-        .eq('action', 'EXPORT')
+        .select('id, action_type, entity_name, created_at, profiles(full_name, email)')
+        .eq('action_type', 'EXPORT')
         .order('created_at', { ascending: false })
         .limit(5),
       supabase.from('templates').select('id', { count: 'exact', head: true }),
       supabase.from('template_bundles').select('id', { count: 'exact', head: true }),
       supabase.from('folders').select('created_at').gte('created_at', thirtyDaysAgoIso),
-      supabase.from('activity_logs').select('action, created_at').gte('created_at', thirtyDaysAgoIso).eq('action', 'EXPORT')
+      supabase.from('activity_logs').select('action_type, created_at').gte('created_at', thirtyDaysAgoIso).eq('action_type', 'EXPORT')
     ]);
 
     if (companiesRes.error) console.error(`Companies query failed: ${companiesRes.error.message}`);
