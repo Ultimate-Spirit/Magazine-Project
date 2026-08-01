@@ -1,25 +1,46 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, Building2, FileEdit, FileText } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
-export default async function TopKPIs() {
-  const [
-    companiesRes,
-    usersRes,
-    foldersRes,
-    pagesRes
-  ] = await Promise.all([
-    supabase.from('companies').select('id', { count: 'exact', head: true }),
-    supabase.from('profiles').select('id', { count: 'exact', head: true }),
-    supabase.from('folders').select('id', { count: 'exact', head: true }),
-    supabase.from('pages').select('id', { count: 'exact', head: true }),
-  ]);
+export default function TopKPIs() {
+  const [data, setData] = useState({
+    totalWorkspaces: 0,
+    activeUsers: 0,
+    totalMagazines: 0,
+    publishedPages: 0
+  });
+  const [loading, setLoading] = useState(true);
 
-  const totalWorkspaces = companiesRes.count || 0;
-  const activeUsers = usersRes.count || 0;
-  const totalMagazines = foldersRes.count || 0;
-  const publishedPages = pagesRes.count || 0;
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [
+          companiesRes,
+          usersRes,
+          foldersRes,
+          pagesRes
+        ] = await Promise.all([
+          supabase.from('companies').select('id', { count: 'exact', head: true }),
+          supabase.from('profiles').select('id', { count: 'exact', head: true }),
+          supabase.from('folders').select('id', { count: 'exact', head: true }),
+          supabase.from('pages').select('id', { count: 'exact', head: true }),
+        ]);
+
+        setData({
+          totalWorkspaces: companiesRes.count || 0,
+          activeUsers: usersRes.count || 0,
+          totalMagazines: foldersRes.count || 0,
+          publishedPages: pagesRes.count || 0
+        });
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -29,7 +50,7 @@ export default async function TopKPIs() {
           <Building2 className="w-4 h-4 text-muted-foreground" />
         </div>
         <p className="text-2xl font-semibold text-foreground">
-          {totalWorkspaces}
+          {loading ? <span className="animate-pulse">...</span> : data.totalWorkspaces}
         </p>
       </Link>
 
@@ -39,7 +60,7 @@ export default async function TopKPIs() {
           <Users className="w-4 h-4 text-muted-foreground" />
         </div>
         <p className="text-2xl font-semibold text-foreground">
-          {activeUsers}
+          {loading ? <span className="animate-pulse">...</span> : data.activeUsers}
         </p>
       </Link>
 
@@ -49,7 +70,7 @@ export default async function TopKPIs() {
           <FileEdit className="w-4 h-4 text-muted-foreground" />
         </div>
         <p className="text-2xl font-semibold text-foreground">
-          {totalMagazines}
+          {loading ? <span className="animate-pulse">...</span> : data.totalMagazines}
         </p>
       </div>
 
@@ -59,7 +80,7 @@ export default async function TopKPIs() {
           <FileText className="w-4 h-4 text-muted-foreground" />
         </div>
         <p className="text-2xl font-semibold text-foreground">
-          {publishedPages}
+          {loading ? <span className="animate-pulse">...</span> : data.publishedPages}
         </p>
       </div>
     </div>

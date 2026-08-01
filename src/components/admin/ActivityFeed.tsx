@@ -1,12 +1,26 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 
-export default async function ActivityFeed() {
-  const { data: activities, error } = await supabase
-    .from('activity_logs')
-    .select('id, action_type, entity_type, entity_name, created_at, profiles(full_name, email)')
-    .order('created_at', { ascending: false })
-    .limit(10);
+export default function ActivityFeed() {
+  const [activities, setActivities] = useState<any[] | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      const { data, error } = await supabase
+        .from('activity_logs')
+        .select('id, action_type, entity_type, entity_name, created_at, profiles(full_name, email)')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (error) {
+        setError(error);
+      } else {
+        setActivities(data);
+      }
+    }
+    fetchData();
+  }, []);
 
   if (error) {
     return (
@@ -24,7 +38,9 @@ export default async function ActivityFeed() {
       <h2 className="text-sm font-semibold text-foreground mb-4 shrink-0">Activity Feed</h2>
       <div className="flex-1 overflow-y-auto invisible-scrollbar">
         <div className="space-y-3">
-          {!activities || activities.length === 0 ? (
+          {activities === null ? (
+            <div className="py-10 text-center text-muted-foreground/50 text-xs">Loading...</div>
+          ) : activities.length === 0 ? (
             <div className="py-10 text-center text-muted-foreground/50 text-xs">No recent activity.</div>
           ) : (
             activities.map((log: any) => (
