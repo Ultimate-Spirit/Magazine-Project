@@ -182,57 +182,52 @@ export const CompanyManagement: React.FC = () => {
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4">
             {filteredCompanies.map((company) => {
               const memberCount = company.user_companies?.[0]?.count ?? 0;
               return (
               <div 
                 key={company.id} 
                 onClick={() => navigate(`/company/${company.id}/folders`)}
-                className="bento-card micro-surface micro-surface-hover border-border/20 hover:border-primary/30 group relative cursor-pointer flex flex-col justify-between min-h-[180px] lg:min-h-[220px] p-4 lg:p-8"
+                className="micro-surface micro-surface-hover border border-border/10 hover:border-primary/30 group relative cursor-pointer flex flex-row items-center gap-4 p-3 rounded-2xl transition-all"
               >
-                <div className="flex items-start justify-between mb-4 lg:mb-6">
-                  <div className="w-12 h-12 lg:w-16 lg:h-16 bg-card rounded-xl lg:rounded-2xl flex items-center justify-center overflow-hidden border border-border/10 group-hover:border-primary/20 transition-all shrink-0">
-                    {company.logoUrl ? (
-                      <img src={company.logoUrl} alt={company.name} className="w-full h-full object-contain p-1 group-hover:scale-110 transition-transform duration-500" />
-                    ) : (
-                      <Building2 className="w-6 h-6 lg:w-8 lg:h-8 text-muted-foreground/30 group-hover:text-primary transition-colors duration-500" />
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 lg:translate-x-2 lg:group-hover:translate-x-0">
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openModal(company);
-                      }}
-                      className="p-2 lg:p-3 micro-surface border border-border/10 rounded-xl text-muted-foreground/40 hover:text-primary transition-all"
-                      title="Edit Company"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCompanyToDelete(company);
-                      }}
-                      className="p-2 lg:p-3 micro-surface border border-border/10 rounded-xl text-muted-foreground/40 hover:text-destructive transition-all"
-                      title="Delete Company"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                <div className="w-12 h-12 bg-muted/50 rounded-xl flex items-center justify-center overflow-hidden border border-border/10 shrink-0">
+                  {company.logoUrl ? (
+                    <img src={company.logoUrl} alt={company.name} className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform duration-500" />
+                  ) : (
+                    <Building2 className="w-6 h-6 text-muted-foreground/50 group-hover:text-primary transition-colors duration-500" />
+                  )}
                 </div>
                 
-                <div>
-                  <div className="flex items-center justify-between group-hover:text-primary transition-colors mb-1 lg:mb-2">
-                    <h3 className="text-xl lg:text-2xl font-black text-foreground group-hover:text-primary tracking-tight line-clamp-1">{company.name}</h3>
-                    <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all shrink-0 hidden lg:block" />
-                  </div>
-                  
-                  <div className="flex items-center gap-2 text-[9px] lg:text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest mt-1 group-hover:text-muted-foreground transition-colors">
-                    <Users className="w-3 h-3" />
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-bold text-foreground group-hover:text-primary tracking-tight truncate">{company.name}</h3>
+                  <div className="label-premium flex items-center gap-1.5 mt-0.5 group-hover:text-muted-foreground transition-colors">
+                    <Users className="w-3.5 h-3.5" />
                     {memberCount} Member{memberCount !== 1 ? 's' : ''}
                   </div>
+                </div>
+
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0 shrink-0">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openModal(company);
+                    }}
+                    className="p-2 hover:bg-muted/50 rounded-lg text-muted-foreground/40 hover:text-primary transition-all"
+                    title="Edit Company"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCompanyToDelete(company);
+                    }}
+                    className="p-2 hover:bg-muted/50 rounded-lg text-muted-foreground/40 hover:text-destructive transition-all"
+                    title="Delete Company"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             )})}
